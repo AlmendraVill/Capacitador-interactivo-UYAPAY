@@ -3,159 +3,325 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plataforma UYAPAY Asesor B2C</title>
+<title>Plataforma UYAPAY</title>
 <style>
   :root {
-    --yellow: #F4A81D; --yellow-dark: #E09400;
-    --portal-bg: #f4f6f8; --portal-nav: #2b2b2b; --portal-text: #333;
+    --yellow: #F4A81D;
+    --yellow-dark: #E09400;
+    --bg-light: #F9F9F9;
+    --white: #FFFFFF;
+    --text-dark: #333333;
+    --text-muted: #666666;
+    --border: #E2E2E2;
   }
-  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-  body { margin: 0; background: var(--portal-bg); color: var(--portal-text); }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  body { margin: 0; background-color: var(--bg-light); color: var(--text-dark); }
 
-  /* Estilos del Portal */
-  .portal-screen { display: none; min-height: 100vh; }
-  .portal-screen.active { display: flex; }
-  
-  #login-portal { flex-direction: column; align-items: center; justify-content: center; background: #2b2b2b; color: white; }
-  .login-box { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; color: #333; }
-  .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; }
-  .login-box button { width: 100%; padding: 12px; background: var(--yellow); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-  .login-error { color: red; font-size: 14px; margin-bottom: 10px; display: none; text-align: center; }
-
-  .portal-layout { width: 100%; display: flex; }
-  .sidebar { width: 250px; background: var(--portal-nav); color: white; padding: 20px 0; display: flex; flex-direction: column; }
-  .nav-item { padding: 15px 20px; cursor: pointer; border-left: 4px solid transparent; }
-  .nav-item.active { background: #3d3d3d; border-left-color: var(--yellow); }
-  .logout-btn { margin-top: auto; padding: 15px 20px; cursor: pointer; color: #ff6b6b; }
-  
-  .main-content { flex: 1; padding: 40px; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  .module-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-  th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-  .btn-start-case { background: var(--yellow); color: #3a2a00; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-
-  /* Contenedor del Simulador (Iframe) */
-  #simulator-wrapper { 
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; 
-    background: rgba(43, 43, 43, 0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; 
+  /* --- LOGIN --- */
+  #login-view {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; background-color: var(--bg-light);
   }
-  .close-simulator { position: absolute; top: 20px; right: 20px; color: white; background: #444; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
-  iframe { border: none; width: 100%; max-width: 420px; height: 90vh; border-radius: 10px; }
+  .login-card {
+    background: var(--white); padding: 40px; border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 380px; text-align: center;
+  }
+  .login-card h1 { color: var(--yellow-dark); margin-top: 0; }
+  .login-card input {
+    width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 14px;
+  }
+  .btn-primary {
+    width: 100%; padding: 12px; background-color: var(--yellow); color: #fff;
+    border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;
+  }
+  .btn-primary:hover { background-color: var(--yellow-dark); }
+  .error-msg { color: #d32f2f; font-size: 13px; margin-bottom: 12px; display: none; }
+
+  /* --- MENÚ SUPERIOR (TOPBAR) --- */
+  #top-navbar {
+    display: none; background-color: var(--white); border-bottom: 3px solid var(--yellow);
+    padding: 0 40px; align-items: center; justify-content: space-between; height: 60px;
+  }
+  .nav-brand { font-weight: bold; font-size: 20px; color: var(--yellow-dark); }
+  .nav-links { display: flex; gap: 20px; height: 100%; }
+  .nav-item {
+    padding: 0 15px; display: flex; align-items: center; cursor: pointer;
+    font-weight: 500; color: var(--text-muted); border-bottom: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--yellow-dark); }
+  .nav-item.active { color: var(--yellow-dark); border-bottom-color: var(--yellow-dark); }
+  .nav-user { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+  .logout { cursor: pointer; color: #d32f2f; font-weight: 500; }
+
+  /* --- CONTENEDOR PRINCIPAL --- */
+  .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: none; }
+  .container.active { display: block; }
+  .section-header { border-bottom: 2px solid var(--yellow); padding-bottom: 10px; margin-bottom: 24px; color: var(--yellow-dark); }
+
+  /* --- TABLAS Y TARJETAS --- */
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  th { background-color: #f5f5f5; color: var(--text-muted); font-weight: 600; font-size: 13px; }
+  .btn-secondary { background: var(--white); border: 1px solid var(--yellow); color: var(--yellow-dark); padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+  .btn-secondary:hover { background: #fffcf5; }
+
+  /* --- MÓDULOS DE CAPACITACIÓN --- */
+  .module-list { display: flex; flex-direction: column; gap: 12px; }
+  .module-item {
+    border: 1px solid var(--border); border-left: 4px solid var(--yellow); background: var(--white);
+    padding: 16px 20px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .module-title { font-weight: 600; font-size: 16px; margin: 0 0 4px 0; }
+  .module-desc { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+  /* --- EVALUACIÓN Y EXAMEN --- */
+  #evaluation-arena { display: none; flex-direction: column; height: calc(100vh - 60px); }
+  .exam-tabs { background: var(--white); display: flex; padding: 0 20px; border-bottom: 1px solid var(--border); }
+  .exam-tab { padding: 15px 24px; cursor: pointer; font-weight: 500; border-bottom: 3px solid transparent; }
+  .exam-tab.active { border-bottom-color: var(--yellow); color: var(--yellow-dark); font-weight: bold; background: #fffcf5; }
+  .exam-workspace { display: flex; flex: 1; overflow: hidden; }
+  .exam-instructions { flex: 1; padding: 40px; overflow-y: auto; background: var(--bg-light); }
+  .exam-simulator { width: 420px; background: #2b2b2b; display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 20px; }
+  iframe { border: none; width: 360px; height: 720px; border-radius: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: var(--white); }
 </style>
 </head>
 <body>
 
-<!-- Login -->
-<div id="login-portal" class="portal-screen active">
-  <div class="login-box">
-    <h2 style="text-align:center; color:#E09400;">Plataforma UYAPAY</h2>
-    <div class="login-error" id="portal-error">Credenciales incorrectas</div>
-    <input type="text" id="portal-user" placeholder="Usuario (admin o alvaro)">
-    <input type="password" id="portal-pass" placeholder="Contraseña">
-    <button onclick="loginPortal()">Ingresar</button>
+<!-- 1. PANTALLA DE LOGIN -->
+<div id="login-view">
+  <div class="login-card">
+    <h1>UYAPAY</h1>
+    <p style="color:var(--text-muted); margin-bottom:24px;">Capacitación B2C</p>
+    <div id="login-error" class="error-msg">Usuario o contraseña incorrectos.</div>
+    <input type="text" id="username" placeholder="Usuario">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button class="btn-primary" onclick="login()">Iniciar sesión</button>
   </div>
 </div>
 
-<!-- Portal Admin -->
-<div id="admin-portal" class="portal-screen portal-layout">
-  <div class="sidebar">
-    <h3 style="text-align:center; color:var(--yellow);">Admin</h3>
-    <div class="nav-item active">Resultados Globales</div>
-    <div class="logout-btn" onclick="logout()">Cerrar Sesión</div>
+<!-- 2. MENÚ SUPERIOR -->
+<nav id="top-navbar">
+  <div class="nav-brand">UYAPAY</div>
+  <div class="nav-links" id="nav-links-container">
+    <!-- Se llena dinámicamente según el rol -->
   </div>
-  <div class="main-content">
-    <div class="tab-content active">
-      <h2>Resultados</h2>
-      <div class="module-card">
-        <table>
-          <tr><th>Asesor</th><th>Caso</th><th>Errores</th></tr>
-          <tr><td>alvaro</td><td>Caso 1</td><td id="admin-score">-</td></tr>
-        </table>
+  <div class="nav-user">
+    <span id="user-greeting">Hola, Usuario</span>
+    <span class="logout" onclick="logout()">Salir</span>
+  </div>
+</nav>
+
+<!-- 3. VISTAS DEL ADMINISTRADOR -->
+<!-- Dashboard Resultados -->
+<div id="admin-resultados" class="container">
+  <h2 class="section-header">Dashboard de Resultados</h2>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0;">Rendimiento de Asesores</h3>
+      <button class="btn-secondary">+ Crear / Editar Usuario</button>
+    </div>
+    <table>
+      <tr><th>Asesor</th><th>Fecha Evaluación</th><th>Módulo</th><th>Calificación</th><th>Estado</th></tr>
+      <tr><td>Alvaro Rodriguez</td><td>02 Sep 2026</td><td>Casos Aleatorios B2C</td><td>85%</td><td style="color:green; font-weight:bold;">Aprobado</td></tr>
+      <tr><td>Maria Sanchez</td><td>-</td><td>-</td><td>-</td><td>Pendiente</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Gestión de Capacitación -->
+<div id="admin-capacitacion" class="container">
+  <h2 class="section-header">Gestión de Capacitación</h2>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0;">Módulos de Estudio</h3>
+      <button class="btn-primary" style="width:auto; padding:8px 16px;">+ Agregar Material (Video/Doc)</button>
+    </div>
+    <div class="module-list">
+      <div class="module-item">
+        <div>
+          <h4 class="module-title">Módulo 1: Logística y Distribución B2C en Perú</h4>
+          <p class="module-desc">3 Videos · 1 PDF adjunto</p>
+        </div>
+        <button class="btn-secondary">Editar / Organizar</button>
+      </div>
+      <div class="module-item">
+        <div>
+          <h4 class="module-title">Módulo 2: Interacción con el Sistema ERP</h4>
+          <p class="module-desc">2 Videos</p>
+        </div>
+        <button class="btn-secondary">Editar / Organizar</button>
+      </div>
+      <div class="module-item">
+        <div>
+          <h4 class="module-title">Módulo 3: Conectividad en la Cadena de Suministro</h4>
+          <p class="module-desc">1 Video · 2 Docs</p>
+        </div>
+        <button class="btn-secondary">Editar / Organizar</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Portal Asesor -->
-<div id="asesor-portal" class="portal-screen portal-layout">
-  <div class="sidebar">
-    <h3 style="text-align:center; color:var(--yellow);">Mi Panel</h3>
-    <div class="nav-item active" onclick="navAsesor('asesor-eval', this)">Evaluación</div>
-    <div class="nav-item" onclick="navAsesor('asesor-resultados', this)">Mis Resultados</div>
-    <div class="logout-btn" onclick="logout()">Cerrar Sesión</div>
-  </div>
-  <div class="main-content">
-    <div id="asesor-eval" class="tab-content active">
-      <h2>Evaluación Interactiva</h2>
-      <div class="module-card" style="display:flex; justify-content:space-between;">
-        <div><h3>Caso 1: Pedido con Promociones</h3><p>Cliente: Juan Perez</p></div>
-        <button class="btn-start-case" onclick="iniciarSimulador()">Iniciar Caso 1</button>
+
+<!-- 4. VISTAS DEL ASESOR -->
+<!-- Lista de Videos -->
+<div id="asesor-videos" class="container">
+  <h2 class="section-header">Mis Capacitaciones</h2>
+  <div class="module-list">
+    <div class="module-item" style="cursor:pointer;">
+      <div>
+        <h4 class="module-title">Módulo 1: Logística y Distribución B2C en Perú</h4>
+        <p class="module-desc">3 Videos · 1 Documento</p>
       </div>
+      <span style="color:var(--yellow-dark); font-weight:bold;">Ver contenido ❯</span>
     </div>
-    <div id="asesor-resultados" class="tab-content">
-      <h2>Mis Resultados</h2>
-      <div class="module-card">
-        <table>
-          <tr><th>Caso</th><th>Errores</th><th>Estado</th></tr>
-          <tr><td>Caso 1</td><td id="portal-score">-</td><td>Pendiente</td></tr>
-        </table>
+    <div class="module-item" style="cursor:pointer;">
+      <div>
+        <h4 class="module-title">Módulo 2: Interacción con el Sistema ERP</h4>
+        <p class="module-desc">2 Videos</p>
       </div>
+      <span style="color:var(--yellow-dark); font-weight:bold;">Ver contenido ❯</span>
     </div>
   </div>
 </div>
 
-<!-- Wrapper del Iframe -->
-<div id="simulator-wrapper">
-  <button class="close-simulator" onclick="cerrarSimulador()">Salir de la evaluación (X)</button>
-  <iframe id="simulador-frame" src=""></iframe>
+<!-- Vista previa Evaluación -->
+<div id="asesor-eval-intro" class="container">
+  <h2 class="section-header">Evaluación Práctica</h2>
+  <div class="card" style="text-align:center; padding: 60px 20px;">
+    <h3 style="margin-top:0;">Evaluación Aleatoria B2C</h3>
+    <p style="color:var(--text-muted); max-width:500px; margin:0 auto 24px auto;">
+      Al iniciar, el sistema seleccionará 5 casos aleatorios. Deberás leer las instrucciones de cada caso y resolverlos utilizando el simulador de la aplicación.
+    </p>
+    <button class="btn-primary" style="width:auto; padding:12px 32px;" onclick="startExam()">Iniciar Evaluación Ahora</button>
+  </div>
+</div>
+
+<!-- 5. ÁREA DEL EXAMEN (Simulador Activo) -->
+<div id="evaluation-arena">
+  <div class="exam-tabs" id="exam-tabs-container">
+    <!-- Las pestañas se generan por JS -->
+  </div>
+  <div class="exam-workspace">
+    <div class="exam-instructions">
+      <h2 id="case-title" style="color:var(--yellow-dark); margin-top:0;">Caso 1</h2>
+      <div class="card">
+        <p id="case-desc">Cargando instrucciones del caso...</p>
+      </div>
+    </div>
+    <div class="exam-simulator">
+      <p style="color:#aaa; font-size:12px; margin-bottom:10px;">Simulador Interactivo</p>
+      <iframe id="simulador-frame" src=""></iframe>
+    </div>
+  </div>
 </div>
 
 <script>
-function loginPortal() {
-  const u = document.getElementById('portal-user').value.trim();
-  const p = document.getElementById('portal-pass').value.trim();
-  document.querySelectorAll('.portal-screen').forEach(s => s.classList.remove('active'));
-  
-  if(u === 'admin') document.getElementById('admin-portal').classList.add('active');
-  else if(u === 'alvaro') document.getElementById('asesor-portal').classList.add('active');
-  else {
-    document.getElementById('login-portal').classList.add('active');
-    document.getElementById('portal-error').style.display = 'block';
+  let currentRole = '';
+
+  function login() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
+    const err = document.getElementById('login-error');
+
+    if (u === 'admin' && p === 'admin') {
+      currentRole = 'admin';
+      setupUI('Admin', [
+        { id: 'admin-resultados', label: 'Dashboard Resultados' },
+        { id: 'admin-capacitacion', label: 'Gestión Capacitación' }
+      ]);
+    } else if (u === 'alvaro' && p === 'alvaro123') {
+      currentRole = 'asesor';
+      setupUI('Alvaro Rodriguez', [
+        { id: 'asesor-videos', label: 'Módulos de Estudio' },
+        { id: 'asesor-eval-intro', label: 'Evaluación' }
+      ]);
+    } else {
+      err.style.display = 'block';
+    }
   }
-}
 
-function logout() { location.reload(); }
+  function setupUI(userName, navItems) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('top-navbar').style.display = 'flex';
+    document.getElementById('user-greeting').textContent = 'Hola, ' + userName;
+    
+    const navContainer = document.getElementById('nav-links-container');
+    navContainer.innerHTML = '';
+    
+    navItems.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'nav-item' + (index === 0 ? ' active' : '');
+      div.textContent = item.label;
+      div.onclick = () => switchTab(item.id, div);
+      navContainer.appendChild(div);
+    });
 
-function navAsesor(tabId, el) {
-  document.querySelectorAll('#asesor-portal .nav-item').forEach(i => i.classList.remove('active'));
-  document.querySelectorAll('#asesor-portal .tab-content').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById(tabId).classList.add('active');
-}
-
-function iniciarSimulador() {
-  document.getElementById('simulator-wrapper').style.display = 'flex';
-  // Carga el archivo del simulador en el iframe
-  document.getElementById('simulador-frame').src = 'simulador.html'; 
-}
-
-function cerrarSimulador() {
-  document.getElementById('simulator-wrapper').style.display = 'none';
-  document.getElementById('simulador-frame').src = ''; // Limpia el iframe al cerrar
-}
-
-// Escucha los mensajes que el iframe (simulador) envía cuando termina
-window.addEventListener('message', function(event) {
-  if (event.data.type === 'CASO_COMPLETADO') {
-    cerrarSimulador();
-    const errores = event.data.errores;
-    document.getElementById('portal-score').textContent = errores;
-    document.getElementById('admin-score').textContent = errores;
-    alert("¡Caso completado! Has cometido " + errores + " errores.");
+    // Mostrar la primera pestaña por defecto
+    switchTab(navItems[0].id, navContainer.firstChild);
   }
-});
+
+  function switchTab(containerId, navElement) {
+    // Ocultar todo
+    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+    document.getElementById('evaluation-arena').style.display = 'none';
+    
+    // Quitar active del menú
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    // Mostrar lo seleccionado
+    document.getElementById(containerId).classList.add('active');
+    if (navElement) navElement.classList.add('active');
+  }
+
+  function logout() {
+    location.reload();
+  }
+
+  // --- LÓGICA DEL EXAMEN (ASESOR) ---
+  const examCases = [
+    { title: 'Caso 1: Pedido Contado', desc: 'El cliente Juan Perez solicita un pedido pagado al contado. Selecciona los productos y finaliza la visita confirmando la orden de compra.' },
+    { title: 'Caso 2: Cobranza Cheque', desc: 'El cliente tiene una deuda vencida. Registra una cobranza utilizando un cheque diferido por el monto total.' },
+    { title: 'Caso 3: Promociones Hx5', desc: 'Aplica la promoción de Helix Hx5 para el cliente. Asegúrate de verificar las cantidades mínimas requeridas.' },
+    { title: 'Caso 4: Cambio de Ruta', desc: 'Inicia una visita fuera de ruta justificando el motivo en el sistema, luego realiza el tracking de precios de la competencia.' },
+    { title: 'Caso 5: Pedido Crédito', desc: 'Genera una cotización a 30 días de crédito, no superes el límite de la línea disponible y compártela.' }
+  ];
+
+  function startExam() {
+    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+    document.getElementById('top-navbar').style.display = 'none'; // Ocultamos el navbar para enfocar en el examen
+    const arena = document.getElementById('evaluation-arena');
+    arena.style.display = 'flex';
+    
+    const tabsContainer = document.getElementById('exam-tabs-container');
+    tabsContainer.innerHTML = '';
+
+    // Generar las 5 pestañas
+    examCases.forEach((caso, index) => {
+      const tab = document.createElement('div');
+      tab.className = 'exam-tab' + (index === 0 ? ' active' : '');
+      tab.textContent = 'Pregunta ' + (index + 1);
+      tab.onclick = () => loadCase(index, tab);
+      tabsContainer.appendChild(tab);
+    });
+
+    // Cargar el primer caso y el simulador
+    loadCase(0, tabsContainer.firstChild);
+    document.getElementById('simulador-frame').src = 'simulador.html';
+  }
+
+  function loadCase(index, tabElement) {
+    document.querySelectorAll('.exam-tab').forEach(t => t.classList.remove('active'));
+    tabElement.classList.add('active');
+    
+    document.getElementById('case-title').textContent = examCases[index].title;
+    document.getElementById('case-desc').textContent = examCases[index].desc;
+    
+    // Aquí puedes hacer que el iframe se reinicie si es necesario para cada pregunta
+    // document.getElementById('simulador-frame').src = 'simulador.html';
+  }
 </script>
 </body>
 </html>
