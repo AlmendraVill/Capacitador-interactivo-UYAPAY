@@ -81,10 +81,27 @@
   .exam-tabs { background: var(--white); display: flex; padding: 0 20px; border-bottom: 1px solid var(--border); }
   .exam-tab { padding: 15px 24px; cursor: pointer; font-weight: 500; border-bottom: 3px solid transparent; }
   .exam-tab.active { border-bottom-color: var(--yellow); color: var(--yellow-dark); font-weight: bold; background: #fffcf5; }
-  .exam-workspace { display: flex; flex: 1; overflow: hidden; }
-  .exam-instructions { flex: 1; padding: 40px; overflow-y: auto; background: var(--bg-light); }
-  .exam-simulator { width: 420px; background: #2b2b2b; display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 20px; }
-  iframe { border: none; width: 360px; height: 720px; border-radius: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: var(--white); }
+  .exam-workspace { display: flex; 
+    flex-direction: column; /* Apila de arriba hacia abajo */
+    align-items: center; /* Centra horizontalmente */
+    flex: 1; 
+    overflow-y: auto; 
+    background: var(--bg-light); 
+    padding: 30px 20px; }
+  .exam-instructions {width: 100%; 
+    max-width: 700px; /* Evita que el texto sea muy ancho */
+    margin-bottom: 30px; 
+    text-align: center;}
+  .exam-simulator {display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    flex-direction: column; }
+  iframe { border: none; 
+    width: 360px; 
+    height: 720px; 
+    border-radius: 36px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
+    background: var(--white);}
 </style>
 </head>
 <body>
@@ -309,7 +326,7 @@
 
     // Cargar el primer caso y el simulador
     loadCase(0, tabsContainer.firstChild);
-    document.getElementById('simulador-frame').src = 'simulador.html';
+    document.getElementById('simulador-frame').src = 'simulator.html';
   }
 
   function loadCase(index, tabElement) {
