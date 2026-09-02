@@ -5,40 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador Móvil</title>
 <style>
-  :root{
-    --yellow:#F4A81D; --bg:#EFEFEF; --card:#ffffff;
-    --text:#1a1a1a; --muted:#6b6b6b; --border:#e2e2e2;
+  :root {
+    --yellow: #F4A81D; --bg: #EFEFEF; --card: #ffffff;
+    --text: #1a1a1a; --muted: #6b6b6b; --border: #e2e2e2;
   }
-  *{box-sizing:border-box; font-family:sans-serif;}
-  body{
-    margin:0; background:transparent; display:flex; flex-direction:column; 
-    align-items:center; justify-content:center; min-height:100vh;
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: transparent; display: flex; justify-content: center; min-height: 100vh; padding-top: 20px; }
+  
+  .phone {
+    width: 360px; height: 720px; background: var(--bg); border-radius: 36px;
+    box-shadow: 0 0 0 8px #000, 0 20px 40px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; position: relative;
   }
+  .statusbar { background: var(--yellow); font-size: 12px; padding: 6px 16px 2px; display: flex; justify-content: space-between; font-weight: 500;}
+  .screen { flex: 1; overflow-y: auto; display: none; flex-direction: column; background: var(--bg); }
+  .screen.active { display: flex; }
   
-  #evalpanel{ width:100%; max-width:360px; background:#1c1c1c; color:#ddd; border-radius:10px; padding:10px; font-size:12px; margin-bottom:10px; }
-  #evalpanel b{color:var(--yellow);}
+  /* Topbar y Navegación tipo App */
+  .topbar-app { background: var(--yellow); padding: 10px 16px; display: flex; align-items: center; font-size: 18px; font-weight: 600; }
+  .topbar-app .menu-icon { margin-right: 15px; font-size: 20px; cursor: pointer; }
+  .topbar-app .tc { margin-left: auto; font-size: 12px; font-weight: 400; }
+  .tabs-app { display: flex; background: var(--yellow); justify-content: space-between; padding: 0 20px; border-bottom: 2px solid #df9a1b; }
+  .tab-item { padding: 10px 0; font-size: 11px; font-weight: 600; color: #5a3d00; display: flex; flex-direction: column; align-items: center; cursor: pointer; border-bottom: 3px solid transparent; }
+  .tab-item.active { border-bottom-color: #fff; color: #1a1a1a; }
   
-  .phone{
-    width:360px; height:720px; background:var(--bg); border-radius:36px;
-    box-shadow:0 0 0 8px #000; overflow:hidden; display:flex; flex-direction:column;
-  }
-  .statusbar{background:var(--yellow); font-size:12px; padding:6px 16px 2px; display:flex; justify-content:space-between;}
-  .screen{flex:1; overflow-y:auto; display:none; flex-direction:column;}
-  .screen.active{display:flex;}
-  .topbar{ background:var(--yellow); padding:14px 16px; font-weight:600; font-size:16px; }
-  .content{padding:14px 16px; flex:1;}
+  /* Elementos Plan de Visitas */
+  .section-box { background: #fff; padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 13px; align-items: center; cursor: pointer; }
+  .filters-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px; background: var(--bg); }
+  .filters-scroll::-webkit-scrollbar { display: none; }
+  .filter-pill { background: #fff; border: 1px solid var(--yellow); border-radius: 16px; padding: 4px 12px; font-size: 11px; white-space: nowrap; cursor: pointer; }
+  .filter-pill.active { background: var(--yellow); font-weight: bold; }
   
-  .btn{ width:100%; background:var(--yellow); border:none; border-radius:24px; padding:13px; font-weight:600; cursor:pointer; margin-top:10px; }
-  .hint{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#222; color:#fff; font-size:12px; padding:8px 14px; border-radius:20px; opacity:0; transition:.2s;}
-  .hint.show{opacity:1;}
+  .zone-header { padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--text); background: var(--bg); display: flex; align-items: center; gap: 8px; }
+  .client-card { display: flex; gap: 12px; background: #fff; padding: 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .client-card .pin { color: var(--yellow); font-size: 18px; margin-top: 2px; }
+  .client-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .client-address { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+
+  /* Bottom Sheet (Modal Opciones) */
+  .modal-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: flex-end; }
+  .modal-overlay.active { display: flex; }
+  .bottom-sheet { background: #fff; width: 100%; border-radius: 16px 16px 0 0; padding: 16px; transform: translateY(100%); transition: transform 0.3s ease-out; }
+  .modal-overlay.active .bottom-sheet { transform: translateY(0); }
+  .bs-header { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; position: relative; }
+  .bs-header .close-btn { position: absolute; right: 0; top: -4px; font-size: 18px; cursor: pointer; }
+  .opcion-row { padding: 14px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; }
+  .opcion-row:last-child { border-bottom: none; }
+  .opcion-desc { font-size: 11px; color: var(--muted); display: block; margin-top: 4px; }
+  
+  /* Generales */
+  .content { padding: 14px 16px; }
+  .btn { width: 100%; background: var(--yellow); border: none; border-radius: 24px; padding: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; font-size: 14px; }
+  .hint { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; font-size: 12px; padding: 10px 16px; border-radius: 20px; opacity: 0; transition: .2s; z-index: 200; pointer-events: none; text-align: center; width: 80%; }
+  .hint.show { opacity: 1; }
 </style>
 </head>
 <body>
-
-<div id="evalpanel">
-  <b>Panel Evaluador</b><br>
-  Progreso: <span id="progress">Login App</span> · Errores: <span id="wrongcount">0</span>
-</div>
 
 <div class="phone">
   <div class="statusbar"><span>9:00</span><span>UYAPAY</span></div>
@@ -46,52 +67,194 @@
   <!-- PANTALLA LOGIN -->
   <div class="screen active" id="s-login">
     <div class="content" style="display:flex; flex-direction:column; justify-content:center; height:100%;">
-      <h2 style="text-align:center;">UYAPAY APP</h2>
-      <input type="text" id="userIn" placeholder="Usuario" style="padding:10px; margin-bottom:10px;">
-      <input type="password" id="passIn" placeholder="Clave" style="padding:10px; margin-bottom:10px;">
-      <button class="btn" onclick="tryLoginApp()">Ingresar</button>
+      <h2 style="text-align:center; color:var(--yellow); font-size:24px;">UYAPAY</h2>
+      <input type="text" id="userIn" placeholder="Usuario" style="padding:12px; margin-bottom:12px; border:1px solid #ccc; border-radius:8px;">
+      <input type="password" id="passIn" placeholder="Contraseña" style="padding:12px; margin-bottom:12px; border:1px solid #ccc; border-radius:8px;">
+      <button class="btn" onclick="tryLoginApp()">Iniciar sesión</button>
     </div>
   </div>
 
-  <!-- DASHBOARD SIMPLIFICADO -->
-  <div class="screen" id="s-dash">
-    <div class="topbar">Inicio</div>
-    <div class="content">
-      <p>Bienvenido Alvaro</p>
-      <button class="btn" onclick="terminarSimulacion()">Finalizar Caso (Prueba)</button>
+  <!-- PANTALLA PLAN DE VISITAS (Fiel al manual) -->
+  <div class="screen" id="s-visitas">
+    <div class="topbar-app">
+      <span class="menu-icon">☰</span> Visitas <span class="tc">TC:S/3.7200 🔔</span>
+    </div>
+    <div class="tabs-app">
+      <div class="tab-item" onclick="hint('Aún no implementado')">🏠<br>Inicio</div>
+      <div class="tab-item active">📅<br>Visitas</div>
+      <div class="tab-item" onclick="hint('Aún no implementado')">🛒<br>Pedidos</div>
+      <div class="tab-item" onclick="hint('Aún no implementado')">🏪<br>Tienda</div>
+    </div>
+    
+    <!-- Secciones superiores -->
+    <div class="section-box" onclick="hint('Ver proyecciones (Fuera de alcance del caso)')">
+      <span>Avance de proyección de ventas</span> <span>›</span>
+    </div>
+    <div class="section-box">
+      <div>
+        <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Progreso <span>›</span></div>
+        <span class="muted">Visitas realizadas</span>
+      </div>
+      <span style="font-weight:600;">0 de 16</span>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-scroll">
+      <div class="filter-pill active">Todos</div>
+      <div class="filter-pill">No visitados</div>
+      <div class="filter-pill">No compran</div>
+      <div class="filter-pill">Con deuda</div>
+    </div>
+
+    <!-- Zona y Clientes -->
+    <div class="zone-header">⌃ Socabaya</div>
+    
+    <div class="client-card" onclick="openOptions('Ramirez Alarcon Hernan')">
+      <div class="pin">◎</div>
+      <div>
+        <div class="client-name">RAMIREZ ALARCON HERNAN</div>
+        <div class="client-address">CALLE HUACHO 109 URB SAN MARTIN DE SOCABAYA</div>
+      </div>
+    </div>
+    
+    <div class="client-card" onclick="openOptions('Chahua Puma Franclin')">
+      <div class="pin">◎</div>
+      <div>
+        <div class="client-name">CHAHUA PUMA FRANCLIN</div>
+        <div class="client-address">AV. PAISAJISTA NRO. 503</div>
+      </div>
+    </div>
+
+    <div class="client-card" style="border-left: 4px solid var(--yellow);" onclick="openOptions('Juan Perez', true)">
+      <div class="pin">◎</div>
+      <div>
+        <div class="client-name">JUAN PEREZ</div>
+        <div class="client-address">AV. TOMAS TUYRUTUPAC 412</div>
+      </div>
+    </div>
+
+  </div>
+  
+  <!-- PANTALLA TEMPORAL PARA CONTINUAR EL FLUJO -->
+  <div class="screen" id="s-dashboard">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="go('s-visitas', 'Volviendo a visitas')">‹</span> Juan Perez
+    </div>
+    <div class="content" style="text-align:center; padding-top:40px;">
+      <h3>Simulación pausada</h3>
+      <p class="muted">Hasta aquí llega la actualización visual de esta etapa.</p>
+      <button class="btn" onclick="terminarSimulacion()">Finalizar Evaluación Test</button>
     </div>
   </div>
+
+  <!-- BOTTOM SHEET (MODAL DE OPCIONES) -->
+  <div class="modal-overlay" id="optionsModal">
+    <div class="bottom-sheet">
+      <div class="bs-header">
+        OPCIONES
+        <span class="close-btn" onclick="closeOptions()">×</span>
+      </div>
+      
+      <div class="opcion-row" onclick="checkOption('proyectar')">
+        <div>Proyectar ventas <span class="opcion-desc">Proyecte sus ventas por familia de productos.</span></div> <span>›</span>
+      </div>
+      <div class="opcion-row" onclick="checkOption('llegar')">
+        <div>Cómo llegar al cliente <span class="opcion-desc">El punto de venta está a 323 km (aprox).</span></div> <span>›</span>
+      </div>
+      <div class="opcion-row" onclick="checkOption('iniciar')">
+        <div>Iniciar visita <span class="opcion-desc">Inicie la visita al cliente.</span></div> <span>›</span>
+      </div>
+      <div class="opcion-row" onclick="checkOption('motivo')">
+        <div>Registrar motivo de no visita <span class="opcion-desc">Registre la razón por la que no inició la visita.</span></div> <span>›</span>
+      </div>
+      <div class="opcion-row" onclick="checkOption('cambiar')">
+        <div>Cambiar dirección de visita <span class="opcion-desc">Seleccione una nueva dirección de visita.</span></div> <span>›</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="hint" id="hintBox"></div>
 
 <script>
+// VARIABLES DE SEGUIMIENTO
 let wrongCount = 0;
+let currentProgressText = 'En pantalla de Login';
+let isTargetClientSelected = false; // Saber si eligió a Juan Perez
 
-function progress(txt){ document.getElementById('progress').textContent = txt; }
-function wrong(){ wrongCount++; document.getElementById('wrongcount').textContent = wrongCount; }
-function hint(msg){ wrong(); const h=document.getElementById('hintBox'); h.textContent=msg; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'),2200); }
+// FUNCIONES DE COMUNICACIÓN EN TIEMPO REAL CON EL PORTAL
+function sendLiveUpdate(txt) {
+  if(txt) currentProgressText = txt;
+  
+  // Enviar mensaje al documento padre (index.html)
+  window.parent.postMessage({ 
+    type: 'LIVE_UPDATE', 
+    progress: currentProgressText,
+    errors: wrongCount 
+  }, '*');
+}
 
-function go(id, label){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+function wrong(msg){ 
+  wrongCount++; 
+  const h = document.getElementById('hintBox'); 
+  h.textContent = msg; 
+  h.classList.add('show'); 
+  setTimeout(() => h.classList.remove('show'), 2500);
+  sendLiveUpdate(); // Actualiza el portal web con el nuevo error
+}
+
+function go(id, stepLabel){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(label) progress(label);
+  sendLiveUpdate(stepLabel);
 }
 
+// LOGICA DE LA APLICACIÓN
 function tryLoginApp(){
-  const u = document.getElementById('userIn').value;
-  if(u === 'alvaro') go('s-dash', 'Dashboard');
-  else hint('Usuario incorrecto');
+  const u = document.getElementById('userIn').value.trim();
+  if(u === 'alvaro') {
+    go('s-visitas', 'Revisando Plan de Visitas');
+  } else {
+    wrong('Usuario incorrecto. Recuerda usar los datos de prueba.');
+  }
 }
 
-// ESTA ES LA FUNCIÓN CLAVE
+// LÓGICA DEL MODAL DE OPCIONES
+function openOptions(clientName, isTarget = false) {
+  isTargetClientSelected = isTarget;
+  document.getElementById('optionsModal').classList.add('active');
+  sendLiveUpdate(`Abrió opciones del cliente: ${clientName}`);
+}
+
+function closeOptions() {
+  document.getElementById('optionsModal').classList.remove('active');
+}
+
+function checkOption(action) {
+  closeOptions();
+  
+  if(!isTargetClientSelected) {
+    wrong("Ese no es el cliente indicado en el caso. Busca a Juan Perez.");
+    return;
+  }
+  
+  if(action === 'iniciar') {
+    go('s-dashboard', 'Visita iniciada en Juan Perez');
+  } else {
+    wrong("Esa no es la acción correcta para este caso. Debes 'Iniciar visita'.");
+  }
+}
+
 function terminarSimulacion() {
-  // Envia un mensaje al index.html con los resultados
   window.parent.postMessage({ 
     type: 'CASO_COMPLETADO', 
     errores: wrongCount 
   }, '*');
 }
+
+// Reportar estado inicial al cargar
+window.onload = () => sendLiveUpdate();
 </script>
 </body>
 </html>
