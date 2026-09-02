@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Móvil</title>
+<style>
+  :root{
+    --yellow:#F4A81D; --bg:#EFEFEF; --card:#ffffff;
+    --text:#1a1a1a; --muted:#6b6b6b; --border:#e2e2e2;
+  }
+  *{box-sizing:border-box; font-family:sans-serif;}
+  body{
+    margin:0; background:transparent; display:flex; flex-direction:column; 
+    align-items:center; justify-content:center; min-height:100vh;
+  }
+  
+  #evalpanel{ width:100%; max-width:360px; background:#1c1c1c; color:#ddd; border-radius:10px; padding:10px; font-size:12px; margin-bottom:10px; }
+  #evalpanel b{color:var(--yellow);}
+  
+  .phone{
+    width:360px; height:720px; background:var(--bg); border-radius:36px;
+    box-shadow:0 0 0 8px #000; overflow:hidden; display:flex; flex-direction:column;
+  }
+  .statusbar{background:var(--yellow); font-size:12px; padding:6px 16px 2px; display:flex; justify-content:space-between;}
+  .screen{flex:1; overflow-y:auto; display:none; flex-direction:column;}
+  .screen.active{display:flex;}
+  .topbar{ background:var(--yellow); padding:14px 16px; font-weight:600; font-size:16px; }
+  .content{padding:14px 16px; flex:1;}
+  
+  .btn{ width:100%; background:var(--yellow); border:none; border-radius:24px; padding:13px; font-weight:600; cursor:pointer; margin-top:10px; }
+  .hint{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#222; color:#fff; font-size:12px; padding:8px 14px; border-radius:20px; opacity:0; transition:.2s;}
+  .hint.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="evalpanel">
+  <b>Panel Evaluador</b><br>
+  Progreso: <span id="progress">Login App</span> · Errores: <span id="wrongcount">0</span>
+</div>
+
+<div class="phone">
+  <div class="statusbar"><span>9:00</span><span>UYAPAY</span></div>
+
+  <!-- PANTALLA LOGIN -->
+  <div class="screen active" id="s-login">
+    <div class="content" style="display:flex; flex-direction:column; justify-content:center; height:100%;">
+      <h2 style="text-align:center;">UYAPAY APP</h2>
+      <input type="text" id="userIn" placeholder="Usuario" style="padding:10px; margin-bottom:10px;">
+      <input type="password" id="passIn" placeholder="Clave" style="padding:10px; margin-bottom:10px;">
+      <button class="btn" onclick="tryLoginApp()">Ingresar</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SIMPLIFICADO -->
+  <div class="screen" id="s-dash">
+    <div class="topbar">Inicio</div>
+    <div class="content">
+      <p>Bienvenido Alvaro</p>
+      <button class="btn" onclick="terminarSimulacion()">Finalizar Caso (Prueba)</button>
+    </div>
+  </div>
+</div>
+
+<div class="hint" id="hintBox"></div>
+
+<script>
+let wrongCount = 0;
+
+function progress(txt){ document.getElementById('progress').textContent = txt; }
+function wrong(){ wrongCount++; document.getElementById('wrongcount').textContent = wrongCount; }
+function hint(msg){ wrong(); const h=document.getElementById('hintBox'); h.textContent=msg; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'),2200); }
+
+function go(id, label){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(label) progress(label);
+}
+
+function tryLoginApp(){
+  const u = document.getElementById('userIn').value;
+  if(u === 'alvaro') go('s-dash', 'Dashboard');
+  else hint('Usuario incorrecto');
+}
+
+// ESTA ES LA FUNCIÓN CLAVE
+function terminarSimulacion() {
+  // Envia un mensaje al index.html con los resultados
+  window.parent.postMessage({ 
+    type: 'CASO_COMPLETADO', 
+    errores: wrongCount 
+  }, '*');
+}
+</script>
+</body>
+</html>
