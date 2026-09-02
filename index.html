@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador UYAPAY - Caso 1</title>
+<style>
+  :root{
+    --yellow:#F4A81D; --yellow-dark:#E09400; --bg:#EFEFEF; --card:#ffffff;
+    --text:#1a1a1a; --muted:#6b6b6b; --green:#1e9e5a; --border:#e2e2e2;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:#2b2b2b; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:24px 12px;
+  }
+  #evalpanel{
+    width:340px; max-width:94vw; background:#1c1c1c; color:#ddd; border-radius:10px; padding:10px 14px;
+    font-size:12px; margin-bottom:14px; line-height:1.5;
+  }
+  #evalpanel b{color:#F4A81D;}
+  .phone{
+    width:360px; max-width:94vw; height:720px; background:var(--bg); border-radius:36px;
+    box-shadow:0 0 0 8px #000, 0 20px 40px rgba(0,0,0,.5); overflow:hidden; position:relative;
+    display:flex; flex-direction:column;
+  }
+  .statusbar{background:var(--yellow); color:#3a2a00; font-size:12px; padding:6px 16px 2px; display:flex; justify-content:space-between;}
+  .screen{flex:1; overflow-y:auto; display:none; flex-direction:column;}
+  .screen.active{display:flex;}
+  .topbar{
+    background:var(--yellow); padding:14px 16px; display:flex; align-items:center; gap:10px;
+    color:#3a2a00; font-weight:600; font-size:16px; flex-shrink:0;
+  }
+  .topbar .back{font-size:20px; cursor:pointer; font-weight:400;}
+  .topbar small{display:block; font-weight:400; font-size:11px; opacity:.8;}
+  .content{padding:14px 16px 90px; flex:1;}
+  .btn{
+    display:block; width:100%; text-align:center; background:var(--yellow); color:#3a2a00;
+    border:none; border-radius:24px; padding:13px; font-size:15px; font-weight:600; cursor:pointer; margin-top:10px;
+  }
+  .btn:active{background:var(--yellow-dark);}
+  .btn.outline{background:#fff; border:1px solid var(--border); color:var(--text);}
+  .btn.disabled{opacity:.4; pointer-events:none;}
+  .card{background:var(--card); border-radius:12px; padding:12px 14px; margin-bottom:10px; border:1px solid var(--border);}
+  .row{display:flex; justify-content:space-between; align-items:center;}
+  .muted{color:var(--muted); font-size:12px;}
+  .field{
+    background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+    margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-size:14px;
+  }
+  .field.two{width:48%; display:inline-flex;}
+  .field select{border:none; background:transparent; width:100%; font-size:14px; appearance:none; cursor:pointer;}
+  input[type=text]{width:100%; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:14px;}
+  h4{margin:14px 0 6px; font-size:13px; color:var(--muted); font-weight:600;}
+  .client-card{background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:8px; cursor:pointer;}
+  .client-card.target{}
+  .client-card b{font-size:14px;}
+  .badge{display:inline-block; font-size:10px; background:#fdecc8; color:#8a5a00; padding:2px 8px; border-radius:8px; margin-left:6px;}
+  .task-pill{display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .task-pill.done{color:var(--green);}
+  .task-pill.current{font-weight:600;}
+  .check{width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;}
+  .check.done{background:var(--green); color:#fff;}
+  .check.pending{border:1px solid var(--border); color:transparent;}
+  .prod-card{background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px; cursor:pointer;}
+  .prod-card .row b{font-size:13px;}
+  .toggle{width:40px; height:22px; border-radius:12px; background:#ddd; position:relative; cursor:pointer; flex-shrink:0;}
+  .toggle.on{background:var(--yellow);}
+  .toggle span{position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.15s;}
+  .toggle.on span{left:20px;}
+  .qty{display:flex; align-items:center; gap:14px; justify-content:center; margin:10px 0;}
+  .qty button{width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:#fff; font-size:18px;}
+  .qty input{width:70px; text-align:center; border:1px solid var(--border); border-radius:8px; padding:8px; font-size:15px;}
+  .login-wrap{flex:1; display:flex; flex-direction:column; justify-content:center; padding:24px;}
+  .login-wrap h2{text-align:center; color:#8a5a00; margin-bottom:24px;}
+  .login-wrap input{width:100%; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; font-size:14px;}
+  .err{color:#c0392b; font-size:12px; min-height:16px; text-align:center;}
+  .hint{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#222; color:#fff; font-size:12px;
+    padding:8px 14px; border-radius:20px; opacity:0; transition:.2s; pointer-events:none; z-index:99;}
+  .hint.show{opacity:1;}
+  .receipt{background:#fff; border-radius:8px; padding:16px; text-align:center;}
+  .receipt hr{border:none; border-top:1px dashed var(--border); margin:10px 0;}
+</style>
+</head>
+<body>
+
+<div id="evalpanel">
+  <b>Panel de evaluador</b> (solo visible aquí, no en el celular del asesor)<br>
+  Caso 1 - Crear pedido con promociones · Cliente objetivo: <b>Juan Perez</b><br>
+  Progreso: <span id="progress">Login</span> · Intentos incorrectos: <span id="wrongcount">0</span>
+</div>
+
+<div class="phone">
+  <div class="statusbar"><span>9:00</span><span>UYAPAY</span></div>
+
+  <!-- LOGIN -->
+  <div class="screen active" id="s-login">
+    <div class="login-wrap">
+      <h2>UYAPAY</h2>
+      <input type="text" id="userIn" placeholder="Usuario">
+      <input type="password" id="passIn" placeholder="Contraseña">
+      <div class="err" id="loginErr"></div>
+      <button class="btn" onclick="tryLogin()">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="screen" id="s-dash">
+    <div class="topbar">☰ Inicio <span style="margin-left:auto; font-size:12px; font-weight:400;">TC:S/3.7200 🔔</span></div>
+    <div class="content">
+      <div class="card">
+        <div class="muted">Bienvenido</div>
+        <b>Alvaro</b>
+        <div class="row" style="margin-top:10px;">
+          <div><div class="muted">Visitas hoy</div><b>0 de 5</b></div>
+          <div><div class="muted">Proyección</div><b>S/ 0.00</b></div>
+        </div>
+      </div>
+      <button class="btn" data-target="s-visitas" onclick="go('s-visitas','dash-to-visitas')">Ir a Visitas</button>
+    </div>
+  </div>
+
+  <!-- VISITAS: lista de clientes -->
+  <div class="screen" id="s-visitas">
+    <div class="topbar"><span class="back" onclick="go('s-dash')">‹</span> Visitas</div>
+    <div class="content">
+      <div class="muted" style="margin-bottom:8px;">Pendientes (5)</div>
+      <div class="client-card" onclick="hint('Ese no es el cliente del caso. Buscá a Juan Perez.')">
+        <b>Mendigure Magaño Juvenal</b><div class="muted">RUC: 10297354677 · Zona: Socabaya</div>
+      </div>
+      <div class="client-card" onclick="hint('Ese no es el cliente del caso. Buscá a Juan Perez.')">
+        <b>Ticona Zubia Irma Violeta</b><div class="muted">RUC: 10294236754 · Zona: Socabaya</div>
+      </div>
+      <div class="client-card target" onclick="go('s-cliente','pick-juan')">
+        <b>Juan Perez</b><div class="muted">RUC: 10296331304 · Zona: Consumer AQP I</div>
+      </div>
+      <div class="client-card" onclick="hint('Ese no es el cliente del caso. Buscá a Juan Perez.')">
+        <b>Cayro Flores Yanet Maria</b><div class="muted">RUC: 10297002835 · Zona: Consumer AQP I</div>
+      </div>
+      <div class="client-card" onclick="hint('Ese no es el cliente del caso. Buscá a Juan Perez.')">
+        <b>Barra Andrade Rossana Luz</b><div class="muted">RUC: 10293811887 · Zona: Consumer AQP I</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FICHA CLIENTE -->
+  <div class="screen" id="s-cliente">
+    <div class="topbar"><span class="back" onclick="go('s-visitas')">‹</span> Juan Perez</div>
+    <div class="content">
+      <div class="card">
+        <div class="muted">RUC: 10296331304</div>
+        <div class="muted">Condición de pago: Contado</div>
+        <div class="muted">Dirección: Av. Tomas Tuyrutupac 412</div>
+      </div>
+      <button class="btn" onclick="go('s-gps','iniciar-visita')">Iniciar visita</button>
+    </div>
+  </div>
+
+  <!-- GPS -->
+  <div class="screen" id="s-gps">
+    <div class="topbar">Juan Perez ⏱ 00:00</div>
+    <div class="content" style="text-align:center; padding-top:60px;">
+      <div style="font-size:40px;">📍</div>
+      <p>Validando tu ubicación…</p>
+      <p class="muted">Estás a 12 metros del punto de venta.</p>
+    </div>
+  </div>
+
+  <!-- TAREAS DE VISITA -->
+  <div class="screen" id="s-tareas">
+    <div class="topbar">Juan Perez ⏱ 05:12</div>
+    <div class="content">
+      <div class="task-pill done"><div class="check done">✓</div> Inicio</div>
+      <div class="task-pill done"><div class="check done">✓</div> Fotos (exhibición de marca)</div>
+      <div class="task-pill done"><div class="check done">✓</div> Precios (tracking competencia)</div>
+      <div class="task-pill current" onclick="go('s-pedidos-tarea','ir-a-pedidos')" style="cursor:pointer;">
+        <div class="check pending"></div> Pedidos
+      </div>
+      <div class="task-pill"><div class="check pending"></div> Cobranza</div>
+    </div>
+  </div>
+
+  <!-- TAREA PEDIDOS -->
+  <div class="screen" id="s-pedidos-tarea">
+    <div class="topbar"><span class="back" onclick="go('s-tareas')">‹</span> Pedidos</div>
+    <div class="content">
+      <p class="muted">Aún no hay pedidos para este cliente en esta visita.</p>
+      <button class="btn outline" onclick="go('s-nuevopedido','crear-pedido')">+ Crear pedido</button>
+    </div>
+  </div>
+
+  <!-- NUEVO PEDIDO -->
+  <div class="screen" id="s-nuevopedido">
+    <div class="topbar"><span class="back" onclick="go('s-pedidos-tarea')">‹</span> Nuevo pedido</div>
+    <div class="content">
+      <h4>Datos del pedido</h4>
+      <div class="field" id="clienteField" onclick="pickCliente()">
+        <span id="clienteFieldTxt">Seleccionar cliente</span><span>▾</span>
+      </div>
+      <div class="field" id="condField" onclick="pickCondicion()">
+        <span id="condFieldTxt">Condición de pago</span><span>▾</span>
+      </div>
+      <div class="field" id="listaField" onclick="pickLista()">
+        <span id="listaFieldTxt">Lista de precios</span><span>▾</span>
+      </div>
+      <div class="row">
+        <div class="field two" id="lineaField" onclick="pickLinea()">
+          <span id="lineaFieldTxt">Línea</span><span>▾</span>
+        </div>
+        <div class="field two" id="marcaField" onclick="pickMarca()">
+          <span id="marcaFieldTxt">Marca</span><span>▾</span>
+        </div>
+      </div>
+      <h4>Productos</h4>
+      <div id="prodList"></div>
+      <button class="btn outline" onclick="checkBeforeAddProduct()">+ Agregar producto</button>
+      <div class="card" style="margin-top:14px;">
+        <div class="row"><span class="muted">Sub total</span><b id="subtotalTxt">$0.00</b></div>
+        <div class="row"><span class="muted">Descuento</span><b id="descTxt">-$0.00</b></div>
+        <div class="row"><span class="muted">Total pedido</span><b id="totalTxt">$0.00</b></div>
+      </div>
+      <button class="btn" id="completarBtn" onclick="checkCompletar()">Completar</button>
+    </div>
+  </div>
+
+  <!-- SELECCION PRODUCTO -->
+  <div class="screen" id="s-seleccion">
+    <div class="topbar"><span class="back" onclick="go('s-nuevopedido')">‹</span> <span id="seleccionTitle">Selección de producto</span></div>
+    <div class="content">
+      <input type="text" id="searchProd" placeholder="Buscar en nuestro almacén" oninput="filterProd()">
+      <div id="searchResults" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- DETALLE PRODUCTO -->
+  <div class="screen" id="s-detalle">
+    <div class="topbar"><span class="back" onclick="go('s-seleccion')">‹</span> Detalle del producto</div>
+    <div class="content">
+      <div class="card" id="detalleInfo"></div>
+      <h4>Cantidad</h4>
+      <div class="qty">
+        <button onclick="changeQty(-1)">−</button>
+        <input type="text" id="qtyInput" value="0">
+        <button onclick="changeQty(1)">+</button>
+      </div>
+      <div id="promosBox"></div>
+      <button class="btn" onclick="agregarProducto()">Agregar producto</button>
+    </div>
+  </div>
+
+  <!-- CONFIRMACION -->
+  <div class="screen" id="s-confirm">
+    <div class="topbar"><span class="back" onclick="go('s-nuevopedido')">‹</span> Confirmación</div>
+    <div class="content">
+      <h4>Resumen</h4>
+      <div class="card"><div class="row"><span class="muted">Cliente</span><b>Juan Perez</b></div></div>
+      <div id="confirmProdList"></div>
+      <div class="card">
+        <div class="row"><span class="muted">Sub total</span><b id="c-subtotal"></b></div>
+        <div class="row"><span class="muted">Descuento</span><b id="c-desc"></b></div>
+        <div class="row"><span class="muted">Total pedido</span><b id="c-total"></b></div>
+        <div class="row"><span class="muted">Total factura</span><b id="c-factura"></b></div>
+      </div>
+      <h4>Datos de confirmación</h4>
+      <div class="field" id="dirField" onclick="pickDireccion()">
+        <span id="dirFieldTxt">Av. Tomas Tuyrutupac 412 - Principal</span><span>▾</span>
+      </div>
+      <div class="field" id="fechaField" onclick="pickFecha()">
+        <span id="fechaFieldTxt">📅 Fecha de entrega estimada</span>
+      </div>
+      <div class="row" style="margin:10px 0;">
+        <span>Venta segura</span>
+        <div class="toggle" id="ventaSeguraToggle" onclick="toggleVentaSegura()"><span></span></div>
+      </div>
+      <button class="btn" onclick="checkConfirmarOrden()">Confirmar Orden de compra</button>
+      <button class="btn outline" onclick="hint('El cliente pidió pagar todo al momento de la entrega, no es una cotización pendiente. Usá Confirmar Orden de compra.')">Guardar como Cotización</button>
+    </div>
+  </div>
+
+  <!-- RECIBO -->
+  <div class="screen" id="s-recibo">
+    <div class="topbar">Confirmación</div>
+    <div class="content">
+      <div class="receipt">
+        <b style="font-size:18px;">SOLAR</b>
+        <p style="margin:2px 0; font-weight:600;">COTIZACIÓN CO-001469</p>
+        <p class="muted">SOLAR REPRESENTACIONES S.A.C.</p>
+        <hr>
+        <div class="row"><span class="muted">Asesor</span><b>Alvaro</b></div>
+        <div class="row"><span class="muted">Cliente</span><b>Juan Perez</b></div>
+        <div class="row"><span class="muted">Entrega</span><b id="reciboFecha"></b></div>
+        <div class="row"><span class="muted">Forma de pago</span><b>Contado</b></div>
+        <hr>
+        <div class="row"><span class="muted">Total pedido</span><b id="r-total"></b></div>
+        <div class="row"><span class="muted">Total factura</span><b id="r-factura"></b></div>
+        <hr>
+        <p>¡Gracias por tu compra!</p>
+      </div>
+      <button class="btn outline" onclick="hint('Bien - así compartirías el comprobante por WhatsApp al cliente.')">Compartir</button>
+      <button class="btn" onclick="finish()">Continuar</button>
+    </div>
+  </div>
+
+  <!-- FIN -->
+  <div class="screen" id="s-fin">
+    <div class="topbar">Pedidos</div>
+    <div class="content" style="text-align:center; padding-top:40px;">
+      <div style="font-size:40px;">✅</div>
+      <h3>Caso completado</h3>
+      <p class="muted">Pedido CO-001469 · Juan Perez · Estado: ENVIADO</p>
+      <p class="muted" id="finFecha"></p>
+    </div>
+  </div>
+
+</div>
+
+<div class="hint" id="hintBox"></div>
+
+<script>
+let wrongCount = 0;
+let state = { cliente:false, condicion:false, lista:false, linea:false, marca:false, direccion:false, ventaSegura:false, fecha:'' };
+let productos = [];
+let currentProd = null;
+
+function progress(txt){ document.getElementById('progress').textContent = txt; }
+function wrong(){ wrongCount++; document.getElementById('wrongcount').textContent = wrongCount; }
+function hint(msg){ wrong(); const h=document.getElementById('hintBox'); h.textContent=msg; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'),2200); }
+
+function go(id, label){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(label) progress(label);
+  if(id==='s-gps'){ setTimeout(()=>go('s-tareas','gps-ok'), 1200); }
+}
+
+function tryLogin(){
+  const u = document.getElementById('userIn').value.trim();
+  const p = document.getElementById('passIn').value.trim();
+  if(u==='alvaro' && p==='alvaro123'){
+    go('s-dash','login-ok');
+  } else {
+    document.getElementById('loginErr').textContent = 'Usuario o contraseña incorrectos.';
+    wrong();
+  }
+}
+
+function pickCliente(){
+  document.getElementById('clienteFieldTxt').textContent = 'Jorge Perez -';
+  state.cliente = true; progress('cliente-ok');
+}
+function pickCondicion(){
+  document.getElementById('condFieldTxt').textContent = 'Contado';
+  state.condicion = true; progress('condicion-ok');
+}
+function pickLista(){
+  document.getElementById('listaFieldTxt').textContent = 'Lista 3';
+  state.lista = true; progress('lista-ok');
+}
+function pickLinea(){
+  document.getElementById('lineaFieldTxt').textContent = 'Lubricantes';
+  state.linea = true; progress('linea-ok');
+}
+function pickMarca(){
+  document.getElementById('marcaFieldTxt').textContent = 'Shell';
+  state.marca = true; progress('marca-ok');
+}
+
+function checkBeforeAddProduct(){
+  if(!(state.cliente && state.condicion && state.lista && state.linea && state.marca)){
+    hint('Completá cliente, condición de pago, lista de precios, línea y marca antes de agregar productos.');
+    return;
+  }
+  go('s-seleccion','agregar-producto');
+  document.getElementById('searchProd').value='';
+  filterProd();
+}
+
+const catalog = [
+  {sku:'505929', name:'Rimula R4L Medio Balde', pres:'BAL 2.50 GLNS', price:47.50, family:'rimula', volGal:2.5},
+  {sku:'771404', name:'Helix Hx8 Prosyn Ag 5W30', pres:'CAJ 6 X 1 LTS', price:73.81, family:'helix', volGal:1.6},
+  {sku:'900001', name:'Rimula R3', pres:'CAJ 4X4 GLNS', price:19.90, family:'rimula-r3', volGal:4},
+  {sku:'900002', name:'Helix Hx5', pres:'BAL 5 GLNS', price:15.20, family:'helix-hx5', volGal:5}
+];
+
+function filterProd(){
+  const q = document.getElementById('searchProd').value.toLowerCase();
+  const res = document.getElementById('searchResults');
+  res.innerHTML='';
+  if(!q){ return; }
+  catalog.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{
+    const div = document.createElement('div');
+    div.className='prod-card';
+    div.innerHTML = `<div class="row"><b>SKU: ${p.sku}<br>${p.name}<br><span class="muted">${p.pres}</span></b><span>$${p.price.toFixed(2)}</span></div>`;
+    div.onclick = ()=> openDetalle(p);
+    res.appendChild(div);
+  });
+}
+
+function openDetalle(p){
+  currentProd = {...p, qty:0, promos:[]};
+  document.getElementById('detalleInfo').innerHTML =
+    `<div class="row"><span class="muted">Presentación</span><b>${p.pres}</b></div>
+     <div class="row"><span class="muted">Precio unitario</span><b>$${p.price.toFixed(2)}</b></div>`;
+  document.getElementById('qtyInput').value = 0;
+  const box = document.getElementById('promosBox');
+  box.innerHTML = '';
+  if(p.family==='helix-hx5'){
+    box.innerHTML = `
+      <h4>Promociones</h4>
+      <div class="card">
+        <div class="row"><span style="font-size:13px;">Por cada 15 baldes: 1 botella Helix Hx8</span>
+        <div class="toggle" id="promo1" onclick="togglePromo('promo1')"><span></span></div></div>
+      </div>
+      <div class="card">
+        <div class="row"><span style="font-size:13px;">Acumulable: por cada 30 galones, 1 gorro Shell</span>
+        <div class="toggle" id="promo2" onclick="togglePromo('promo2')"><span></span></div></div>
+      </div>`;
+  }
+  go('s-detalle');
+}
+
+function togglePromo(id){
+  const el = document.getElementById(id);
+  el.classList.toggle('on');
+}
+
+function changeQty(delta){
+  const inp = document.getElementById('qtyInput');
+  let v = parseInt(inp.value)||0;
+  v = Math.max(0, v+delta);
+  inp.value = v;
+}
+
+function agregarProducto(){
+  const qty = parseInt(document.getElementById('qtyInput').value)||0;
+  if(qty<=0){ hint('Ingresá una cantidad mayor a 0.'); return; }
+  const promo1 = document.getElementById('promo1');
+  const promo2 = document.getElementById('promo2');
+  const item = {...currentProd, qty, promo1: promo1?promo1.classList.contains('on'):false, promo2: promo2?promo2.classList.contains('on'):false};
+
+  if(item.family==='helix-hx5'){
+    if(qty!==50){ hint('El caso pide 50 baldes de Helix Hx5. Revisá la cantidad.'); return; }
+    if(!item.promo1){ hint('El cliente aplica a la promoción de 1 botella Helix Hx8 cada 15 baldes. Activala.'); return; }
+    if(!item.promo2){ hint('El cliente también aplica al gorro Shell acumulable por cada 30 galones. Activala.'); return; }
+  }
+  if(item.family==='rimula-r3' && qty!==7){
+    hint('El caso pide 7 cajas de Rimula R3. Revisá la cantidad.'); return;
+  }
+
+  productos.push(item);
+  renderProdList();
+  go('s-nuevopedido','producto-agregado');
+}
+
+function renderProdList(){
+  const list = document.getElementById('prodList');
+  list.innerHTML='';
+  let subtotal=0, desc=0;
+  productos.forEach(p=>{
+    const div = document.createElement('div');
+    div.className='prod-card';
+    let bonus = '';
+    if(p.promo1) bonus += `<div class="muted">🎁 ${Math.floor(p.qty/15)} botella(s) Helix Hx8</div>`;
+    if(p.promo2) bonus += `<div class="muted">🎁 ${Math.floor((p.qty*p.volGal)/30)} gorro(s) Shell</div>`;
+    div.innerHTML = `<div class="row"><b>SKU: ${p.sku}<br>${p.name}<br><span class="muted">${p.pres}</span></b><span>Cant: ${p.qty}</span></div>${bonus}`;
+    list.appendChild(div);
+    subtotal += p.price*p.qty;
+    if(p.promo1) desc += p.price*p.qty*0.05;
+  });
+  document.getElementById('subtotalTxt').textContent = '$'+subtotal.toFixed(2);
+  document.getElementById('descTxt').textContent = '-$'+desc.toFixed(2);
+  document.getElementById('totalTxt').textContent = '$'+(subtotal-desc).toFixed(2);
+}
+
+function checkCompletar(){
+  const hasR3 = productos.some(p=>p.family==='rimula-r3');
+  const hasHelix = productos.some(p=>p.family==='helix-hx5');
+  if(!hasR3 || !hasHelix){
+    hint('Faltan productos: el pedido necesita 50 baldes de Helix Hx5 y 7 cajas de Rimula R3.');
+    return;
+  }
+  const subtotal = productos.reduce((s,p)=>s+p.price*p.qty,0);
+  const desc = productos.reduce((s,p)=>s+(p.promo1?p.price*p.qty*0.05:0),0);
+  document.getElementById('c-subtotal').textContent = '$'+subtotal.toFixed(2);
+  document.getElementById('c-desc').textContent = '-$'+desc.toFixed(2);
+  document.getElementById('c-total').textContent = '$'+(subtotal-desc).toFixed(2);
+  document.getElementById('c-factura').textContent = '$'+((subtotal-desc)*1.18).toFixed(2);
+  const cList = document.getElementById('confirmProdList');
+  cList.innerHTML='';
+  productos.forEach(p=>{
+    const div=document.createElement('div'); div.className='prod-card';
+    div.innerHTML = `<b>${p.name}</b><div class="muted">Cantidad: ${p.qty}</div>`;
+    cList.appendChild(div);
+  });
+  go('s-confirm','completar-ok');
+}
+
+function pickDireccion(){
+  document.getElementById('dirFieldTxt').textContent = 'Av. Tomas Tuyrutupac 412 - ENTREGA';
+  state.direccion = true;
+  progress('direccion-ok');
+}
+function pickFecha(){
+  document.getElementById('fechaFieldTxt').textContent = '📅 15-09-2026';
+  state.fecha = '15-09-2026';
+  progress('fecha-ok');
+}
+function toggleVentaSegura(){
+  const t = document.getElementById('ventaSeguraToggle');
+  t.classList.toggle('on');
+  state.ventaSegura = t.classList.contains('on');
+}
+
+function checkConfirmarOrden(){
+  if(!state.direccion){ hint('Seleccioná la dirección que dice "- ENTREGA" antes de confirmar.'); return; }
+  if(state.fecha!=='15-09-2026'){ hint('El cliente pidió la entrega el 15 de septiembre. Ajustá la fecha.'); return; }
+  if(!state.ventaSegura){ hint('El cliente confirmó el monto y pagará contra entrega: activá "Venta segura".'); return; }
+  document.getElementById('reciboFecha').textContent = state.fecha;
+  document.getElementById('r-total').textContent = document.getElementById('c-total').textContent;
+  document.getElementById('r-factura').textContent = document.getElementById('c-factura').textContent;
+  go('s-recibo','orden-confirmada');
+}
+
+function finish(){
+  document.getElementById('finFecha').textContent = 'Entrega estimada: '+state.fecha;
+  go('s-fin','CASO COMPLETADO');
+}
+</script>
+</body>
+</html>
