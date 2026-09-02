@@ -6,418 +6,127 @@
 <title>Plataforma UYAPAY Asesor B2C</title>
 <style>
   :root {
-    /* Variables de la App UYAPAY */
-    --yellow: #F4A81D; --yellow-dark: #E09400; --bg: #EFEFEF; --card: #ffffff;
-    --text: #1a1a1a; --muted: #6b6b6b; --green: #1e9e5a; --border: #e2e2e2;
-    /* Variables del Portal Web */
+    --yellow: #F4A81D; --yellow-dark: #E09400;
     --portal-bg: #f4f6f8; --portal-nav: #2b2b2b; --portal-text: #333;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
   body { margin: 0; background: var(--portal-bg); color: var(--portal-text); }
 
-  /* --- ESTILOS DEL PORTAL WEB --- */
+  /* Estilos del Portal */
   .portal-screen { display: none; min-height: 100vh; }
   .portal-screen.active { display: flex; }
   
-  /* Login del Portal */
   #login-portal { flex-direction: column; align-items: center; justify-content: center; background: #2b2b2b; color: white; }
-  .login-box { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-  .login-box h2 { text-align: center; color: var(--yellow-dark); margin-top: 0; }
-  .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-  .login-box button { width: 100%; padding: 12px; background: var(--yellow); border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-  .login-box button:hover { background: var(--yellow-dark); }
-  .login-error { color: red; font-size: 14px; margin-bottom: 10px; text-align: center; display: none; }
-  .login-hint { font-size: 12px; color: #666; margin-top: 20px; text-align: center; }
+  .login-box { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; color: #333; }
+  .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; }
+  .login-box button { width: 100%; padding: 12px; background: var(--yellow); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+  .login-error { color: red; font-size: 14px; margin-bottom: 10px; display: none; text-align: center; }
 
-  /* Layout del Portal (Admin y User) */
   .portal-layout { width: 100%; display: flex; }
   .sidebar { width: 250px; background: var(--portal-nav); color: white; padding: 20px 0; display: flex; flex-direction: column; }
-  .sidebar h3 { text-align: center; color: var(--yellow); margin-bottom: 30px; }
-  .nav-item { padding: 15px 20px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
-  .nav-item:hover, .nav-item.active { background: #3d3d3d; border-left-color: var(--yellow); }
+  .nav-item { padding: 15px 20px; cursor: pointer; border-left: 4px solid transparent; }
+  .nav-item.active { background: #3d3d3d; border-left-color: var(--yellow); }
   .logout-btn { margin-top: auto; padding: 15px 20px; cursor: pointer; color: #ff6b6b; }
-  .logout-btn:hover { background: #3d3d3d; }
   
-  .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+  .main-content { flex: 1; padding: 40px; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
-  .module-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-
-  /* Tablas para resultados/usuarios */
+  .module-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
   table { width: 100%; border-collapse: collapse; margin-top: 15px; }
   th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-  th { background: #f9f9f9; color: #555; }
-
-  /* Botón Iniciar Caso */
   .btn-start-case { background: var(--yellow); color: #3a2a00; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-  /* --- ESTILOS DEL SIMULADOR MÓVIL (Empaquetado) --- */
-  #simulator-wrapper { display: none; flex-direction: column; align-items: center; justify-content: center; background: #2b2b2b; min-height: 100vh; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 20px; }
-  .close-simulator { position: absolute; top: 20px; right: 20px; color: white; background: #444; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-  
-  #evalpanel{ width:340px; max-width:94vw; background:#1c1c1c; color:#ddd; border-radius:10px; padding:10px 14px; font-size:12px; margin-bottom:14px; line-height:1.5; }
-  #evalpanel b{color:#F4A81D;}
-  
-  .phone{ width:360px; max-width:94vw; height:720px; background:var(--bg); border-radius:36px; box-shadow:0 0 0 8px #000, 0 20px 40px rgba(0,0,0,.5); overflow:hidden; position:relative; display:flex; flex-direction:column; }
-  .statusbar{background:var(--yellow); color:#3a2a00; font-size:12px; padding:6px 16px 2px; display:flex; justify-content:space-between;}
-  .screen{flex:1; overflow-y:auto; display:none; flex-direction:column; background: var(--bg);}
-  .screen.active{display:flex;}
-  .topbar{ background:var(--yellow); padding:14px 16px; display:flex; align-items:center; gap:10px; color:#3a2a00; font-weight:600; font-size:16px; flex-shrink:0; }
-  .topbar .back{font-size:20px; cursor:pointer; font-weight:400;}
-  .content{padding:14px 16px 90px; flex:1;}
-  .btn{ display:block; width:100%; text-align:center; background:var(--yellow); color:#3a2a00; border:none; border-radius:24px; padding:13px; font-size:15px; font-weight:600; cursor:pointer; margin-top:10px; }
-  .btn.outline{background:#fff; border:1px solid var(--border); color:var(--text);}
-  .card{background:var(--card); border-radius:12px; padding:12px 14px; margin-bottom:10px; border:1px solid var(--border);}
-  .row{display:flex; justify-content:space-between; align-items:center;}
-  .muted{color:var(--muted); font-size:12px;}
-  .field{ background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-size:14px; }
-  .field.two{width:48%; display:inline-flex;}
-  .client-card{background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:8px; cursor:pointer;}
-  .client-card.target{border-left: 4px solid var(--yellow);}
-  .task-pill{display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; cursor: pointer;}
-  .task-pill.done{color:var(--green);}
-  .check{width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;}
-  .check.done{background:var(--green); color:#fff;}
-  .check.pending{border:1px solid var(--border); color:transparent;}
-  .prod-card{background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px; cursor:pointer;}
-  .toggle{width:40px; height:22px; border-radius:12px; background:#ddd; position:relative; cursor:pointer; flex-shrink:0;}
-  .toggle.on{background:var(--yellow);}
-  .toggle span{position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.15s;}
-  .toggle.on span{left:20px;}
-  .qty{display:flex; align-items:center; gap:14px; justify-content:center; margin:10px 0;}
-  .qty button{width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:#fff; font-size:18px; cursor:pointer;}
-  .qty input{width:70px; text-align:center; border:1px solid var(--border); border-radius:8px; padding:8px; font-size:15px;}
-  .login-wrap{flex:1; display:flex; flex-direction:column; justify-content:center; padding:24px;}
-  .login-wrap input{width:100%; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px;}
-  .err{color:#c0392b; font-size:12px; min-height:16px; text-align:center;}
-  .hint{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#222; color:#fff; font-size:12px; padding:8px 14px; border-radius:20px; opacity:0; transition:.2s; pointer-events:none; z-index:99;}
-  .hint.show{opacity:1;}
+  /* Contenedor del Simulador (Iframe) */
+  #simulator-wrapper { 
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; 
+    background: rgba(43, 43, 43, 0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; 
+  }
+  .close-simulator { position: absolute; top: 20px; right: 20px; color: white; background: #444; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+  iframe { border: none; width: 100%; max-width: 420px; height: 90vh; border-radius: 10px; }
 </style>
 </head>
 <body>
 
-<!-- PANTALLA 1: LOGIN DEL PORTAL WEB -->
+<!-- Login -->
 <div id="login-portal" class="portal-screen active">
   <div class="login-box">
-    <h2>Plataforma UYAPAY</h2>
-    <p style="text-align:center; color:#666; margin-bottom:20px;">Capacitación y Evaluación B2C</p>
+    <h2 style="text-align:center; color:#E09400;">Plataforma UYAPAY</h2>
     <div class="login-error" id="portal-error">Credenciales incorrectas</div>
-    <input type="text" id="portal-user" placeholder="Usuario">
+    <input type="text" id="portal-user" placeholder="Usuario (admin o alvaro)">
     <input type="password" id="portal-pass" placeholder="Contraseña">
-    <button onclick="loginPortal()">Ingresar a la plataforma</button>
-    
-    <div class="login-hint">
-      <b>Datos de prueba:</b><br>
-      Admin: <i>admin / admin</i><br>
-      Asesor: <i>alvaro / alvaro123</i>
-    </div>
+    <button onclick="loginPortal()">Ingresar</button>
   </div>
 </div>
 
-<!-- PANTALLA 2: PORTAL ADMIN -->
+<!-- Portal Admin -->
 <div id="admin-portal" class="portal-screen portal-layout">
   <div class="sidebar">
-    <h3>Admin UYAPAY</h3>
-    <div class="nav-item active" onclick="navAdmin('admin-usuarios', this)">Gestión de Usuarios</div>
-    <div class="nav-item" onclick="navAdmin('admin-resultados', this)">Resultados Globales</div>
-    <div class="nav-item" onclick="navAdmin('admin-documentos', this)">Subir Documentos</div>
-    <div class="nav-item" onclick="navAdmin('admin-editar', this)">Editar Página</div>
+    <h3 style="text-align:center; color:var(--yellow);">Admin</h3>
+    <div class="nav-item active">Resultados Globales</div>
     <div class="logout-btn" onclick="logout()">Cerrar Sesión</div>
   </div>
   <div class="main-content">
-    
-    <div id="admin-usuarios" class="tab-content active">
-      <h2>Gestión de Usuarios</h2>
+    <div class="tab-content active">
+      <h2>Resultados</h2>
       <div class="module-card">
-        <button class="btn-start-case" style="margin-bottom: 15px;">+ Crear Nuevo Usuario</button>
         <table>
-          <tr><th>Usuario</th><th>Rol</th><th>Último acceso</th><th>Acción</th></tr>
-          <tr><td>alvaro</td><td>Asesor</td><td>Hoy</td><td><a href="#">Editar</a></td></tr>
-          <tr><td>admin</td><td>Administrador</td><td>Hoy</td><td><a href="#">Editar</a></td></tr>
+          <tr><th>Asesor</th><th>Caso</th><th>Errores</th></tr>
+          <tr><td>alvaro</td><td>Caso 1</td><td id="admin-score">-</td></tr>
         </table>
       </div>
     </div>
-
-    <div id="admin-resultados" class="tab-content">
-      <h2>Resultados de Asesores</h2>
-      <div class="module-card">
-        <table>
-          <tr><th>Asesor</th><th>Caso Evaluado</th><th>Errores</th><th>Estado</th><th>Fecha</th></tr>
-          <tr><td>alvaro</td><td>Caso 1 - Crear pedido</td><td>2</td><td><span style="color:green">Completado</span></td><td>15 Sep 2026</td></tr>
-        </table>
-      </div>
-    </div>
-
-    <div id="admin-documentos" class="tab-content">
-      <h2>Subir Documentos y Materiales</h2>
-      <div class="module-card">
-        <p>Sube archivos PDF, videos o manuales para que los asesores los visualicen en su panel.</p>
-        <input type="file" style="margin-bottom:15px;">
-        <button class="btn-start-case">Subir Archivo</button>
-      </div>
-    </div>
-
-    <div id="admin-editar" class="tab-content">
-      <h2>Editar Plataforma</h2>
-      <div class="module-card">
-        <p>Configuraciones de la plataforma interactiva (En desarrollo).</p>
-      </div>
-    </div>
-
   </div>
 </div>
 
-<!-- PANTALLA 3: PORTAL ASESOR (ALVARO) -->
+<!-- Portal Asesor -->
 <div id="asesor-portal" class="portal-screen portal-layout">
   <div class="sidebar">
-    <h3>Mi Panel</h3>
-    <div class="nav-item active" onclick="navAsesor('asesor-videos', this)">Videos Capacitación</div>
-    <div class="nav-item" onclick="navAsesor('asesor-eval', this)">Evaluación Interactiva</div>
+    <h3 style="text-align:center; color:var(--yellow);">Mi Panel</h3>
+    <div class="nav-item active" onclick="navAsesor('asesor-eval', this)">Evaluación</div>
     <div class="nav-item" onclick="navAsesor('asesor-resultados', this)">Mis Resultados</div>
     <div class="logout-btn" onclick="logout()">Cerrar Sesión</div>
   </div>
   <div class="main-content">
-    
-    <div id="asesor-videos" class="tab-content active">
-      <h2>Videos de Capacitación</h2>
-      <div class="module-card" style="text-align:center; padding: 40px; color:#888;">
-        <i>Aún no hay videos subidos por el administrador.</i>
-      </div>
-    </div>
-
-    <div id="asesor-eval" class="tab-content">
+    <div id="asesor-eval" class="tab-content active">
       <h2>Evaluación Interactiva</h2>
-      <p>Resuelve los siguientes casos prácticos utilizando el simulador de la App UYAPAY.</p>
-      
-      <div class="module-card" style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <h3 style="margin:0 0 5px;">Caso 1: Creación de Pedido con Promociones</h3>
-          <p style="margin:0; color:#666; font-size:14px;">Cliente: Juan Perez | Tareas: Selección de productos, aplicación de promos y confirmación segura.</p>
-        </div>
+      <div class="module-card" style="display:flex; justify-content:space-between;">
+        <div><h3>Caso 1: Pedido con Promociones</h3><p>Cliente: Juan Perez</p></div>
         <button class="btn-start-case" onclick="iniciarSimulador()">Iniciar Caso 1</button>
       </div>
-      
-      <div class="module-card" style="display:flex; justify-content:space-between; align-items:center; opacity:0.6;">
-        <div>
-          <h3 style="margin:0 0 5px;">Caso 2: Cobranza y Depósito (Próximamente)</h3>
-          <p style="margin:0; color:#666; font-size:14px;">Aprende a registrar cobranzas y subir comprobantes.</p>
-        </div>
-        <button class="btn-start-case" disabled style="background:#ccc; cursor:not-allowed;">Bloqueado</button>
-      </div>
     </div>
-
     <div id="asesor-resultados" class="tab-content">
       <h2>Mis Resultados</h2>
       <div class="module-card">
         <table>
-          <tr><th>Caso</th><th>Intentos Fallidos</th><th>Estado</th><th>Fecha</th></tr>
-          <tr><td>Caso 1</td><td id="portal-score">-</td><td>Pendiente</td><td>-</td></tr>
+          <tr><th>Caso</th><th>Errores</th><th>Estado</th></tr>
+          <tr><td>Caso 1</td><td id="portal-score">-</td><td>Pendiente</td></tr>
         </table>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- ========================================== -->
-<!-- EL SIMULADOR MÓVIL (Oculto hasta que se inicia el caso) -->
-<!-- ========================================== -->
+<!-- Wrapper del Iframe -->
 <div id="simulator-wrapper">
   <button class="close-simulator" onclick="cerrarSimulador()">Salir de la evaluación (X)</button>
-  
-  <div id="evalpanel">
-    <b>Panel de evaluador en tiempo real</b><br>
-    Caso 1 - Crear pedido con promociones · Cliente objetivo: <b>Juan Perez</b><br>
-    Progreso actual: <span id="progress">Login App</span> · Errores cometidos: <span id="wrongcount">0</span>
-  </div>
-
-  <div class="phone">
-    <div class="statusbar"><span>9:00</span><span>UYAPAY</span></div>
-
-    <!-- PANTALLAS DE LA APP (Idénticas a tu prototipo original) -->
-    
-    <!-- LOGIN APP -->
-    <div class="screen active" id="s-login">
-      <div class="login-wrap">
-        <h2 style="text-align:center; color:#8a5a00; margin-bottom:24px;">UYAPAY APP</h2>
-        <input type="text" id="userIn" placeholder="Usuario App (alvaro)">
-        <input type="password" id="passIn" placeholder="Contraseña (alvaro123)">
-        <div class="err" id="loginErr"></div>
-        <button class="btn" onclick="tryLoginApp()">Iniciar sesión en App</button>
-      </div>
-    </div>
-
-    <!-- DASHBOARD -->
-    <div class="screen" id="s-dash">
-      <div class="topbar">☰ Inicio <span style="margin-left:auto; font-size:12px; font-weight:400;">TC:S/3.7200 🔔</span></div>
-      <div class="content">
-        <div class="card">
-          <div class="muted">Bienvenido</div>
-          <b>Alvaro</b>
-          <div class="row" style="margin-top:10px;">
-            <div><div class="muted">Visitas hoy</div><b>0 de 5</b></div>
-            <div><div class="muted">Proyección</div><b>S/ 0.00</b></div>
-          </div>
-        </div>
-        <button class="btn" onclick="go('s-visitas','dash-to-visitas')">Ir a Plan de Visitas</button>
-      </div>
-    </div>
-
-    <!-- VISITAS -->
-    <div class="screen" id="s-visitas">
-      <div class="topbar"><span class="back" onclick="go('s-dash')">‹</span> Visitas</div>
-      <div class="content">
-        <div class="muted" style="margin-bottom:8px;">Pendientes (5)</div>
-        <div class="client-card" onclick="hint('Ese no es el cliente del caso. Buscá a Juan Perez.')">
-          <b>Mendigure Magaño Juvenal</b><div class="muted">RUC: 10297354677 · Zona: Socabaya</div>
-        </div>
-        <div class="client-card target" onclick="go('s-cliente','pick-juan')">
-          <b>Juan Perez</b><div class="muted">RUC: 10296331304 · Zona: Consumer AQP I</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FICHA CLIENTE -->
-    <div class="screen" id="s-cliente">
-      <div class="topbar"><span class="back" onclick="go('s-visitas')">‹</span> Juan Perez</div>
-      <div class="content">
-        <div class="card">
-          <div class="muted">RUC: 10296331304</div>
-          <div class="muted">Condición de pago: Contado</div>
-        </div>
-        <button class="btn" onclick="go('s-gps','iniciar-visita')">Iniciar visita</button>
-      </div>
-    </div>
-
-    <!-- GPS -->
-    <div class="screen" id="s-gps">
-      <div class="topbar">Juan Perez ⏱ 00:00</div>
-      <div class="content" style="text-align:center; padding-top:60px;">
-        <div style="font-size:40px;">📍</div>
-        <p>Validando tu ubicación…</p>
-      </div>
-    </div>
-
-    <!-- TAREAS DE VISITA -->
-    <div class="screen" id="s-tareas">
-      <div class="topbar">Juan Perez ⏱ 05:12</div>
-      <div class="content">
-        <div class="task-pill done"><div class="check done">✓</div> Inicio</div>
-        <div class="task-pill done"><div class="check done">✓</div> Fotos</div>
-        <div class="task-pill" onclick="go('s-pedidos-tarea','ir-a-pedidos')"><div class="check pending"></div> Pedidos</div>
-      </div>
-    </div>
-
-    <!-- PEDIDOS -->
-    <div class="screen" id="s-pedidos-tarea">
-      <div class="topbar"><span class="back" onclick="go('s-tareas')">‹</span> Pedidos</div>
-      <div class="content">
-        <button class="btn outline" onclick="go('s-nuevopedido','crear-pedido')">+ Crear pedido o cotización</button>
-      </div>
-    </div>
-
-    <!-- NUEVO PEDIDO -->
-    <div class="screen" id="s-nuevopedido">
-      <div class="topbar"><span class="back" onclick="go('s-pedidos-tarea')">‹</span> Nuevo pedido</div>
-      <div class="content">
-        <div class="field" onclick="pickData('clienteFieldTxt', 'Juan Perez - Padre', 'cliente')">
-          <span id="clienteFieldTxt">Seleccionar cliente</span><span>▾</span>
-        </div>
-        <div class="field" onclick="pickData('condFieldTxt', 'Contado', 'condicion')">
-          <span id="condFieldTxt">Condición de pago</span><span>▾</span>
-        </div>
-        <button class="btn outline" onclick="checkBeforeAddProduct()">+ Agregar producto</button>
-        <button class="btn" style="margin-top:20px;" onclick="checkCompletar()">Completar</button>
-      </div>
-    </div>
-
-    <!-- SELECCIÓN DE PRODUCTO (Simplificado para el prototipo visual) -->
-    <div class="screen" id="s-seleccion">
-      <div class="topbar"><span class="back" onclick="go('s-nuevopedido')">‹</span> Almacén</div>
-      <div class="content">
-        <div class="prod-card" onclick="openDetalle('Helix Hx5', 50)">
-          <b>Helix Hx5</b><br><span class="muted">BAL 5 GLNS</span>
-        </div>
-        <div class="prod-card" onclick="openDetalle('Rimula R3', 7)">
-          <b>Rimula R3</b><br><span class="muted">CAJ 4X4 GLNS</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- DETALLE PRODUCTO -->
-    <div class="screen" id="s-detalle">
-      <div class="topbar"><span class="back" onclick="go('s-seleccion')">‹</span> Detalle</div>
-      <div class="content">
-        <h3 id="det-name"></h3>
-        <p>Asegúrate de agregar la cantidad correcta según el caso.</p>
-        <button class="btn" onclick="agregarProducto()">Agregar producto al pedido</button>
-      </div>
-    </div>
-
-    <!-- CONFIRMACION -->
-    <div class="screen" id="s-confirm">
-      <div class="topbar"><span class="back" onclick="go('s-nuevopedido')">‹</span> Confirmación</div>
-      <div class="content">
-        <div class="row" style="margin:10px 0;">
-          <span>Venta segura</span>
-          <div class="toggle" id="ventaSeguraToggle" onclick="toggleVentaSegura()"><span></span></div>
-        </div>
-        <button class="btn" onclick="finishCase()">Confirmar Orden de compra</button>
-      </div>
-    </div>
-
-    <!-- FIN -->
-    <div class="screen" id="s-fin">
-      <div class="topbar">Caso Completado</div>
-      <div class="content" style="text-align:center; padding-top:40px;">
-        <div style="font-size:40px;">✅</div>
-        <h3>¡Caso enviado con éxito!</h3>
-        <p class="muted">Tus resultados han sido guardados en el portal.</p>
-        <button class="btn" onclick="cerrarSimulador()">Volver al Portal</button>
-      </div>
-    </div>
-
-  </div>
+  <iframe id="simulador-frame" src=""></iframe>
 </div>
 
-<div class="hint" id="hintBox"></div>
-
 <script>
-/* ====================================================
-   LÓGICA DEL PORTAL WEB (Login y Menús)
-   ==================================================== */
 function loginPortal() {
   const u = document.getElementById('portal-user').value.trim();
   const p = document.getElementById('portal-pass').value.trim();
-  const err = document.getElementById('portal-error');
-  
   document.querySelectorAll('.portal-screen').forEach(s => s.classList.remove('active'));
   
-  if(u === 'admin' && p === 'admin') {
-    document.getElementById('admin-portal').classList.add('active');
-  } else if(u === 'alvaro' && p === 'alvaro123') {
-    document.getElementById('asesor-portal').classList.add('active');
-  } else {
+  if(u === 'admin') document.getElementById('admin-portal').classList.add('active');
+  else if(u === 'alvaro') document.getElementById('asesor-portal').classList.add('active');
+  else {
     document.getElementById('login-portal').classList.add('active');
-    err.style.display = 'block';
+    document.getElementById('portal-error').style.display = 'block';
   }
 }
 
-function logout() {
-  document.querySelectorAll('.portal-screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('login-portal').classList.add('active');
-  document.getElementById('portal-user').value = '';
-  document.getElementById('portal-pass').value = '';
-  document.getElementById('portal-error').style.display = 'none';
-}
-
-function navAdmin(tabId, el) {
-  document.querySelectorAll('#admin-portal .nav-item').forEach(i => i.classList.remove('active'));
-  document.querySelectorAll('#admin-portal .tab-content').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById(tabId).classList.add('active');
-}
+function logout() { location.reload(); }
 
 function navAsesor(tabId, el) {
   document.querySelectorAll('#asesor-portal .nav-item').forEach(i => i.classList.remove('active'));
@@ -426,96 +135,27 @@ function navAsesor(tabId, el) {
   document.getElementById(tabId).classList.add('active');
 }
 
-/* ====================================================
-   INTERACCIÓN ENTRE EL PORTAL Y EL SIMULADOR
-   ==================================================== */
 function iniciarSimulador() {
   document.getElementById('simulator-wrapper').style.display = 'flex';
-  // Reiniciar estado de la app
-  wrongCount = 0; 
-  document.getElementById('wrongcount').textContent = '0';
-  go('s-login', 'Iniciando App');
+  // Carga el archivo del simulador en el iframe
+  document.getElementById('simulador-frame').src = 'simulador.html'; 
 }
 
 function cerrarSimulador() {
   document.getElementById('simulator-wrapper').style.display = 'none';
+  document.getElementById('simulador-frame').src = ''; // Limpia el iframe al cerrar
 }
 
-/* ====================================================
-   LÓGICA DEL SIMULADOR MÓVIL (Basada en tu código original)
-   ==================================================== */
-let wrongCount = 0;
-let state = { cliente:false, condicion:false, ventaSegura:false, prodCount:0 };
-let currentTargetProd = '';
-
-function progress(txt){ document.getElementById('progress').textContent = txt; }
-function wrong(){ wrongCount++; document.getElementById('wrongcount').textContent = wrongCount; }
-function hint(msg){ wrong(); const h=document.getElementById('hintBox'); h.textContent=msg; h.classList.add('show'); setTimeout(()=>h.classList.remove('show'),2200); }
-
-function go(id, label){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if(label) progress(label);
-  if(id==='s-gps'){ setTimeout(()=>go('s-tareas','Ubicación validada'), 1200); }
-}
-
-function tryLoginApp(){
-  const u = document.getElementById('userIn').value.trim();
-  const p = document.getElementById('passIn').value.trim();
-  if(u==='alvaro' && p==='alvaro123'){
-    go('s-dash','App: Login exitoso');
-  } else {
-    document.getElementById('loginErr').textContent = 'Usuario/clave de app incorrectos';
-    wrong();
+// Escucha los mensajes que el iframe (simulador) envía cuando termina
+window.addEventListener('message', function(event) {
+  if (event.data.type === 'CASO_COMPLETADO') {
+    cerrarSimulador();
+    const errores = event.data.errores;
+    document.getElementById('portal-score').textContent = errores;
+    document.getElementById('admin-score').textContent = errores;
+    alert("¡Caso completado! Has cometido " + errores + " errores.");
   }
-}
-
-function pickData(elId, text, stateKey) {
-  document.getElementById(elId).textContent = text;
-  state[stateKey] = true;
-  progress(stateKey + ' completado');
-}
-
-function checkBeforeAddProduct(){
-  if(!(state.cliente && state.condicion)){
-    hint('Completá los datos del pedido arriba primero.');
-    return;
-  }
-  go('s-seleccion','Buscar producto');
-}
-
-function openDetalle(name, reqQty) {
-  document.getElementById('det-name').textContent = name;
-  currentTargetProd = name;
-  go('s-detalle');
-}
-
-function agregarProducto() {
-  state.prodCount++;
-  go('s-nuevopedido', 'Producto agregado');
-}
-
-function checkCompletar() {
-  if(state.prodCount < 2) {
-    hint('El caso pide Rimula y Helix. Faltan productos.'); return;
-  }
-  go('s-confirm', 'Completar pedido');
-}
-
-function toggleVentaSegura(){
-  const t = document.getElementById('ventaSeguraToggle');
-  t.classList.toggle('on');
-  state.ventaSegura = t.classList.contains('on');
-}
-
-function finishCase() {
-  if(!state.ventaSegura) { hint('Activa la venta segura antes de confirmar.'); return; }
-  go('s-fin', 'CASO COMPLETADO');
-  
-  // Enviar resultados al portal web
-  document.getElementById('portal-score').textContent = wrongCount;
-  document.getElementById('portal-score').style.color = wrongCount > 3 ? 'red' : 'green';
-}
+});
 </script>
 </body>
 </html>
