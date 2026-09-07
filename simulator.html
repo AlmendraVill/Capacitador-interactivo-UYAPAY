@@ -15,7 +15,7 @@
     <span>UYAPAY</span>
   </div>
 
-  <!-- PANTALLA: LOGIN MÓVIL -->
+  <!-- 1. PANTALLA: LOGIN MÓVIL -->
   <div class="screen active" id="s-login">
     <div class="content" style="display:flex; flex-direction:column; justify-content:center; height:100%;">
       <h2 style="text-align:center; color:var(--yellow); font-size:26px; margin-bottom:20px;">UYAPAY</h2>
@@ -25,7 +25,7 @@
     </div>
   </div>
 
-  <!-- PANTALLA: PLAN DE VISITAS -->
+  <!-- 2. PANTALLA: PLAN DE VISITAS -->
   <div class="screen" id="s-visitas">
     <div class="topbar-app">
       <span class="menu-icon">☰</span> Visitas <span class="tc">TC: S/ 3.7200 🔔</span>
@@ -59,16 +59,26 @@
     </div>
 
     <!-- Zona y Lista de Clientes -->
-    <div class="zone-header">⌃ Socabaya</div>
+    <div class="zone-header">⌃ Socabaya / Ruta B2C</div>
     
-    <div class="client-card" onclick="window.UyapaySimulator.openOptions('Ramirez Alarcon Hernan')">
+    <!-- Cliente Caso 2 -->
+    <div class="client-card" style="border-left: 4px solid #2980b9;" onclick="window.UyapaySimulator.openOptions('Distribuidora Kanchis EIRL')">
       <div class="pin">◎</div>
       <div>
-        <div class="client-name">RAMIREZ ALARCON HERNAN</div>
-        <div class="client-address">CALLE HUACHO 109 URB SAN MARTIN DE SOCABAYA</div>
+        <div class="client-name">DISTRIBUIDORA KANCHIS EIRL</div>
+        <div class="client-address">AV. INDUSTRIAL 104 (B2C - Crédito 30d)</div>
       </div>
     </div>
-    
+
+    <!-- Cliente Caso 1 -->
+    <div class="client-card" style="border-left: 4px solid var(--yellow);" onclick="window.UyapaySimulator.openOptions('Ferretería Los Andes S.A.C.')">
+      <div class="pin">◎</div>
+      <div>
+        <div class="client-name">FERRETERÍA LOS ANDES S.A.C. (Juan Perez)</div>
+        <div class="client-address">AV. TOMAS TUYRUTUPAC 412</div>
+      </div>
+    </div>
+
     <div class="client-card" onclick="window.UyapaySimulator.openOptions('Chahua Puma Franclin')">
       <div class="pin">◎</div>
       <div>
@@ -76,25 +86,250 @@
         <div class="client-address">AV. PAISAJISTA NRO. 503</div>
       </div>
     </div>
-
-    <div class="client-card" style="border-left: 4px solid var(--yellow);" onclick="window.UyapaySimulator.openOptions('Juan Perez (Ferretería Los Andes)')">
+    
+    <div class="client-card" onclick="window.UyapaySimulator.openOptions('Ramirez Alarcon Hernan')">
       <div class="pin">◎</div>
       <div>
-        <div class="client-name">JUAN PEREZ (Ferretería Los Andes S.A.C.)</div>
-        <div class="client-address">AV. TOMAS TUYRUTUPAC 412</div>
+        <div class="client-name">RAMIREZ ALARCON HERNAN</div>
+        <div class="client-address">CALLE HUACHO 109 URB SAN MARTIN</div>
       </div>
     </div>
   </div>
-  
-  <!-- PANTALLA: CONFIRMACIÓN Y DASHBOARD DE VISITA -->
+
+  <!-- 3. PANTALLA: INICIO DE VISITA / PERFIL COMERCIAL (Flujo Manual Paso 2) -->
+  <div class="screen" id="s-cliente-inicio">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span> Datos del Cliente
+    </div>
+    <div class="content" style="padding:16px;">
+      <div class="card" style="margin-bottom:14px; padding:14px;">
+        <h3 id="cli-nombre-header" style="font-size:16px; color:#222; margin-bottom:4px;">Distribuidora Kanchis EIRL</h3>
+        <p style="font-size:12px; color:var(--muted); margin:0;">RUC: 20451829101 | Clasificación: B2C Minorista</p>
+      </div>
+
+      <div class="card" style="margin-bottom:14px; padding:14px;">
+        <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Perfil Crediticio</div>
+        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+          <span>Línea de crédito autorizada:</span>
+          <b>USD 2,500.00</b>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+          <span>Deuda vencida:</span>
+          <b style="color:var(--success);">USD 0.00 (Al día)</b>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span>Lista autorizada:</span>
+          <b>Lista OF</b>
+        </div>
+      </div>
+
+      <button class="btn" style="margin-top:20px;" onclick="window.UyapaySimulator.go('s-fotos')">Continuar a Fotos de Visita ›</button>
+    </div>
+  </div>
+
+  <!-- 4. PANTALLA: FOTOS OBLIGATORIAS (Flujo Manual Paso 3) -->
+  <div class="screen" id="s-fotos">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-cliente-inicio')">‹</span> Fotos de Visita
+    </div>
+    <div class="content" style="padding:16px;">
+      <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">
+        Registro obligatorio de exhibición según manual UYAPAY antes de cotizar o facturar.
+      </p>
+
+      <!-- Foto 1 -->
+      <div class="photo-card" id="card-foto-1">
+        <div>
+          <div class="photo-info">1. Presentación Inicial</div>
+          <div class="photo-sub">Fachada y exhibición del local</div>
+        </div>
+        <button class="photo-badge" id="btn-foto-1" onclick="window.UyapaySimulator.takePhoto(1)">📷 Tomar Foto</button>
+      </div>
+
+      <!-- Foto 2 -->
+      <div class="photo-card" id="card-foto-2">
+        <div>
+          <div class="photo-info">2. Presentación Final</div>
+          <div class="photo-sub">Góndola, stock y exhibidor</div>
+        </div>
+        <button class="photo-badge" id="btn-foto-2" onclick="window.UyapaySimulator.takePhoto(2)">📷 Tomar Foto</button>
+      </div>
+
+      <button class="btn" style="margin-top:24px;" onclick="window.UyapaySimulator.submitPhotos()">Guardar y Continuar a Pedidos ›</button>
+    </div>
+  </div>
+
+  <!-- 5. PANTALLA: MENÚ DE PEDIDOS (Flujo Manual Paso 5) -->
+  <div class="screen" id="s-pedidos-menu">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-fotos')">‹</span> Pedidos en Visita
+    </div>
+    <div class="content" style="padding:16px; text-align:center;">
+      <div style="font-size:40px; margin:24px 0 10px 0;">📦</div>
+      <h3 style="font-size:16px; color:#222; margin-bottom:6px;">No hay pedidos emitidos</h3>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:24px;">Presiona el botón para iniciar un nuevo pedido o cotización para este cliente.</p>
+      
+      <button class="btn" style="padding:14px;" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">
+        ➕ Crear pedido o cotización
+      </button>
+    </div>
+  </div>
+
+  <!-- 6. PANTALLA: CONFIGURACIÓN DEL PEDIDO (Flujo Manual Pasos 6 y 7) -->
+  <div class="screen" id="s-nuevo-pedido">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-pedidos-menu')">‹</span> Nuevo Pedido
+    </div>
+    <div class="content" style="padding:16px;">
+      <div class="form-group">
+        <label class="form-label">Condición de Pago:</label>
+        <select id="sel-condicion" class="form-select">
+          <option value="">-- Selecciona Condición --</option>
+          <option value="contado">Contado (5% desc.)</option>
+          <option value="credito_15">Crédito 15 días (4% desc.)</option>
+          <option value="credito_30">Crédito 30 días (3% desc.)</option>
+          <option value="credito_45">Crédito 45 días (2% desc.)</option>
+          <option value="credito_60">Crédito 60 días (1% desc.)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Lista de Precios:</label>
+        <select id="sel-lista" class="form-select">
+          <option value="">-- Selecciona Lista --</option>
+          <option value="OF">Lista OF (Oficina)</option>
+          <option value="1">Lista 1</option>
+          <option value="2">Lista 2</option>
+          <option value="EC">Lista EC</option>
+          <option value="3">Lista 3</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Línea de Negocio (1 línea por pedido):</label>
+        <select id="sel-linea" class="form-select">
+          <option value="">-- Selecciona Línea --</option>
+          <option value="lubricantes">Lubricantes</option>
+          <option value="neumaticos">Neumáticos</option>
+          <option value="repuestos">Repuestos</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Marca:</label>
+        <select id="sel-marca" class="form-select">
+          <option value="">-- Selecciona Marca --</option>
+          <option value="michelin">Michelin</option>
+          <option value="bfgoodrich">BFGoodrich</option>
+          <option value="shell">Shell</option>
+        </select>
+      </div>
+
+      <button class="btn" style="margin-top:16px;" onclick="window.UyapaySimulator.submitOrderConfig()">
+        Siguiente: Seleccionar Productos ›
+      </button>
+    </div>
+  </div>
+
+  <!-- 7. PANTALLA: CATÁLOGO Y DETALLE DEL PRODUCTO (Flujo Manual Paso 8) -->
+  <div class="screen" id="s-catalogo-producto">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">‹</span> Catálogo Neumáticos
+    </div>
+    <div class="content" style="padding:16px;">
+      <div class="card" style="padding:14px; margin-bottom:14px;">
+        <span style="background:#eef2f7; color:#2980b9; font-size:11px; padding:3px 8px; border-radius:6px; font-weight:700;">MICHELIN</span>
+        <h3 style="font-size:15px; margin:6px 0 2px 0;">Energy XM2+ 195/60 R15</h3>
+        <p style="font-size:12px; color:var(--muted); margin:0 0 10px 0;">Cód: 003718 | Caja máster</p>
+        
+        <div style="font-size:18px; font-weight:800; color:#1a1a1a; margin-bottom:8px;">
+          USD 55.00 <span style="font-size:12px; font-weight:400; color:var(--muted);">/ caja</span>
+        </div>
+
+        <!-- Selector de Cantidad -->
+        <div style="font-size:12px; font-weight:600; color:#333; margin-top:10px;">Cantidad de cajas:</div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="window.UyapaySimulator.changeQty(-1)">-</button>
+          <div class="qty-display" id="product-qty">3</div>
+          <button class="qty-btn" onclick="window.UyapaySimulator.changeQty(1)">+</button>
+          <span style="font-size:13px; color:var(--muted); margin-left:8px;" id="product-subtotal-text">= USD 165.00</span>
+        </div>
+
+        <!-- Toggle de Promoción según el manual -->
+        <div class="promo-toggle-card">
+          <div>
+            <div style="font-size:12px; font-weight:700; color:#795548;">🎁 Descuento por Volumen (3+ cajas)</div>
+            <div style="font-size:11px; color:#5d4037;">Aplica descuento directo de USD 10.00</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-promo-discount" checked onchange="window.UyapaySimulator.togglePromo(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn" onclick="window.UyapaySimulator.addProductToCart()">
+        Agregar Producto y Ver Resumen ›
+      </button>
+    </div>
+  </div>
+
+  <!-- 8. PANTALLA: RESUMEN Y LIQUIDACIÓN (Flujo Manual Pasos 9 y 10) -->
+  <div class="screen" id="s-resumen-pedido">
+    <div class="topbar-app">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-catalogo-producto')">‹</span> Resumen de Orden
+    </div>
+    <div class="content" style="padding:16px;">
+      <div class="receipt-card">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Detalle de Liquidación B2C</div>
+        
+        <div class="receipt-row">
+          <span>3 cajas Energy XM2+ (@ $55.00)</span>
+          <b>USD 165.00</b>
+        </div>
+        <div class="receipt-row discount" id="row-promo-desc">
+          <span>Descuento Promo Volumen:</span>
+          <b>- USD 10.00</b>
+        </div>
+        <div class="receipt-row" style="border-top:1px dashed #eee; padding-top:6px;">
+          <span>Subtotal neto:</span>
+          <b id="receipt-subtotal">USD 155.00</b>
+        </div>
+        <div class="receipt-row discount">
+          <span>Desc. Crédito 30 días (3%):</span>
+          <b id="receipt-credito-desc">- USD 4.65</b>
+        </div>
+        
+        <div class="receipt-total">
+          <span>TOTAL A FACTURAR:</span>
+          <span style="color:#27ae60;" id="receipt-total-val">USD 150.35</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:12px; margin-bottom:14px; font-size:12px;">
+        <div style="color:var(--muted); margin-bottom:4px;">Dirección de Entrega:</div>
+        <b>AV. INDUSTRIAL 104 - SOCABAYA</b>
+        <div style="color:var(--muted); margin-top:8px; margin-bottom:4px;">Condición / Plazo:</div>
+        <b>Crédito 30 días (Lista OF)</b>
+      </div>
+
+      <button class="btn" onclick="window.UyapaySimulator.submitFinalOrder()">
+        Actualizar Orden de Compra y Enviar
+      </button>
+    </div>
+  </div>
+
+  <!-- 9. PANTALLA: PEDIDO ENVIADO Y CIERRE (Flujo Manual Pasos 11 y 12) -->
   <div class="screen" id="s-dashboard">
     <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas', 'Volviendo a visitas')">‹</span> Juan Perez (Los Andes)
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span> Orden Enviada
     </div>
-    <div class="content" style="text-align:center; padding-top:40px;">
+    <div class="content" style="text-align:center; padding-top:30px;">
       <div style="font-size:48px; margin-bottom:12px;">✅</div>
-      <h3>¡Visita Iniciada!</h3>
-      <p style="color:var(--muted); font-size:13px; margin-bottom:24px;">Has seleccionado correctamente al cliente en tu ruta e iniciado el proceso de visita.</p>
+      <h3 id="finish-title">¡Orden Enviada con Éxito!</h3>
+      <p id="finish-desc" style="color:var(--muted); font-size:13px; margin-bottom:24px;">
+        Se actualizó la orden de compra en el sistema central en estado <b>ENVIADO</b>. Has completado el flujo oficial del manual.
+      </p>
       <button class="btn" onclick="window.UyapaySimulator.finish()">Finalizar Evaluación y Enviar</button>
     </div>
   </div>
@@ -103,24 +338,24 @@
   <div class="modal-overlay" id="optionsModal">
     <div class="bottom-sheet">
       <div class="bs-header">
-        OPCIONES
+        OPCIONES DE RUTA
         <span class="close-btn" onclick="window.UyapaySimulator.closeOptions()">×</span>
       </div>
       
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('proyectar')">
-        <div>Proyectar ventas <span class="opcion-desc">Proyecte sus ventas por familia de productos.</span></div> <span>›</span>
+        <div>Proyectar ventas <span class="opcion-desc">Proyecte ventas por familia de productos.</span></div> <span>›</span>
       </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('llegar')">
-        <div>Cómo llegar al cliente <span class="opcion-desc">El punto de venta está a 323 km (aprox).</span></div> <span>›</span>
+        <div>Cómo llegar al cliente <span class="opcion-desc">Ver mapa y distancia de ruta.</span></div> <span>›</span>
       </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('iniciar')">
-        <div>Iniciar visita <span class="opcion-desc">Inicie la visita al cliente.</span></div> <span>›</span>
+        <div>Iniciar visita <span class="opcion-desc">Inicie el proceso de visita al cliente.</span></div> <span>›</span>
       </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('motivo')">
-        <div>Registrar motivo de no visita <span class="opcion-desc">Registre la razón por la que no inició la visita.</span></div> <span>›</span>
+        <div>Registrar motivo de no visita <span class="opcion-desc">Registre la razón si no visita.</span></div> <span>›</span>
       </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('cambiar')">
-        <div>Cambiar dirección de visita <span class="opcion-desc">Seleccione una nueva dirección de visita.</span></div> <span>›</span>
+        <div>Cambiar dirección de visita <span class="opcion-desc">Seleccione una nueva dirección.</span></div> <span>›</span>
       </div>
     </div>
   </div>

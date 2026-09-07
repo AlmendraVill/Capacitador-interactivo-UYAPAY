@@ -53,16 +53,57 @@ window.UyapayData.CASES = [
     client: 'Distribuidora Kanchis EIRL',
     paymentCondition: 'Crédito 30 días (3% desc.)',
     priceList: 'Lista OF',
-    instructions: 'Inicia la visita a Distribuidora Kanchis EIRL, registra 3 cajas de neumáticos Michelin Energy XM2+ a crédito 30 días con Lista OF, aplica el descuento de USD 10 por volumen y confirma el pedido.',
-    active: false,
+    instructions: '1. Visitas: Inicia visita en Distribuidora Kanchis EIRL.\n2. Fotos: Registra fotos inicial y final obligatorias.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Producto: Agrega 3 cajas Energy XM2+ y activa el toggle de descuento de USD 10 por volumen.\n5. Resumen: Verifica el 3% de crédito ($4.65) para un total de USD 150.35 y confirma la orden.',
+    active: true,
     scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
     rules: [
       {
         stepIndex: 0,
         eventName: 'SELECT_CLIENT',
+        description: 'Seleccionar al cliente correcto en la ruta',
         expectedValue: 'Distribuidora Kanchis EIRL',
         validate: (p) => (p.clientName || '').toLowerCase().includes('kanchis'),
-        errorMessage: 'Selecciona al cliente Distribuidora Kanchis EIRL.'
+        errorMessage: 'Ese no es el cliente indicado en el caso. Busca a Distribuidora Kanchis EIRL.'
+      },
+      {
+        stepIndex: 1,
+        eventName: 'SELECT_ACTION',
+        description: 'Iniciar la visita al cliente',
+        expectedValue: 'iniciar',
+        validate: (p) => p.action === 'iniciar',
+        errorMessage: 'Debes seleccionar "Iniciar visita" para comenzar la atención en Distribuidora Kanchis.'
+      },
+      {
+        stepIndex: 2,
+        eventName: 'SAVE_PHOTOS',
+        description: 'Registrar fotos obligatorias de presentación inicial y final',
+        expectedValue: 'fotos_completas',
+        validate: (p) => p.initialPhoto && p.finalPhoto,
+        errorMessage: 'Debes registrar ambas fotos (inicial y final) antes de continuar.'
+      },
+      {
+        stepIndex: 3,
+        eventName: 'CREATE_ORDER_CONFIG',
+        description: 'Configurar pedido (Crédito 30 días, Lista OF, Neumáticos Michelin)',
+        expectedValue: 'credito_30_OF',
+        validate: (p) => p.paymentCondition === 'credito_30' && p.priceList === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
+        errorMessage: 'Configuración incorrecta. Revisa: Crédito 30 días, Lista OF, Línea Neumáticos y Marca Michelin.'
+      },
+      {
+        stepIndex: 4,
+        eventName: 'ADD_PRODUCT',
+        description: 'Agregar 3 cajas Energy XM2+ activando el descuento de $10',
+        expectedValue: 'michelin_3_cajas_promo',
+        validate: (p) => (p.product || '').toLowerCase().includes('energy') && Number(p.quantity) === 3 && Boolean(p.promoDiscount),
+        errorMessage: 'Debes agregar exactamente 3 cajas de Michelin Energy XM2+ y activar el toggle de descuento de $10 USD.'
+      },
+      {
+        stepIndex: 5,
+        eventName: 'SUBMIT_ORDER',
+        description: 'Confirmar orden con liquidación neta de USD 150.35',
+        expectedValue: 'orden_confirmada_150_35',
+        validate: (p) => p.confirmed === true,
+        errorMessage: 'Debes confirmar y actualizar la orden de compra.'
       }
     ]
   },

@@ -129,13 +129,32 @@
     <div class="section-header">
       <h2>Evaluación Práctica</h2>
     </div>
-    <div class="card" style="text-align:center; padding: 40px 20px;">
-      <h3 style="font-size:22px; margin-bottom:12px; color:var(--yellow-dark);">Módulo B2C: Plan de Visitas</h3>
-      <p style="color:var(--text-muted); max-width:540px; margin:0 auto 24px auto; line-height:1.5;">
-        A continuación interactuarás con el simulador móvil de la aplicación UYAPAY. Deberás leer las instrucciones del caso y ejecutar la secuencia correcta de acciones directamente en la pantalla del celular.
+    <div class="card" style="text-align:center; padding: 36px 20px;">
+      <h3 style="font-size:22px; margin-bottom:8px; color:var(--yellow-dark);">Módulo de Capacitación B2C</h3>
+      <p style="color:var(--text-muted); max-width:540px; margin:0 auto 20px auto; line-height:1.5; font-size:13px;">
+        Selecciona el caso práctico a evaluar e interactúa con el simulador móvil UYAPAY cumpliendo los flujos reales del manual:
       </p>
+
+      <div style="max-width:480px; margin:0 auto 20px auto; text-align:left;">
+        <label style="font-size:12px; font-weight:700; color:#333; display:block; margin-bottom:6px;">Caso práctico a resolver:</label>
+        <select id="eval-case-selector" style="padding:10px 12px; font-size:13px; border:1px solid #ccc; border-radius:8px; width:100%; background:#fff;" onchange="window.UyapayPortal.updateCasePreview(this.value)">
+          <option value="case-2" selected>⭐ Caso 2: Venta a crédito 30 días con descuento en dinero (Kanchis)</option>
+          <option value="case-1">Caso 1: Venta simple contado con regalo por volumen (Los Andes)</option>
+        </select>
+      </div>
+
+      <div id="case-preview-box" class="card" style="text-align:left; background:#fcfcfc; border-left:4px solid var(--yellow); padding:16px; margin:0 auto 24px auto; max-width:500px; box-shadow:none;">
+        <h4 id="preview-title" style="margin:0 0 6px 0; color:#222; font-size:14px;">Caso 2: Venta a crédito 30 días con descuento en dinero</h4>
+        <p id="preview-desc" style="font-size:12px; color:#555; margin:0; line-height:1.5;">
+          • <b>Cliente:</b> Distribuidora Kanchis EIRL (Crédito 30d, Lista OF)<br>
+          • <b>Fotos obligatorias:</b> Registro de fotos inicial y final de visita.<br>
+          • <b>Pedido:</b> 3 cajas Michelin Energy XM2+ ($55 c/u) con promo de $10 USD.<br>
+          • <b>Resultado esperado:</b> Liquidación neta de <b>USD 150.35</b> tras aplicar 3% de crédito.
+        </p>
+      </div>
+
       <button class="btn-primary" style="width:auto; padding:14px 36px; font-size:15px;" onclick="window.UyapayPortal.startExam()">
-        Iniciar Evaluación Ahora
+        Iniciar Evaluación en el Celular
       </button>
     </div>
   </div>

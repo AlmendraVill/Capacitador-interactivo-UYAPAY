@@ -304,8 +304,10 @@
     const user = Auth.getCurrentUser();
     if (!user) return;
 
-    const activeCase = Cases[0]; // Caso 1 activo
-    currentCaseIndex = 0;
+    const selector = document.getElementById('eval-case-selector');
+    const selectedCaseId = selector ? selector.value : 'case-2';
+    const activeCase = Cases.find(c => c.id === selectedCaseId) || Cases[1] || Cases[0];
+    currentCaseIndex = Cases.findIndex(c => c.id === activeCase.id);
 
     document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
     document.getElementById('top-navbar').style.display = 'none';
@@ -327,9 +329,38 @@
     const liveAdvisorEl = document.getElementById('live-advisor');
     if (liveAdvisorEl) liveAdvisorEl.textContent = user.name;
 
-    // Cargar iframe
+    // Cargar iframe con el caso seleccionado
     const frame = document.getElementById('simulador-frame');
     frame.src = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}`;
+  }
+
+  function updateCasePreview(caseId) {
+    const c = Cases.find(item => item.id === caseId);
+    if (!c) return;
+
+    const titleEl = document.getElementById('preview-title');
+    const descEl = document.getElementById('preview-desc');
+    if (titleEl) titleEl.textContent = c.title;
+
+    if (descEl) {
+      if (c.id === 'case-2') {
+        descEl.innerHTML = `
+          • <b>Cliente:</b> Distribuidora Kanchis EIRL (Crédito 30d, Lista OF)<br>
+          • <b>Fotos obligatorias:</b> Registro de fotos inicial y final de visita.<br>
+          • <b>Pedido:</b> 3 cajas Michelin Energy XM2+ ($55 c/u) con promo de $10 USD.<br>
+          • <b>Resultado esperado:</b> Liquidación neta de <b>USD 150.35</b> tras aplicar 3% de crédito.
+        `;
+      } else if (c.id === 'case-1') {
+        descEl.innerHTML = `
+          • <b>Cliente:</b> Ferretería Los Andes S.A.C. (Juan Perez - Contado, Lista 1)<br>
+          • <b>Pedido:</b> 8 baldes Shell Helix HX7 10W/40 ($22 c/u = $176).<br>
+          • <b>Promoción:</b> Regalo de 2 botellas Shell Helix Plus.<br>
+          • <b>Resultado esperado:</b> Total USD 176 - 5% contado ($8.80) → <b>USD 167.20</b> + regalo.
+        `;
+      } else {
+        descEl.textContent = c.instructions;
+      }
+    }
   }
 
   function cancelExam() {
@@ -448,6 +479,7 @@
     startExam: startExam,
     cancelExam: cancelExam,
     switchTab: switchTab,
+    updateCasePreview: updateCasePreview,
     resetData: async () => {
       if (confirm('¿Restablecer base de datos y reiniciar el ranking?')) {
         await Storage.resetAll();
