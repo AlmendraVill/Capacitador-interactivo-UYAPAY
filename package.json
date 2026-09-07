@@ -1,0 +1,26 @@
+{
+  "name": "capacitador-interactivo-uyapay",
+  "version": "1.0.0",
+  "description": "Plataforma web interactiva para la capacitación, simulación móvil y evaluación práctica de asesores de ventas de **UYAPAY**.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlmendraVill/Capacitador-interactivo-UYAPAY.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AlmendraVill/Capacitador-interactivo-UYAPAY/issues"
+  },
+  "homepage": "https://github.com/AlmendraVill/Capacitador-interactivo-UYAPAY#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

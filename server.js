@@ -1,0 +1,395 @@
+/**
+ * Servidor Backend Ligero UYAPAY con Base de Datos SQLite Persistente
+ * Cumple con RNF-MVP-006 a RNF-MVP-013 (Persistencia centralizada, multi-usuario y validación).
+ */
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const { DatabaseSync } = require('node:sqlite');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configuración de middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
+
+// ================= INICIALIZACIÓN BASE DE DATOS SQLITE =================
+const dbPath = path.join(__dirname, 'uyapay.sqlite');
+const db = new DatabaseSync(dbPath);
+
+// Crear tablas si no existen
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    password TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS results (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    case_code TEXT NOT NULL,
+    case_title TEXT NOT NULL,
+    username TEXT NOT NULL,
+    advisor_name TEXT NOT NULL,
+    score TEXT NOT NULL,
+    numeric_score INTEGER NOT NULL,
+    errors INTEGER NOT NULL,
+    max_errors INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    duration_seconds INTEGER NOT NULL,
+    formatted_duration TEXT NOT NULL,
+    completed_at TEXT NOT NULL,
+    interactions TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS live_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    advisor TEXT NOT NULL,
+    step TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    type TEXT NOT NULL,
+    errors INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+`);
+
+// Catálogo inicial de 12 asesores + 1 administrador
+const INITIAL_USERS = [
+  { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: 'admin' },
+  { id: 'usr-alvaro', username: 'alvaro', name: 'Alvaro Rodriguez', role: 'asesor', password: '123' },
+  { id: 'usr-maria', username: 'maria', name: 'María Fernandez', role: 'asesor', password: '123' },
+  { id: 'usr-carlos', username: 'carlos', name: 'Carlos Mendoza', role: 'asesor', password: '123' },
+  { id: 'usr-lucia', username: 'lucia', name: 'Lucía Ramos', role: 'asesor', password: '123' },
+  { id: 'usr-jorge', username: 'jorge', name: 'Jorge Quispe', role: 'asesor', password: '123' },
+  { id: 'usr-ana', username: 'ana', name: 'Ana Morales', role: 'asesor', password: '123' },
+  { id: 'usr-diego', username: 'diego', name: 'Diego Torres', role: 'asesor', password: '123' },
+  { id: 'usr-patricia', username: 'patricia', name: 'Patricia Silva', role: 'asesor', password: '123' },
+  { id: 'usr-fernando', username: 'fernando', name: 'Fernando Vargas', role: 'asesor', password: '123' },
+  { id: 'usr-sofia', username: 'sofia', name: 'Sofía Castro', role: 'asesor', password: '123' },
+  { id: 'usr-roberto', username: 'roberto', name: 'Roberto Flores', role: 'asesor', password: '123' },
+  { id: 'usr-elena', username: 'elena', name: 'Elena Huamán', role: 'asesor', password: '123' }
+];
+
+// Sembrar usuarios si la tabla está vacía
+const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+if (userCount === 0) {
+  const insertUser = db.prepare(`
+    INSERT INTO users (id, username, name, role, password, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  for (const u of INITIAL_USERS) {
+    insertUser.run(u.id, u.username, u.name, u.role, u.password, new Date().toISOString());
+  }
+  console.log(`[DB] Se han sembrado ${INITIAL_USERS.length} usuarios oficiales en la base de datos.`);
+}
+
+// Sembrar evaluaciones iniciales de demostración si la tabla está vacía
+const resultsCount = db.prepare('SELECT COUNT(*) as count FROM results').get().count;
+if (resultsCount === 0) {
+  const insertResult = db.prepare(`
+    INSERT INTO results (
+      id, case_id, case_code, case_title, username, advisor_name,
+      score, numeric_score, errors, max_errors, status,
+      duration_seconds, formatted_duration, completed_at, interactions
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertResult.run(
+    'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
+    'maria', 'María Fernandez', '20 / 20', 20, 0, 2, 'Aprobado',
+    38, '00:38', new Date(Date.now() - 3600000).toLocaleString('es-PE'), '[]'
+  );
+
+  insertResult.run(
+    'eval-seed-2', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
+    'carlos', 'Carlos Mendoza', '16 / 20', 16, 1, 2, 'Aprobado',
+    52, '00:52', new Date(Date.now() - 7200000).toLocaleString('es-PE'), '[]'
+  );
+
+  console.log('[DB] Se han sembrado resultados iniciales para el ranking.');
+}
+
+// Clientes suscritos a Server-Sent Events (SSE) para el monitor en vivo
+let sseClients = [];
+
+// ================= RUTAS DE LA API REST =================
+
+// 1. Salud del servicio
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// 2. Autenticación de usuarios
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Ingresa un nombre de usuario.' });
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE LOWER(username) = LOWER(?)').get(username.trim());
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'Usuario no encontrado en la plataforma.' });
+  }
+
+  if (user.password && password && user.password !== password.trim()) {
+    return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
+  }
+
+  const sessionUser = {
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    role: user.role
+  };
+
+  res.json({ success: true, user: sessionUser });
+});
+
+// 3. Listar usuarios
+app.get('/api/users', (req, res) => {
+  const users = db.prepare('SELECT id, username, name, role, created_at FROM users ORDER BY name ASC').all();
+  res.json(users);
+});
+
+// 4. Registrar nuevo usuario
+app.post('/api/users', (req, res) => {
+  const { username, name, role = 'asesor', password = '123' } = req.body;
+  if (!username || !name) {
+    return res.status(400).json({ success: false, message: 'Nombre y usuario son obligatorios.' });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  const existing = db.prepare('SELECT id FROM users WHERE LOWER(username) = ?').get(cleanUsername);
+  if (existing) {
+    return res.status(409).json({ success: false, message: 'Ese nombre de usuario ya está registrado.' });
+  }
+
+  const newId = 'usr-' + Date.now();
+  db.prepare(`
+    INSERT INTO users (id, username, name, role, password, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(newId, cleanUsername, name.trim(), role, password.trim(), new Date().toISOString());
+
+  res.status(201).json({
+    success: true,
+    user: { id: newId, username: cleanUsername, name: name.trim(), role }
+  });
+});
+
+// 5. Listar resultados de evaluaciones
+app.get('/api/results', (req, res) => {
+  const results = db.prepare('SELECT * FROM results ORDER BY rowid DESC').all();
+  const parsed = results.map(r => ({
+    id: r.id,
+    caseId: r.case_id,
+    caseCode: r.case_code,
+    caseTitle: r.case_title,
+    username: r.username,
+    advisorName: r.advisor_name,
+    score: r.score,
+    numericScore: r.numeric_score,
+    errors: r.errors,
+    maxErrorsAllowed: r.max_errors,
+    status: r.status,
+    durationSeconds: r.duration_seconds,
+    formattedDuration: r.formatted_duration,
+    completedAt: r.completed_at,
+    interactions: JSON.parse(r.interactions || '[]')
+  }));
+  res.json(parsed);
+});
+
+// 6. Guardar nueva evaluación (RF-MVP-035)
+app.post('/api/results', (req, res) => {
+  const data = req.body;
+  if (!data.username) {
+    return res.status(400).json({ success: false, message: 'El usuario es obligatorio.' });
+  }
+
+  const id = data.id || ('eval-' + Date.now());
+  const numericScore = data.numericScore !== undefined ? data.numericScore : Math.max(0, 20 - ((data.errors || 0) * 4));
+  const maxErrors = data.maxErrorsAllowed !== undefined ? data.maxErrorsAllowed : 2;
+  const status = data.status || ((data.errors || 0) <= maxErrors ? 'Aprobado' : 'Desaprobado');
+  const durationSeconds = data.durationSeconds || 0;
+  const mins = Math.floor(durationSeconds / 60);
+  const secs = durationSeconds % 60;
+  const formattedDuration = data.formattedDuration || `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  const completedAt = data.completedAt || new Date().toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium' });
+
+  db.prepare(`
+    INSERT INTO results (
+      id, case_id, case_code, case_title, username, advisor_name,
+      score, numeric_score, errors, max_errors, status,
+      duration_seconds, formatted_duration, completed_at, interactions
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.caseId || 'case-1',
+    data.caseCode || 'B2C-01',
+    data.caseTitle || 'Caso 1: Venta simple contado con regalo',
+    data.username,
+    data.advisorName || data.username,
+    data.score || `${numericScore} / 20`,
+    numericScore,
+    data.errors || 0,
+    maxErrors,
+    status,
+    durationSeconds,
+    formattedDuration,
+    completedAt,
+    JSON.stringify(data.interactions || [])
+  );
+
+  const savedRecord = {
+    id,
+    caseId: data.caseId,
+    caseCode: data.caseCode,
+    caseTitle: data.caseTitle,
+    username: data.username,
+    advisorName: data.advisorName,
+    score: `${numericScore} / 20`,
+    numericScore,
+    errors: data.errors,
+    maxErrorsAllowed: maxErrors,
+    status,
+    durationSeconds,
+    formattedDuration,
+    completedAt
+  };
+
+  res.status(201).json({ success: true, result: savedRecord });
+});
+
+// 7. Cálculo dinámico de Ranking y Podio (RF-MVP-042 a RF-MVP-047)
+app.get('/api/leaderboard', (req, res) => {
+  const allResults = db.prepare('SELECT * FROM results').all();
+
+  // Agrupar por usuario tomando su mejor desempeño
+  const userBest = {};
+  allResults.forEach(r => {
+    const u = r.username.toLowerCase();
+    if (!userBest[u]) {
+      userBest[u] = r;
+    } else {
+      const current = userBest[u];
+      const isBetterScore = r.numeric_score > current.numeric_score;
+      const isEqualScoreBetterTime = (r.numeric_score === current.numeric_score) && 
+        (r.duration_seconds < current.duration_seconds);
+      const isEqualBothBetterErrors = (r.numeric_score === current.numeric_score) &&
+        (r.duration_seconds === current.duration_seconds) &&
+        (r.errors < current.errors);
+
+      if (isBetterScore || isEqualScoreBetterTime || isEqualBothBetterErrors) {
+        userBest[u] = r;
+      }
+    }
+  });
+
+  const leaderboard = Object.values(userBest);
+
+  // Ordenamiento oficial: 1. Mayor puntaje, 2. Menor tiempo, 3. Menor errores
+  leaderboard.sort((a, b) => {
+    if (b.numeric_score !== a.numeric_score) {
+      return b.numeric_score - a.numeric_score;
+    }
+    if (a.duration_seconds !== b.duration_seconds) {
+      return a.duration_seconds - b.duration_seconds;
+    }
+    return a.errors - b.errors;
+  });
+
+  const formatted = leaderboard.map((r, index) => ({
+    rank: index + 1,
+    id: r.id,
+    caseTitle: r.case_title,
+    username: r.username,
+    advisorName: r.advisor_name,
+    score: r.score,
+    numericScore: r.numeric_score,
+    errors: r.errors,
+    status: r.status,
+    durationSeconds: r.duration_seconds,
+    formattedDuration: r.formatted_duration,
+    completedAt: r.completed_at
+  }));
+
+  res.json(formatted);
+});
+
+// 8. Eventos en vivo del simulador móvil
+app.post('/api/live-events', (req, res) => {
+  const { advisor, step, detail, type = 'INFO', errors = 0 } = req.body;
+  const time = new Date().toLocaleTimeString('es-PE');
+
+  db.prepare(`
+    INSERT INTO live_events (advisor, step, detail, type, errors, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(advisor || 'Desconocido', step || '', detail || '', type, errors, time);
+
+  const eventPayload = { advisor, step, detail, type, errors, time };
+
+  // Difundir a todos los monitores admin conectados mediante SSE
+  sseClients.forEach(client => {
+    client.res.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
+  });
+
+  res.json({ success: true });
+});
+
+// 9. Conexión SSE para transmisión de eventos en vivo al monitor de administración
+app.get('/api/live-events/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const clientId = Date.now();
+  const newClient = { id: clientId, res };
+  sseClients.push(newClient);
+
+  req.on('close', () => {
+    sseClients = sseClients.filter(c => c.id !== clientId);
+  });
+});
+
+// 10. Reiniciar datos demo (solo administración)
+app.post('/api/reset', (req, res) => {
+  db.exec('DELETE FROM results; DELETE FROM live_events;');
+  
+  // Re-sembrar resultados demo
+  const insertResult = db.prepare(`
+    INSERT INTO results (
+      id, case_id, case_code, case_title, username, advisor_name,
+      score, numeric_score, errors, max_errors, status,
+      duration_seconds, formatted_duration, completed_at, interactions
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertResult.run(
+    'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
+    'maria', 'María Fernandez', '20 / 20', 20, 0, 2, 'Aprobado',
+    38, '00:38', new Date().toLocaleString('es-PE'), '[]'
+  );
+
+  insertResult.run(
+    'eval-seed-2', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
+    'carlos', 'Carlos Mendoza', '16 / 20', 16, 1, 2, 'Aprobado',
+    52, '00:52', new Date().toLocaleString('es-PE'), '[]'
+  );
+
+  res.json({ success: true, message: 'Datos restablecidos con éxito.' });
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`=======================================================`);
+  console.log(`🚀 Servidor UYAPAY activo en: http://localhost:${PORT}`);
+  console.log(`📁 Base de Datos SQLite: ${dbPath}`);
+  console.log(`=======================================================`);
+});

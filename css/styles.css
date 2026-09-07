@@ -1,0 +1,672 @@
+:root {
+  --yellow: #F4A81D;
+  --yellow-dark: #E09400;
+  --bg-light: #F8F9FA;
+  --white: #FFFFFF;
+  --text-dark: #212529;
+  --text-muted: #6C757D;
+  --border: #E5E7EB;
+  --success: #27ae60;
+  --danger: #e74c3c;
+  --info: #2980b9;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================= 1. LOGIN ================= */
+#login-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--white);
+  padding: 36px 28px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 390px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.login-card h1 {
+  color: var(--yellow-dark);
+  margin-top: 0;
+  font-size: 30px;
+  letter-spacing: 1px;
+}
+
+.login-card p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 6px;
+  margin-bottom: 24px;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 13px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-card input:focus {
+  border-color: var(--yellow);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 13px;
+  background-color: var(--yellow);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background-color: var(--yellow-dark);
+}
+
+.btn-primary:active {
+  transform: scale(0.99);
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background-color: #f1f3f5;
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #e9ecef;
+}
+
+.error-msg {
+  color: var(--danger);
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+/* ================= 2. NAVBAR RESPONSIVE ================= */
+#top-navbar {
+  display: none;
+  background-color: var(--white);
+  border-bottom: 3px solid var(--yellow);
+  padding: 0 24px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--yellow-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+}
+
+.nav-item {
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.nav-item.active, .nav-item:hover {
+  color: var(--yellow-dark);
+  border-bottom-color: var(--yellow-dark);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.nav-badge {
+  background-color: #f8f9fa;
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.logout {
+  cursor: pointer;
+  color: var(--danger);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.logout:hover {
+  background-color: #fff5f5;
+}
+
+/* ================= 3. CONTENEDORES Y TARJETAS ================= */
+.container {
+  max-width: 1180px;
+  margin: 24px auto;
+  padding: 0 20px;
+  display: none;
+}
+
+.container.active {
+  display: block;
+}
+
+.section-header {
+  border-bottom: 2px solid var(--yellow);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  color: var(--yellow-dark);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.section-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* ================= 4. MONITOR EN VIVO ================= */
+.live-monitor-box {
+  border-left: 5px solid var(--danger);
+  background: #fffcfc;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.live-indicator {
+  height: 11px;
+  width: 11px;
+  background-color: var(--danger);
+  border-radius: 50%;
+  display: inline-block;
+  animation: blink 1.4s infinite;
+  margin-right: 8px;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+
+.live-feed-container {
+  margin-top: 14px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.live-feed-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.live-feed-list {
+  max-height: 140px;
+  overflow-y: auto;
+  background: #fdfdfd;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-feed-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: #fff;
+  border-radius: 4px;
+  border-left: 3px solid var(--yellow);
+  font-size: 12px;
+}
+
+.live-feed-item.error {
+  border-left-color: var(--danger);
+  background: #fff5f5;
+}
+
+.live-feed-item.success {
+  border-left-color: var(--success);
+  background: #f4faf6;
+}
+
+.live-feed-time {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+/* ================= 5. TABLAS RESPONSIVAS ================= */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 580px;
+}
+
+th, td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+th {
+  background-color: #f8f9fa;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-success { background-color: #e8f8f0; color: var(--success); }
+.badge-warning { background-color: #fff9e6; color: var(--yellow-dark); }
+.badge-danger { background-color: #fdeeee; color: var(--danger); }
+.badge-secondary { background-color: #f0f0f0; color: var(--text-muted); }
+
+/* ================= 6. ÁREA DE EVALUACIÓN Y SIMULADOR ================= */
+#evaluation-arena {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #eaedf0;
+}
+
+.exam-top-bar {
+  background: var(--white);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.exam-workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 16px 14px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.exam-instructions {
+  width: 100%;
+  max-width: 480px;
+}
+
+.exam-instructions .card {
+  margin-bottom: 0;
+  padding: 14px 18px;
+}
+
+/* MARCO MÓVIL (MOCKUP SMARTPHONE) PERFECTAMENTE ENCUADRADO */
+.phone-mockup-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.mockup-phone {
+  position: relative;
+  width: 360px;
+  height: 720px;
+  background: #1e1e1e;
+  border-radius: 40px;
+  padding: 10px;
+  box-shadow: 0 0 0 3px #3a3a3a, 0 16px 40px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Notch / Cámara frontal */
+.mockup-notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 14px;
+  background: #111;
+  border-radius: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Pantalla del teléfono que aloja el iframe */
+.mockup-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+}
+
+.mockup-screen iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ================= 7. MEDIA QUERIES (RESPONSIVE) ================= */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 768px) {
+  #top-navbar {
+    padding: 10px 16px;
+    min-height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .nav-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-links {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .live-monitor-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .live-monitor-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-align: left !important;
+  }
+}
+
+/* Dispositivos móviles (Smartphones) */
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+
+  .container {
+    margin: 14px auto;
+    padding: 0 12px;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 8px;
+  }
+
+  .exam-workspace {
+    padding: 10px 8px;
+  }
+
+  /* El simulador en pantalla de smartphone aprovecha el alto y ancho disponible */
+  .mockup-phone {
+    width: 100%;
+    max-width: 350px;
+    height: calc(100vh - 150px);
+    min-height: 520px;
+    border-radius: 24px;
+    padding: 6px;
+    box-shadow: 0 0 0 2px #333, 0 8px 24px rgba(0,0,0,0.18);
+  }
+
+  .mockup-notch {
+    top: 9px;
+    width: 60px;
+    height: 10px;
+  }
+
+  .mockup-screen {
+    border-radius: 18px;
+  }
+}
+
+/* ================= CRONÓMETRO EN VIVO ================= */
+.timer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #212529;
+  color: #F4A81D;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.timer-icon {
+  font-size: 14px;
+}
+
+/* ================= PODIO DE ASESORES (TOP 3) ================= */
+.podium-wrapper {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0 20px 0;
+  flex-wrap: wrap;
+}
+
+.podium-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 24px 18px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  flex: 1;
+  min-width: 200px;
+  max-width: 260px;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.podium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.podium-card.gold {
+  order: 2;
+  border-top: 6px solid #f1c40f;
+  transform: scale(1.04);
+  box-shadow: 0 8px 24px rgba(241, 196, 15, 0.2);
+  background: linear-gradient(180deg, #fffcf0 0%, #ffffff 100%);
+}
+
+.podium-card.silver {
+  order: 1;
+  border-top: 6px solid #bdc3c7;
+}
+
+.podium-card.bronze {
+  order: 3;
+  border-top: 6px solid #e67e22;
+}
+
+.podium-medal {
+  font-size: 38px;
+  margin-bottom: 6px;
+}
+
+.podium-advisor {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.podium-score {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--success);
+  margin-bottom: 6px;
+}
+
+.podium-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+/* ================= BADGES DE RANKING ================= */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.rank-badge.rank-1 {
+  background: #f1c40f;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(241, 196, 15, 0.4);
+}
+
+.rank-badge.rank-2 {
+  background: #bdc3c7;
+  color: #fff;
+}
+
+.rank-badge.rank-3 {
+  background: #e67e22;
+  color: #fff;
+}
+
+.rank-badge.rank-other {
+  background: #e9ecef;
+  color: var(--text-muted);
+}
+

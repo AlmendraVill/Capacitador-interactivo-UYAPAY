@@ -1,205 +1,250 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plataforma UYAPAY</title>
-<style>
-  :root {
-    --yellow: #F4A81D; --yellow-dark: #E09400;
-    --bg-light: #F9F9F9; --white: #FFFFFF;
-    --text-dark: #333333; --text-muted: #666666; --border: #E2E2E2;
-  }
-  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-  body { margin: 0; background-color: var(--bg-light); color: var(--text-dark); }
-
-  /* Login y Navbar */
-  #login-view { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-  .login-card { background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 380px; text-align: center; }
-  .login-card h1 { color: var(--yellow-dark); margin-top: 0; }
-  .login-card input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 4px; }
-  .btn-primary { width: 100%; padding: 12px; background-color: var(--yellow); color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-  .error-msg { color: #d32f2f; font-size: 13px; margin-bottom: 12px; display: none; }
-  
-  #top-navbar { display: none; background-color: var(--white); border-bottom: 3px solid var(--yellow); padding: 0 40px; align-items: center; justify-content: space-between; height: 60px; }
-  .nav-brand { font-weight: bold; font-size: 20px; color: var(--yellow-dark); }
-  .nav-links { display: flex; gap: 20px; height: 100%; }
-  .nav-item { padding: 0 15px; display: flex; align-items: center; cursor: pointer; font-weight: 500; color: var(--text-muted); border-bottom: 3px solid transparent; }
-  .nav-item.active { color: var(--yellow-dark); border-bottom-color: var(--yellow-dark); }
-  .nav-user { display: flex; align-items: center; gap: 15px; font-size: 14px; }
-  .logout { cursor: pointer; color: #d32f2f; font-weight: 500; }
-
-  /* Contenedores y Tablas */
-  .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: none; }
-  .container.active { display: block; }
-  .section-header { border-bottom: 2px solid var(--yellow); padding-bottom: 10px; margin-bottom: 24px; color: var(--yellow-dark); }
-  .card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  th { background-color: #f5f5f5; color: var(--text-muted); font-size: 13px; }
-  
-  /* Nuevo: Monitor en vivo */
-  .live-monitor-box { border-left: 4px solid #e74c3c; background: #fffcfc; display: flex; justify-content: space-between; align-items: center; }
-  .live-indicator { height: 12px; width: 12px; background-color: #e74c3c; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; margin-right: 8px; }
-  @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-  /* Evaluación */
-  #evaluation-arena { display: none; flex-direction: column; height: calc(100vh - 60px); }
-  .exam-tabs { background: var(--white); display: flex; padding: 0 20px; border-bottom: 1px solid var(--border); justify-content: center; }
-  .exam-tab { padding: 15px 24px; cursor: pointer; font-weight: 500; border-bottom: 3px solid transparent; }
-  .exam-tab.active { border-bottom-color: var(--yellow); color: var(--yellow-dark); font-weight: bold; }
-  
-  .exam-workspace { display: flex; flex-direction: column; align-items: center; flex: 1; overflow-y: auto; background: var(--bg-light); padding: 30px 20px; }
-  .exam-instructions { width: 100%; max-width: 700px; margin-bottom: 30px; text-align: center; }
-  .exam-simulator { display: flex; justify-content: center; align-items: center; flex-direction: column; }
-  iframe { border: none; width: 360px; height: 720px; border-radius: 36px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); background: var(--white); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Plataforma de Capacitación UYAPAY</title>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<div id="login-view">
-  <div class="login-card">
-    <h1>UYAPAY</h1>
-    <div id="login-error" class="error-msg">Usuario o contraseña incorrectos.</div>
-    <input type="text" id="username" placeholder="Usuario (admin o alvaro)">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button class="btn-primary" onclick="login()">Iniciar sesión</button>
-  </div>
-</div>
-
-<nav id="top-navbar">
-  <div class="nav-brand">UYAPAY</div>
-  <div class="nav-links" id="nav-links-container"></div>
-  <div class="nav-user">
-    <span id="user-greeting">Hola</span>
-    <span class="logout" onclick="logout()">Salir</span>
-  </div>
-</nav>
-
-<!-- ADMIN DASHBOARD -->
-<div id="admin-resultados" class="container">
-  <h2 class="section-header">Dashboard de Resultados</h2>
-  
-  <!-- PANEL MONITOR EN VIVO -->
-  <div class="card live-monitor-box">
-    <div>
-      <h3 style="margin:0 0 8px 0; color:#c0392b;"><span class="live-indicator"></span>Monitor de Evaluación en Vivo</h3>
-      <p style="margin:0; font-size:14px; color:var(--text-muted);">Usuario activo: <b>Alvaro Rodriguez</b> | Simulador conectado.</p>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:12px; color:var(--text-muted);">Paso actual en celular</div>
-      <div id="live-step" style="font-weight:bold; font-size:16px; margin-bottom:6px;">Esperando conexión...</div>
-      <div style="font-size:12px; color:var(--text-muted);">Errores registrados</div>
-      <div id="live-errors" style="font-weight:bold; font-size:24px; color:#c0392b;">0</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Historial de Asesores</h3>
-    <table>
-      <tr><th>Asesor</th><th>Módulo</th><th>Calificación</th><th>Estado</th></tr>
-      <tr><td>Alvaro Rodriguez</td><td>Evaluación B2C</td><td id="final-score">-</td><td id="final-status">Pendiente</td></tr>
-    </table>
-  </div>
-</div>
-
-<!-- ASESOR EVALUACIÓN -->
-<div id="asesor-eval-intro" class="container">
-  <h2 class="section-header">Evaluación Práctica</h2>
-  <div class="card" style="text-align:center; padding: 60px 20px;">
-    <h3>Evaluación B2C</h3>
-    <button class="btn-primary" style="width:auto; padding:12px 32px;" onclick="startExam()">Iniciar Evaluación Ahora</button>
-  </div>
-</div>
-
-<!-- ESPACIO DEL EXAMEN -->
-<div id="evaluation-arena">
-  <div class="exam-tabs" id="exam-tabs-container">
-    <div class="exam-tab active">Pregunta 1</div>
-  </div>
-  <div class="exam-workspace">
-    <div class="exam-instructions">
-      <h2 style="color:var(--yellow-dark); margin-top:0;">Caso 1: Iniciar Visita</h2>
-      <div class="card">
-        <p>Encuentra al cliente <b>Juan Perez</b> en tu plan de visitas, revisa las opciones y presiona "Iniciar Visita". Evita equivocarte de cliente.</p>
+  <!-- ================= 1. PANTALLA DE LOGIN ================= -->
+  <div id="login-view">
+    <div class="login-card">
+      <h1>UYAPAY</h1>
+      <p>Plataforma de Capacitación y Evaluación Práctica</p>
+      
+      <div id="login-error" class="error-msg">Usuario o contraseña incorrectos.</div>
+      
+      <input type="text" id="username" placeholder="Usuario (ej. admin o alvaro)" autocomplete="username">
+      <input type="password" id="password" placeholder="Contraseña (opcional en demo)" autocomplete="current-password">
+      <button class="btn-primary" id="btn-login">Iniciar sesión</button>
+      
+      <div style="margin-top:20px; font-size:12px; color:var(--text-muted); text-align:left; background:#f9f9f9; padding:12px; border-radius:8px; border:1px solid #eee; line-height:1.5;">
+        <b>Cuentas de la capacitación B2C (12 asesores):</b><br>
+        • Administrador: <code>admin</code> (clave: admin)<br>
+        • Asesores: <code>alvaro</code>, <code>maria</code>, <code>carlos</code>, <code>lucia</code>, <code>jorge</code>, <code>ana</code>, <code>diego</code>, <code>patricia</code>, <code>fernando</code>, <code>sofia</code>, <code>roberto</code>, <code>elena</code> (clave: 123)
       </div>
     </div>
-    <div class="exam-simulator">
-      <iframe id="simulador-frame" src=""></iframe>
+  </div>
+
+  <!-- ================= 2. NAVBAR SUPERIOR RESPONSIVE ================= -->
+  <nav id="top-navbar">
+    <div class="nav-header-row">
+      <div class="nav-brand">UYAPAY B2C</div>
+      <div class="nav-user">
+        <span class="nav-badge" id="user-role-badge">ROL</span>
+        <span id="user-greeting">Hola</span>
+        <span class="logout" onclick="window.UyapayPortal.logout()">Salir</span>
+      </div>
+    </div>
+    <div class="nav-links" id="nav-links-container"></div>
+  </nav>
+
+  <!-- ================= 3. VISTAS DEL ADMINISTRADOR ================= -->
+  
+  <!-- DASHBOARD Y MONITOR EN VIVO -->
+  <div id="admin-dashboard" class="container">
+    <div class="section-header">
+      <h2>Dashboard & Monitor en Vivo</h2>
+      <button class="btn-secondary" onclick="window.UyapayPortal.resetData()">Reiniciar Datos Demo</button>
+    </div>
+
+    <!-- MONITOR DE EVALUACIÓN EN TIEMPO REAL -->
+    <div class="card live-monitor-box">
+      <div style="flex:1;">
+        <h3 style="margin:0 0 8px 0; color:var(--danger); font-size:16px;">
+          <span class="live-indicator"></span>Monitor de Interacciones en Vivo
+        </h3>
+        <p style="margin:0; font-size:13px; color:var(--text-muted);">
+          Asesor evaluado: <b id="live-advisor">En espera</b> | Canal de sincronización activo.
+        </p>
+
+        <!-- Feed en vivo de interacciones -->
+        <div class="live-feed-container">
+          <div class="live-feed-title">Registro de Eventos y Clics en el Celular:</div>
+          <div class="live-feed-list" id="live-feed-list">
+            <div style="color:var(--text-muted); text-align:center; padding:10px;">Esperando que un asesor inicie su evaluación...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="live-monitor-stats" style="text-align:right; min-width:180px;">
+        <div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Paso actual en simulador</div>
+          <div id="live-step" style="font-weight:bold; font-size:14px; margin-bottom:8px; color:var(--yellow-dark);">Sin actividad</div>
+        </div>
+        
+        <div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Errores registrados</div>
+          <div id="live-errors" style="font-weight:bold; font-size:26px; color:var(--danger);">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUMEN DE MÉTRICAS -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:14px; margin-bottom:20px;">
+      <div class="card" style="margin-bottom:0; text-align:center;">
+        <div style="color:var(--text-muted); font-size:13px;">Total Evaluaciones</div>
+        <div id="stat-total-evals" style="font-size:26px; font-weight:bold; color:var(--text-dark); margin-top:4px;">0</div>
+      </div>
+      <div class="card" style="margin-bottom:0; text-align:center;">
+        <div style="color:var(--text-muted); font-size:13px;">Aprobados</div>
+        <div id="stat-passed-evals" style="font-size:26px; font-weight:bold; color:var(--success); margin-top:4px;">0</div>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-  function login() {
-    const u = document.getElementById('username').value.trim();
-    if (u === 'admin') {
-      setupUI('Admin', [{ id: 'admin-resultados', label: 'Dashboard' }]);
-    } else if (u === 'alvaro') {
-      setupUI('Alvaro Rodriguez', [{ id: 'asesor-eval-intro', label: 'Evaluación' }]);
-    } else {
-      document.getElementById('login-error').style.display = 'block';
-    }
-  }
+  <!-- HISTORIAL GENERAL (ADMIN) -->
+  <div id="admin-historial" class="container">
+    <div class="section-header">
+      <h2>Historial de Calificaciones y Asesores</h2>
+    </div>
 
-  function setupUI(userName, navItems) {
-    document.getElementById('login-view').style.display = 'none';
-    document.getElementById('top-navbar').style.display = 'flex';
-    document.getElementById('user-greeting').textContent = 'Hola, ' + userName;
-    
-    const navContainer = document.getElementById('nav-links-container');
-    navContainer.innerHTML = '';
-    
-    navItems.forEach((item, index) => {
-      const div = document.createElement('div');
-      div.className = 'nav-item' + (index === 0 ? ' active' : '');
-      div.textContent = item.label;
-      div.onclick = () => switchTab(item.id, div);
-      navContainer.appendChild(div);
-    });
-    switchTab(navItems[0].id, navContainer.firstChild);
-  }
+    <div class="card">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Asesor</th>
+              <th>Caso Evaluado</th>
+              <th>Calificación</th>
+              <th>Errores</th>
+              <th>Estado</th>
+              <th>Fecha y Hora</th>
+            </tr>
+          </thead>
+          <tbody id="admin-results-table">
+            <!-- Renderizado dinámicamente por JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-  function switchTab(containerId, navElement) {
-    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
-    document.getElementById('evaluation-arena').style.display = 'none';
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById(containerId).classList.add('active');
-    if (navElement) navElement.classList.add('active');
-  }
+  <!-- ================= 4. VISTAS DEL ASESOR ================= -->
+  
+  <!-- INTRODUCCIÓN A LA EVALUACIÓN -->
+  <div id="asesor-eval-intro" class="container">
+    <div class="section-header">
+      <h2>Evaluación Práctica</h2>
+    </div>
+    <div class="card" style="text-align:center; padding: 40px 20px;">
+      <h3 style="font-size:22px; margin-bottom:12px; color:var(--yellow-dark);">Módulo B2C: Plan de Visitas</h3>
+      <p style="color:var(--text-muted); max-width:540px; margin:0 auto 24px auto; line-height:1.5;">
+        A continuación interactuarás con el simulador móvil de la aplicación UYAPAY. Deberás leer las instrucciones del caso y ejecutar la secuencia correcta de acciones directamente en la pantalla del celular.
+      </p>
+      <button class="btn-primary" style="width:auto; padding:14px 36px; font-size:15px;" onclick="window.UyapayPortal.startExam()">
+        Iniciar Evaluación Ahora
+      </button>
+    </div>
+  </div>
 
-  function logout() { location.reload(); }
+  <!-- MIS CALIFICACIONES (ASESOR) -->
+  <div id="asesor-notas" class="container">
+    <div class="section-header">
+      <h2>Mis Calificaciones Obtenidas</h2>
+    </div>
+    <div class="card">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Asesor</th>
+              <th>Caso Evaluado</th>
+              <th>Calificación</th>
+              <th>Errores</th>
+              <th>Estado</th>
+              <th>Fecha y Hora</th>
+            </tr>
+          </thead>
+          <tbody id="asesor-results-table">
+            <!-- Renderizado dinámicamente por JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-  function startExam() {
-    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
-    document.getElementById('top-navbar').style.display = 'none';
-    document.getElementById('evaluation-arena').style.display = 'flex';
-    // Se carga el simulador
-    document.getElementById('simulador-frame').src = 'simulador.html';
-  }
+  <!-- ================= VISTA DE RANKING GENERAL Y PODIO ================= -->
+  <div id="ranking-view" class="container">
+    <div class="section-header">
+      <div>
+        <h2>Ranking General & Podio</h2>
+        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">Clasificación de asesores por puntuación y tiempo de resolución (RF-MVP-042).</p>
+      </div>
+    </div>
 
-  // LISTENER DE EVENTOS EN TIEMPO REAL DESDE EL IFRAME
-  window.addEventListener('message', function(event) {
-    // Escucha la actualización en vivo (cada vez que el asesor hace clic)
-    if (event.data.type === 'LIVE_UPDATE') {
-      document.getElementById('live-step').textContent = event.data.progress;
-      document.getElementById('live-errors').textContent = event.data.errors;
-    }
-    
-    // Escucha cuando el asesor termina el examen
-    if (event.data.type === 'CASO_COMPLETADO') {
-      document.getElementById('final-score').textContent = event.data.errores + ' errores';
-      document.getElementById('final-status').textContent = 'Completado';
-      document.getElementById('final-status').style.color = 'green';
-      document.getElementById('simulador-frame').src = ''; // Limpia el iframe
-      
-      // Regresar al inicio del asesor
-      document.getElementById('evaluation-arena').style.display = 'none';
-      document.getElementById('top-navbar').style.display = 'flex';
-      document.getElementById('asesor-eval-intro').classList.add('active');
-      alert("Examen finalizado y enviado al servidor.");
-    }
-  });
-</script>
+    <!-- PODIO TOP 3 -->
+    <div class="podium-wrapper" id="podium-wrapper">
+      <!-- Generado dinámicamente por JS -->
+    </div>
+
+    <!-- TABLA COMPLETA DE POSICIONES -->
+    <div class="card" style="margin-top:20px;">
+      <h3 style="font-size:16px; margin-bottom:14px; color:var(--text-dark);">Tabla Oficial de Posiciones</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70px;">Posición</th>
+              <th>Asesor</th>
+              <th>Caso Evaluado</th>
+              <th>Puntaje</th>
+              <th>Tiempo</th>
+              <th>Errores</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-results-table">
+            <!-- Renderizado dinámicamente por JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 5. ENTORNO DE EVALUACIÓN (SIMULADOR IFRAME) ================= -->
+  <div id="evaluation-arena">
+    <div class="exam-top-bar">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <span id="case-code" style="font-weight:600; color:var(--text-muted); font-size:13px;">Módulo B2C</span>
+        <div class="timer-chip">
+          <span class="timer-icon">⏱️</span>
+          <span id="exam-timer">00:00</span>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="window.UyapayPortal.cancelExam()">Salir de la Evaluación</button>
+    </div>
+
+    <div class="exam-workspace">
+      <!-- INSTRUCCIONES DEL CASO -->
+      <div class="exam-instructions">
+        <div class="card" style="border-left: 5px solid var(--yellow); margin-bottom:0;">
+          <h3 id="case-title" style="color:var(--yellow-dark); margin:0 0 6px 0; font-size:16px;">Cargando caso...</h3>
+          <p id="case-instructions" style="margin:0; font-size:13px; line-height:1.4; color:var(--text-dark);">Cargando instrucciones...</p>
+        </div>
+      </div>
+
+      <!-- MARCO MÓVIL ENCUADRADO (SMARTPHONE MOCKUP) -->
+      <div class="phone-mockup-wrapper">
+        <div class="mockup-phone">
+          <div class="mockup-notch"></div>
+          <div class="mockup-screen">
+            <iframe id="simulador-frame" src="" title="Simulador Móvil UYAPAY"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 6. SCRIPTS MODULARES ================= -->
+  <script src="js/data/users.js"></script>
+  <script src="js/data/cases.js"></script>
+  <script src="js/services/storage.js"></script>
+  <script src="js/services/evaluator.js"></script>
+  <script src="js/services/auth.js"></script>
+  <script src="js/portal.js"></script>
 </body>
 </html>
