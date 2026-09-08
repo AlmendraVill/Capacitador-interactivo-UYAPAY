@@ -60,35 +60,51 @@ db.exec(`
   );
 `);
 
-// Catálogo inicial de 12 asesores + 1 administrador
+// Catálogo oficial de administradores y 12 asesores oficiales UYAPAY
 const INITIAL_USERS = [
-  { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: 'admin' },
-  { id: 'usr-alvaro', username: 'alvaro', name: 'Alvaro Rodriguez', role: 'asesor', password: '123' },
-  { id: 'usr-maria', username: 'maria', name: 'María Fernandez', role: 'asesor', password: '123' },
-  { id: 'usr-carlos', username: 'carlos', name: 'Carlos Mendoza', role: 'asesor', password: '123' },
-  { id: 'usr-lucia', username: 'lucia', name: 'Lucía Ramos', role: 'asesor', password: '123' },
-  { id: 'usr-jorge', username: 'jorge', name: 'Jorge Quispe', role: 'asesor', password: '123' },
-  { id: 'usr-ana', username: 'ana', name: 'Ana Morales', role: 'asesor', password: '123' },
-  { id: 'usr-diego', username: 'diego', name: 'Diego Torres', role: 'asesor', password: '123' },
-  { id: 'usr-patricia', username: 'patricia', name: 'Patricia Silva', role: 'asesor', password: '123' },
-  { id: 'usr-fernando', username: 'fernando', name: 'Fernando Vargas', role: 'asesor', password: '123' },
-  { id: 'usr-sofia', username: 'sofia', name: 'Sofía Castro', role: 'asesor', password: '123' },
-  { id: 'usr-roberto', username: 'roberto', name: 'Roberto Flores', role: 'asesor', password: '123' },
-  { id: 'usr-elena', username: 'elena', name: 'Elena Huamán', role: 'asesor', password: '123' }
+  // Administradores / Capacitadores
+  { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: '123' },
+  { id: 'usr-edward', username: 'edward', name: 'Edward Velásquez', role: 'admin', password: '123' },
+  { id: 'usr-henry', username: 'henry', name: 'Henry Macedo', role: 'admin', password: '123' },
+
+  // 12 Asesores Comerciales Oficiales
+  { id: 'usr-alvaro', username: 'alvaro', name: 'Álvaro Rodríguez', role: 'asesor', password: '123' },
+  { id: 'usr-lruiz', username: 'lruiz', name: 'Leonardo Ruíz', role: 'asesor', password: '123' },
+  { id: 'usr-percy', username: 'percy', name: 'Percy Chambilla', role: 'asesor', password: '123' },
+  { id: 'usr-danilo', username: 'danilo', name: 'Danilo Salas', role: 'asesor', password: '123' },
+  { id: 'usr-betsy', username: 'betsy', name: 'Betsy Ramos', role: 'asesor', password: '123' },
+  { id: 'usr-williams', username: 'williams', name: 'Williams Campos', role: 'asesor', password: '123' },
+  { id: 'usr-larce', username: 'larce', name: 'Leonardo Arce', role: 'asesor', password: '123' },
+  { id: 'usr-dino', username: 'dino', name: 'Dino Quispe', role: 'asesor', password: '123' },
+  { id: 'usr-natalio', username: 'natalio', name: 'Natalio Ari', role: 'asesor', password: '123' },
+  { id: 'usr-marco', username: 'marco', name: 'Marco Alarcón', role: 'asesor', password: '123' },
+  { id: 'usr-antonio', username: 'antonio', name: 'Antonio Andrade', role: 'asesor', password: '123' },
+  { id: 'usr-hernan', username: 'hernan', name: 'Hernan Pacco', role: 'asesor', password: '123' }
 ];
 
-// Sembrar usuarios si la tabla está vacía
-const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-if (userCount === 0) {
-  const insertUser = db.prepare(`
-    INSERT INTO users (id, username, name, role, password, created_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
-  for (const u of INITIAL_USERS) {
-    insertUser.run(u.id, u.username, u.name, u.role, u.password, new Date().toISOString());
-  }
-  console.log(`[DB] Se han sembrado ${INITIAL_USERS.length} usuarios oficiales en la base de datos.`);
+// Sincronizar / actualizar usuarios en la base de datos SQLite
+const upsertUser = db.prepare(`
+  INSERT INTO users (id, username, name, role, password, created_at)
+  VALUES (?, ?, ?, ?, ?, ?)
+  ON CONFLICT(username) DO UPDATE SET
+    name = excluded.name,
+    role = excluded.role,
+    password = excluded.password
+`);
+
+for (const u of INITIAL_USERS) {
+  upsertUser.run(u.id, u.username, u.name, u.role, u.password, new Date().toISOString());
 }
+
+// Limpiar usuarios antiguos de demo que no pertenezcan a la nómina oficial
+const validUsernames = INITIAL_USERS.map(u => u.username.toLowerCase());
+const allUsersInDb = db.prepare('SELECT username FROM users').all();
+for (const row of allUsersInDb) {
+  if (!validUsernames.includes(row.username.toLowerCase())) {
+    db.prepare('DELETE FROM users WHERE username = ?').run(row.username);
+  }
+}
+console.log(`[DB] Nómina oficial de ${INITIAL_USERS.length} usuarios sincronizada correctamente.`);
 
 // Sembrar evaluaciones iniciales de demostración si la tabla está vacía
 const resultsCount = db.prepare('SELECT COUNT(*) as count FROM results').get().count;
@@ -103,13 +119,13 @@ if (resultsCount === 0) {
 
   insertResult.run(
     'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
-    'maria', 'María Fernandez', '20 / 20', 20, 0, 2, 'Aprobado',
+    'alvaro', 'Álvaro Rodríguez', '20 / 20', 20, 0, 2, 'Aprobado',
     38, '00:38', new Date(Date.now() - 3600000).toLocaleString('es-PE'), '[]'
   );
 
   insertResult.run(
-    'eval-seed-2', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
-    'carlos', 'Carlos Mendoza', '16 / 20', 16, 1, 2, 'Aprobado',
+    'eval-seed-2', 'case-2', 'B2C-02', 'Caso 2: Venta a crédito 30 días con descuento en dinero',
+    'lruiz', 'Leonardo Ruíz', '16 / 20', 16, 1, 2, 'Aprobado',
     52, '00:52', new Date(Date.now() - 7200000).toLocaleString('es-PE'), '[]'
   );
 
@@ -133,7 +149,13 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ success: false, message: 'Ingresa un nombre de usuario.' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE LOWER(username) = LOWER(?)').get(username.trim());
+  const cleanInput = username.trim();
+  const user = db.prepare(`
+    SELECT * FROM users 
+    WHERE LOWER(username) = LOWER(?) 
+       OR LOWER(name) = LOWER(?)
+  `).get(cleanInput, cleanInput);
+
   if (!user) {
     return res.status(401).json({ success: false, message: 'Usuario no encontrado en la plataforma.' });
   }

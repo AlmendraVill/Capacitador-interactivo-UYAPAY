@@ -68,7 +68,11 @@ window.UyapayServices = window.UyapayServices || {};
 
     async getUserByUsername(username) {
       const users = await this.getUsers();
-      return users.find(u => (u.username || '').toLowerCase() === (username || '').toLowerCase()) || null;
+      const clean = (username || '').toLowerCase().trim();
+      return users.find(u => 
+        (u.username || '').toLowerCase() === clean ||
+        (u.name || '').toLowerCase() === clean
+      ) || null;
     },
 
     async registerUser(userData) {

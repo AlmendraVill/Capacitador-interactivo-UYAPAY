@@ -4,17 +4,22 @@
 window.UyapayData = window.UyapayData || {};
 
 window.UyapayData.INITIAL_USERS = [
-  { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: 'admin' },
-  { id: 'usr-alvaro', username: 'alvaro', name: 'Alvaro Rodriguez', role: 'asesor', password: '123' },
-  { id: 'usr-maria', username: 'maria', name: 'María Fernandez', role: 'asesor', password: '123' },
-  { id: 'usr-carlos', username: 'carlos', name: 'Carlos Mendoza', role: 'asesor', password: '123' },
-  { id: 'usr-lucia', username: 'lucia', name: 'Lucía Ramos', role: 'asesor', password: '123' },
-  { id: 'usr-jorge', username: 'jorge', name: 'Jorge Quispe', role: 'asesor', password: '123' },
-  { id: 'usr-ana', username: 'ana', name: 'Ana Morales', role: 'asesor', password: '123' },
-  { id: 'usr-diego', username: 'diego', name: 'Diego Torres', role: 'asesor', password: '123' },
-  { id: 'usr-patricia', username: 'patricia', name: 'Patricia Silva', role: 'asesor', password: '123' },
-  { id: 'usr-fernando', username: 'fernando', name: 'Fernando Vargas', role: 'asesor', password: '123' },
-  { id: 'usr-sofia', username: 'sofia', name: 'Sofía Castro', role: 'asesor', password: '123' },
-  { id: 'usr-roberto', username: 'roberto', name: 'Roberto Flores', role: 'asesor', password: '123' },
-  { id: 'usr-elena', username: 'elena', name: 'Elena Huamán', role: 'asesor', password: '123' }
+  // Administradores / Capacitadores
+  { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: '123' },
+  { id: 'usr-edward', username: 'edward', name: 'Edward Velásquez', role: 'admin', password: '123' },
+  { id: 'usr-henry', username: 'henry', name: 'Henry Macedo', role: 'admin', password: '123' },
+
+  // 12 Asesores Comerciales
+  { id: 'usr-alvaro', username: 'alvaro', name: 'Álvaro Rodríguez', role: 'asesor', password: '123' },
+  { id: 'usr-lruiz', username: 'lruiz', name: 'Leonardo Ruíz', role: 'asesor', password: '123' },
+  { id: 'usr-percy', username: 'percy', name: 'Percy Chambilla', role: 'asesor', password: '123' },
+  { id: 'usr-danilo', username: 'danilo', name: 'Danilo Salas', role: 'asesor', password: '123' },
+  { id: 'usr-betsy', username: 'betsy', name: 'Betsy Ramos', role: 'asesor', password: '123' },
+  { id: 'usr-williams', username: 'williams', name: 'Williams Campos', role: 'asesor', password: '123' },
+  { id: 'usr-larce', username: 'larce', name: 'Leonardo Arce', role: 'asesor', password: '123' },
+  { id: 'usr-dino', username: 'dino', name: 'Dino Quispe', role: 'asesor', password: '123' },
+  { id: 'usr-natalio', username: 'natalio', name: 'Natalio Ari', role: 'asesor', password: '123' },
+  { id: 'usr-marco', username: 'marco', name: 'Marco Alarcón', role: 'asesor', password: '123' },
+  { id: 'usr-antonio', username: 'antonio', name: 'Antonio Andrade', role: 'asesor', password: '123' },
+  { id: 'usr-hernan', username: 'hernan', name: 'Hernan Pacco', role: 'asesor', password: '123' }
 ];
