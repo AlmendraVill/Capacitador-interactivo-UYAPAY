@@ -6,9 +6,7 @@ window.UyapayData = window.UyapayData || {};
 window.UyapayData.INITIAL_USERS = [
   // Administradores / Capacitadores
   { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: '123' },
-  { id: 'usr-edward', username: 'edward', name: 'Edward Velásquez', role: 'admin', password: '123' },
-  { id: 'usr-henry', username: 'henry', name: 'Henry Macedo', role: 'admin', password: '123' },
-
+  
   // 12 Asesores Comerciales
   { id: 'usr-alvaro', username: 'alvaro', name: 'Álvaro Rodríguez', role: 'asesor', password: '123' },
   { id: 'usr-lruiz', username: 'lruiz', name: 'Leonardo Ruíz', role: 'asesor', password: '123' },
@@ -21,5 +19,7 @@ window.UyapayData.INITIAL_USERS = [
   { id: 'usr-natalio', username: 'natalio', name: 'Natalio Ari', role: 'asesor', password: '123' },
   { id: 'usr-marco', username: 'marco', name: 'Marco Alarcón', role: 'asesor', password: '123' },
   { id: 'usr-antonio', username: 'antonio', name: 'Antonio Andrade', role: 'asesor', password: '123' },
-  { id: 'usr-hernan', username: 'hernan', name: 'Hernan Pacco', role: 'asesor', password: '123' }
+  { id: 'usr-hernan', username: 'hernan', name: 'Hernan Pacco', role: 'asesor', password: '123' }, 
+  { id: 'usr-edward', username: 'edward', name: 'Edward Velásquez', role: 'asesor', password: '123' },
+  { id: 'usr-henry', username: 'henry', name: 'Henry Macedo', role: 'asesor', password: '123' },
 ];

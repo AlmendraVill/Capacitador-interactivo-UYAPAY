@@ -147,15 +147,104 @@
 
 ---
 
-## Resumen de cobertura evaluada
+
+---
+
+### Caso 16 — [GPS] Intento de inicio presencial a >50m y bypass por visita telefónica
+
+**Cliente:** Distribuidora Kanchis EIRL (AV. INDUSTRIAL 104 - SOCABAYA)
+**Contexto:** El asesor intenta registrar el inicio de visita de manera presencial pero se encuentra a 250 metros de distancia del local del cliente.
+**Validación técnica:** El motor móvil valida la geocerca GPS con un radio máximo de 50 metros (`visit_validations.dart:8`).
+**Acción requerida:** El asesor no debe falsear la georreferenciación presencial ni forzar el inicio en sitio; debe activar formalmente la modalidad **"Visita Telefónica"** (`isPhoneVisit = true`, `visitTypeId = 2`), permitiendo continuar con la atención comercial de manera justificada y auditada.
+**Pedido:** 2 cajas Michelin Energy XM2+ a Crédito 30 días (Lista OF).
+**Resultado esperado:** Visita iniciada sin penalización por geolocalización y orden de compra registrada con trazabilidad telefónica.
+
+---
+
+### Caso 17 — [Tareas] Cierre de visita con justificación formal de no emisión de pedido (T5)
+
+**Cliente:** Comercial Vega Hnos. (CALLE MERCADERES 301)
+**Contexto:** Visita presencial completada con fotos de exhibición inicial y final. Al momento de la asesoría comercial (tarea obligatoria T5, 15% de ponderación de ruta), el cliente comunica que no realizará pedidos hoy debido a descarga de contenedores y almacén saturado.
+**Acción requerida:** El asesor no debe retirarse sin cerrar la tarea ni forzar pedidos ficticios. Debe ingresar a **"¿Por qué no completó la tarea?"** (`IncompleteVisitTaskPanel.dart`), seleccionar la causa oficial **"Cliente muy ocupado"** y confirmar el cierre formal.
+**Resultado esperado:** Visita cerrada al 100% de cumplimiento en la ruta diaria con sustento formal en la tabla `visit_task`.
+
+---
+
+### Caso 18 — [Cotización] Registro de propuesta comercial formal como Cotización (Tipo 3)
+
+**Cliente:** Grupo Ferretero Miraflores (AV. SAN JERONIMO 210)
+**Contexto:** Se presenta una propuesta comercial por 2 cajas de Michelin Energy XM2+ a Crédito 30 días. El encargado de tienda revisa la propuesta pero el titular decisor de compras no se encuentra presente para autorizar la orden de compra inmediata.
+**Acción requerida:** El asesor debe seleccionar **"Guardar como Cotización (Tipo 3)"** (`documentTypeId = 3`) en lugar de emitir una Orden de Compra definitiva (`documentTypeId = 2`).
+**Resultado esperado:** Cotización formalmente registrada y transmitida sin comprometer stock de almacén ni consumir de forma prematura la línea de crédito disponible del cliente.
+
+---
+
+### Caso 19 — [Cobranzas] Cobranza mixta de facturas (Efectivo + Depósito con voucher)
+
+**Cliente:** Taller Hyundai Express (AV. PARRA 314)
+**Contexto:** El cliente mantiene una factura pendiente por USD 350.00 y desea cancelarla fraccionando el pago en dos modalidades: USD 200.00 en efectivo y USD 150.00 mediante depósito bancario en cuenta corriente.
+**Acción requerida:** En el módulo de cobranza (`collect_debts_page.dart`), ingresar la amortización mixta registrando el efectivo y adjuntando de manera mandatoria la fotografía del voucher de la transferencia bancaria para el abono en cuenta.
+**Resultado esperado:** Emisión consolidada de los recibos provisionales de cobranza con comprobante bancario listo para validación y conciliación en tesorería.
+
+---
+
+### Caso 20 — [Promociones] Exclusión mutua de promociones del mismo combo (Condición 4000)
+
+**Cliente:** Servicentro El Faro (AV. DOLORES 880)
+**Contexto:** Venta de 5 baldes Shell Helix HX7 10W/40 a condición Contado con Lista 2.
+**Validación técnica:** El paquete de incentivos promocionales está configurado bajo la Condición 4000 (`OrderCustomerController.cs:4543`), la cual establece que los beneficios de un mismo grupo promocional son mutuamente excluyentes (máximo 1 promoción activa por combo).
+**Acción requerida:** Activar el toggle de regalo oficial por volumen (ej. botellas de lubricante Plus) sin pretender combinar simultáneamente un descuento monetario directo del mismo paquete.
+**Resultado esperado:** Orden confirmada y validada en servidor sin recibir rechazo HTTP 400 de negocio.
+
+---
+
+### Caso 21 — [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día
+
+**Cliente:** Distribuidora Kanchis EIRL (AV. INDUSTRIAL 104 - SOCABAYA)
+**Contexto:** Al inicio de la jornada comercial, el asesor planifica el orden de atención de su cartera mediante las herramientas de inteligencia de ruta.
+**Acción requerida:**
+1. Deslizar la barra de filtros del plan de visitas y presionar la pastilla **"Deuda vencida"** (`over_due_date = true` en `SellerController.cs`).
+2. Identificar a Distribuidora Kanchis EIRL como cliente crítico con saldo vencido de USD 840.00.
+3. Consultar su perfil de cuenta corriente y, durante la visita presencial, aplicar la política de control de riesgo cotizando exclusivamente a condición **Contado**.
+**Resultado esperado:** Cartera morosa priorizada y nuevo pedido emitido sin incrementar el riesgo crediticio de la empresa.
+
+---
+
+### Caso 22 — [Fuera de Ruta] Alta de visita fuera de ruta para despacho urgente en zona
+
+**Cliente:** Autopartes El Rápido (JR. PIEROLA 540)
+**Contexto:** Mientras el asesor transita por su zona asignada, un cliente de cartera solicita un despacho urgente no programado en el plan de ruta semanal de SOLAR.
+**Acción requerida:** Presionar **"➕ Agregar visita fuera de ruta"** (`NewOutRoutVisitFormPage.dart`), seleccionar a "Autopartes El Rápido", validar su dirección fiscal y registrar la visita no programada. Luego iniciar la visita y emitir el pedido al Contado por 4 botellas Shell Helix Plus 10W-40.
+**Resultado esperado:** Visita fuera de ruta incorporada en el dispositivo móvil (`out_route = true`) y pedido formalmente generado y transmitido.
+
+---
+
+### Caso 23 — [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada
+
+**Módulo:** Liquidación General de Ventas y Cobranza (`SalesSettlement`)
+**Contexto:** Al término de la jornada de visitas, antes de acudir a la agencia o caja central, el asesor debe cuadrar los valores recaudados en ruta.
+**Acción requerida:** En el menú principal de visitas, presionar **"📊 Liquidación de cobranza diaria"**, auditar el arqueo consolidado (Efectivo Soles, Efectivo Dólares, Depósitos bancarios y cero recibos pendientes de envío) y presionar **"Confirmar y Cerrar Arqueo Diario"**.
+**Resultado esperado:** Arqueo transmitido y bloqueado en SOLAR, conciliando con exactitud los valores físicos a entregar en tesorería.
+
+---
+
+## Resumen de cobertura evaluada (23 Casos Oficiales)
 
 | Caso | Tipo de flujo evaluado |
 | --- | --- |
 | 1, 2, 9, 10, 14 | Ventas con promociones (regalo / descuento en dinero) |
-| 3, 12 | Ventas sin promoción, distintas listas de precio |
-| 4, 5, 13 | Errores de proceso (tracking, cobranza, condición de pago) |
+| 3, 12 | Ventas sin promoción, distintas listas de precio y mono-línea |
+| 4, 5, 13 | Errores de proceso y trampas (tracking incompleto, cobranza sin consolidado, condición errónea) |
 | 6 | Consulta histórica (nota de crédito) |
 | 7 | Estado de cuenta + flujo de compartir |
 | 8 | Seguimiento y detalle de pedido |
 | 11 | Alta de cliente nuevo |
-| 15 | Historial de visitas / prevención de duplicidad |
+| 15 | Historial de visitas / prevención de duplicidad de promociones |
+| 16 | Geocerca GPS (50m) y bypass regulado por visita telefónica (`isPhoneVisit`) |
+| 17 | Justificación formal de tareas incompletas (`IncompleteVisitTaskPanel`) |
+| 18 | Registro formal de Cotización (Tipo 3) vs Orden de Compra (Tipo 2) |
+| 19 | Cobranza mixta (Efectivo + Depósito bancario con voucher obligatorio) |
+| 20 | Exclusión mutua de promociones del mismo combo (Condición 4000) |
+| 21 | Consulta y priorización de clientes con deuda vencida en ruta (`over_due_date`) |
+| 22 | Alta de visita fuera de ruta (`NewOutRoutVisitFormPage`) |
+| 23 | Arqueo y cierre de liquidación de cobranza diaria (`SalesSettlement`) |

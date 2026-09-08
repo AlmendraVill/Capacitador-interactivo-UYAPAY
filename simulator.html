@@ -98,11 +98,11 @@
 
     <!-- Filtros de Visitas Oficiales -->
     <div class="filters-scroll">
-      <div class="filter-pill active">Todos</div>
-      <div class="filter-pill" onclick="window.UyapaySimulator.hint('Sin registros con deuda')">Deuda vencida</div>
-      <div class="filter-pill" onclick="window.UyapaySimulator.hint('Sin registros')">Sin visita en el mes</div>
-      <div class="filter-pill" onclick="window.UyapaySimulator.hint('Sin registros')">Sin compra en el mes</div>
-      <div class="filter-pill" onclick="window.UyapaySimulator.hint('Al día')">Documentos por regularizar</div>
+      <div class="filter-pill active" id="pill-todos" onclick="window.UyapaySimulator.selectFilter('todos')">Todos</div>
+      <div class="filter-pill" id="pill-deuda" onclick="window.UyapaySimulator.selectFilter('deuda_vencida')">Deuda vencida</div>
+      <div class="filter-pill" id="pill-sin-visita" onclick="window.UyapaySimulator.selectFilter('sin_visita')">Sin visita en el mes</div>
+      <div class="filter-pill" id="pill-sin-compra" onclick="window.UyapaySimulator.selectFilter('sin_compra')">Sin compra en el mes</div>
+      <div class="filter-pill" id="pill-documentos" onclick="window.UyapaySimulator.selectFilter('documentos')">Documentos por regularizar</div>
     </div>
 
     <!-- Zona y Lista de Clientes -->
@@ -135,6 +135,15 @@
         </div>
         <span class="client-chevron">›</span>
       </div>
+    </div>
+
+    <div style="padding:10px 14px;">
+      <button class="login-btn" style="background:#ffffff; color:var(--text-dark); border:1.5px solid var(--border-dark); font-size:12px; padding:10px; margin-bottom:8px;" onclick="window.UyapaySimulator.openOutRouteModal()">
+        ➕ Agregar visita fuera de ruta
+      </button>
+      <button class="login-btn" style="background:#2c3e50; color:#ffffff; font-size:12px; padding:10px;" onclick="window.UyapaySimulator.openSettlementModal()">
+        📊 Liquidación de cobranza diaria
+      </button>
     </div>
   </div>
 
@@ -178,8 +187,13 @@
         <span>›</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Sin facturas por cobrar para este cliente')">
-        <span>💰 3. Cobranza de facturas</span>
+      <div class="task-item-btn" onclick="window.UyapaySimulator.openCobranzaModal()">
+        <span>💰 3. Cobranza de facturas / Letras</span>
+        <span>›</span>
+      </div>
+
+      <div class="task-item-btn" onclick="window.UyapaySimulator.openIncompleteTasksModal()">
+        <span>⚠️ ¿Por qué no completó la tarea?</span>
         <span>›</span>
       </div>
 
@@ -364,8 +378,11 @@
         <b id="receipt-terms-text">-</b>
       </div>
 
-      <button class="login-btn" onclick="window.UyapaySimulator.submitFinalOrder()">
+      <button class="login-btn" onclick="window.UyapaySimulator.submitFinalOrder('orden')">
         Actualizar Orden de Compra y Enviar
+      </button>
+      <button class="login-btn" style="background:#ffffff; color:#2c3e50; border:1.5px solid #2c3e50; margin-top:8px;" onclick="window.UyapaySimulator.submitFinalOrder('cotizacion')">
+        📄 Guardar como Cotización (Tipo 3)
       </button>
     </div>
   </div>
@@ -397,6 +414,9 @@
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('proyectar')">
         <div>Proyectar ventas <span class="opcion-desc">Proyecte ventas por familia de productos.</span></div> <span>›</span>
       </div>
+      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('ver_deuda')">
+        <div>Consultar perfil / deuda vencida <span class="opcion-desc">Ver saldo moroso y línea de crédito.</span></div> <span>›</span>
+      </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('llegar')">
         <div>Cómo llegar al cliente <span class="opcion-desc">Ver mapa y distancia de ruta.</span></div> <span>›</span>
       </div>
@@ -408,6 +428,153 @@
       </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('cambiar')">
         <div>Cambiar dirección de visita <span class="opcion-desc">Seleccione una nueva dirección.</span></div> <span>›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: VALIDACIÓN GEOCERCA GPS ================= -->
+  <div class="modal-overlay" id="gpsModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        VALIDACIÓN DE GEOCERCA GPS
+        <span class="close-btn" onclick="window.UyapaySimulator.closeGpsModal()">×</span>
+      </div>
+      <div style="text-align:center; padding:15px 0;">
+        <div style="font-size:36px; margin-bottom:10px;">📍⚠️</div>
+        <h4 style="font-size:14px; margin-bottom:8px; color:#c0392b;">Ubicación fuera de rango (>50 metros)</h4>
+        <p style="font-size:12px; color:var(--text-light); line-height:1.4; margin-bottom:16px;">
+          Te encuentras a 250m del local del cliente. Las visitas presenciales exigen proximidad física &le; 50m (visit_validations.dart).
+        </p>
+        <button class="login-btn" style="background:#27ae60; margin-bottom:8px;" onclick="window.UyapaySimulator.confirmVisitType('telefonica')">
+          📞 Iniciar Visita Telefónica (isPhoneVisit)
+        </button>
+        <button class="login-btn" style="background:#e74c3c;" onclick="window.UyapaySimulator.confirmVisitType('presencial')">
+          🏢 Forzar Visita Presencial (Rechazar)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: JUSTIFICAR TAREA INCOMPLETA ================= -->
+  <div class="modal-overlay" id="incompleteTaskModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        JUSTIFICAR TAREA INCOMPLETA
+        <span class="close-btn" onclick="window.UyapaySimulator.closeIncompleteTasksModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div class="form-group">
+          <label class="form-label">Tarea no realizada:</label>
+          <select id="sel-incomplete-task" class="form-select">
+            <option value="T5">T5 - Asesorar en el proceso de pedido (Venta)</option>
+            <option value="T1">T1 - Fotos de exhibición</option>
+            <option value="T3">T3 - Cobranza de facturas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motivo oficial de no realización:</label>
+          <select id="sel-incomplete-reason" class="form-select">
+            <option value="Cliente muy ocupado">Cliente muy ocupado</option>
+            <option value="Decisor ausente">Decisor ausente</option>
+            <option value="Cuenta con stock completo">Cuenta con stock completo</option>
+            <option value="Problemas de liquidez">Problemas de liquidez</option>
+          </select>
+        </div>
+        <button class="login-btn" style="background:#e67e22;" onclick="window.UyapaySimulator.submitIncompleteTask()">
+          💾 Guardar Justificación y Finalizar Visita
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: COBRANZA MIXTA ================= -->
+  <div class="modal-overlay" id="cobranzaModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        COBRANZA DE FACTURAS Y LETRAS
+        <span class="close-btn" onclick="window.UyapaySimulator.closeCobranzaModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div class="card-task" style="margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700;">Factura pendiente: F001-002849</div>
+          <div style="font-size:11px; color:var(--text-light);">Saldo vencido a cobrar: USD 350.00</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto en Efectivo (USD):</label>
+          <input type="number" id="cobranza-cash" class="form-select" value="200.00" style="padding:8px 10px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto Depósito / Transferencia (USD):</label>
+          <input type="number" id="cobranza-deposit" class="form-select" value="150.00" style="padding:8px 10px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Voucher bancario (Obligatorio para depósito):</label>
+          <div style="font-size:12px; padding:6px; background:#e8f5e9; border:1px dashed #4caf50; border-radius:4px; text-align:center;">
+            📷 Voucher adjuntado: OP-948201.jpg
+          </div>
+        </div>
+        <button class="login-btn" style="background:#27ae60;" onclick="window.UyapaySimulator.submitCobranza()">
+          💰 Emitir Recibos Provisionales Consolidados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: AGREGAR VISITA FUERA DE RUTA ================= -->
+  <div class="modal-overlay" id="outRouteModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        AGREGAR VISITA FUERA DE RUTA
+        <span class="close-btn" onclick="window.UyapaySimulator.closeOutRouteModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div class="form-group">
+          <label class="form-label">Cliente de cartera:</label>
+          <select id="sel-outroute-client" class="form-select">
+            <option value="Autopartes El Rápido">Autopartes El Rápido (RUC: 20551928410)</option>
+            <option value="Servicentro San Jerónimo">Servicentro San Jerónimo</option>
+            <option value="Lubricantes del Sur">Lubricantes del Sur</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dirección fiscal asignada:</label>
+          <input type="text" id="outroute-address" class="form-select" value="JR. PIEROLA 540" readonly style="background:#f9f9f9; padding:8px 10px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tareas asignadas:</label>
+          <div style="font-size:11px; color:#555; line-height:1.6;">
+            ☑ 1. Fotos obligatorias de exhibición<br>
+            ☑ 2. Pedidos en visita<br>
+            ☑ 3. Cobranza de facturas
+          </div>
+        </div>
+        <button class="login-btn" style="background:#2980b9;" onclick="window.UyapaySimulator.submitOutRouteVisit()">
+          ➕ Registrar Visita Fuera de Ruta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: LIQUIDACIÓN DE COBRANZA DIARIA ================= -->
+  <div class="modal-overlay" id="settlementModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        LIQUIDACIÓN DE COBRANZA DIARIA
+        <span class="close-btn" onclick="window.UyapaySimulator.closeSettlementModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div class="card-task" style="margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:700; margin-bottom:6px;">Arqueo Consolidado de Jornada</div>
+          <div class="profile-row"><span>Total Recibos emitidos:</span><b>3 recibos</b></div>
+          <div class="profile-row"><span>Recaudación Efectivo Soles:</span><b>S/ 1,480.00</b></div>
+          <div class="profile-row"><span>Recaudación Efectivo Dólares:</span><b>USD 200.00</b></div>
+          <div class="profile-row"><span>Depósitos Bancarios con Voucher:</span><b>USD 150.00</b></div>
+          <div class="profile-row"><span>Recibos pendientes de envío:</span><b style="color:var(--success-color);">0 (Al día)</b></div>
+          <div class="profile-row"><span>Recibos Anulados:</span><b>0</b></div>
+        </div>
+        <button class="login-btn" style="background:#2c3e50;" onclick="window.UyapaySimulator.submitSettlement()">
+          🔒 Confirmar y Cerrar Arqueo Diario
+        </button>
       </div>
     </div>
   </div>

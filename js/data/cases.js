@@ -1,7 +1,8 @@
 /**
  * Catálogo Oficial de Casos Prácticos de Evaluación B2C - UYAPAY
- * Basado en "Casos de Prueba — Simulador UYAPAY Asesor B2C" y "Flujos de Resolución".
- * Cada caso contiene escenario, instrucciones, reglas de negocio y validación desacoplada.
+ * Batería Completa de 23 Casos Oficiales (Casos B2C-01 al B2C-23).
+ * Incluye Casos Base, Casos Borde, Flujos Ocultos de Producción y Flujos de Resolución Oficiales.
+ * Basado estrictamente en la arquitectura Flutter (appSellerV1) y Backend C# (solar-web-app-backend).
  */
 window.UyapayData = window.UyapayData || {};
 
@@ -211,995 +212,1848 @@ window.UyapayData.PRODUCTS = [
   }
 ];
 
-// ================= CATÁLOGO DE LOS 15 CASOS PRÁCTICOS OFICIALES =================
+// ================= CATÁLOGO OFICIAL DE LOS 23 CASOS PRÁCTICOS =================
 window.UyapayData.CASES = [
   {
-    id: 'case-1',
-    code: 'B2C-01',
-    title: 'Caso 1: Venta simple contado con regalo por volumen',
-    module: 'Ventas B2C',
-    client: 'Ferretería Los Andes S.A.C.',
-    clientAddress: 'AV. TOMAS TUYRUTUPAC 412',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '1',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix HX7 10W/40',
-    unitPrice: 22.0,
-    expectedQty: 8,
-    promoDiscount: true,
-    promoType: 'gift',
-    promoLabel: '🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)',
-    instructions: '1. Visitas: Inicia visita en Ferretería Los Andes S.A.C. (Juan Perez).\n2. Fotos: Registra fotos obligatorias de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 8 baldes Shell Helix HX7 10W/40 con la promo de regalo activada.\n5. Resumen: Verifica el 5% de descuento al contado y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-1",
+    "code": "B2C-01",
+    "title": "Caso 1: Venta simple contado con regalo por volumen",
+    "module": "Ventas B2C",
+    "client": "Ferretería Los Andes S.A.C.",
+    "clientAddress": "AV. TOMAS TUYRUTUPAC 412",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix HX7 10W/40",
+    "unitPrice": 22,
+    "expectedQty": 8,
+    "promoDiscount": true,
+    "promoType": "gift",
+    "promoLabel": "🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)",
+    "instructions": "1. Visitas: Inicia visita en Ferretería Los Andes S.A.C. (Juan Perez).\n2. Fotos: Registra fotos obligatorias de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 8 baldes Shell Helix HX7 10W/40 con la promo de regalo activada.\n5. Resumen: Verifica el 5% de descuento al contado (USD 167.20) y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Ejecutar una venta directa al contado en línea Lubricantes con bonificación en especie por escala.",
+      "pasoAPaso": [
+        "1. En el Plan de Visitas ubicar y pulsar sobre \"Ferretería Los Andes S.A.C.\". En la hoja de opciones seleccionar \"Iniciar visita\".",
+        "2. En Datos del Cliente presionar \"Continuar a Fotos de Visita\". Capturar Foto 1 (Fachada) y Foto 2 (Góndola). Guardar.",
+        "3. En Pedidos en Visita pulsar \"➕ Crear pedido o cotización\". Configurar: Condición = Contado (5% desc.), Lista de Precios = 1, Línea = Lubricantes, Marca = Shell.",
+        "4. En el catálogo localizar \"Shell Helix HX7 10W/40\". Ajustar cantidad a 8 baldes y activar el toggle de regalo (2 botellas Shell Helix Plus). Presionar \"Seleccionar Producto\".",
+        "5. En el Resumen verificar: Subtotal bruto USD 176.00, Descuento Contado 5% (-USD 8.80), Total a facturar USD 167.20. Presionar \"Actualizar Orden de Compra y Enviar\"."
+      ],
+      "reglaNegocio": "En condición Contado aplica descuento financiero del 5%. Los regalos promocionales (bonificaciones) no reducen el monto facturado pero deben registrarse vinculados al SKU padre.",
+      "decisionClave": "Activar el toggle de regalo dentro del detalle del producto antes de agregarlo al carrito.",
+      "resultadoEsperado": "Orden emitida en estado ENVIADO con total neto de USD 167.20 y 2 botellas bonificadas."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Ferretería Los Andes en la ruta',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('andes') || (p.clientName || '').toLowerCase().includes('perez'),
-        errorMessage: 'Ese no es el cliente indicado. Busca a Ferretería Los Andes S.A.C.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Ferretería Los Andes",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('andes') || (p.clientName || '').toLowerCase().includes('perez'),
+        "errorMessage": "Selecciona a Ferretería Los Andes S.A.C."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita al cliente',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Debes presionar "Iniciar visita" para comenzar la atención.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Presiona \"Iniciar visita\"."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Registrar fotos obligatorias inicial y final',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Debes registrar ambas fotos obligatorias (inicial y final).'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra ambas fotos (inicial y final)."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar pedido (Contado, Lista 1, Lubricantes Shell)',
-        validate: (p) => p.paymentCondition === 'contado' && p.priceList === '1' && p.line === 'lubricantes' && p.brand === 'shell',
-        errorMessage: 'Configuración incorrecta. Revisa: Contado, Lista 1, Línea Lubricantes y Marca Shell.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configuración comercial",
+        "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '1' && p.line === 'lubricantes' && p.brand === 'shell',
+        "errorMessage": "Configura: Contado, Lista 1, Lubricantes Shell."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 8 baldes Shell Helix HX7 con regalo activado',
-        validate: (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 8 && Boolean(p.promoDiscount),
-        errorMessage: 'Debes seleccionar Shell Helix HX7 10W/40, cantidad 8 baldes y activar la promoción de regalo.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto con regalo",
+        "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 8 && Boolean(p.promoDiscount),
+        "errorMessage": "Agrega 8 baldes Shell Helix HX7 con la promoción de regalo activada."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden con 5% de descuento al contado',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Debes confirmar y enviar la orden de compra.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden de compra."
       }
     ]
   },
   {
-    id: 'case-2',
-    code: 'B2C-02',
-    title: 'Caso 2: Venta a crédito 30 días con descuento en dinero',
-    module: 'Ventas B2C',
-    client: 'Distribuidora Kanchis EIRL',
-    clientAddress: 'AV. INDUSTRIAL 104 - SOCABAYA',
-    paymentCondition: 'credito_30',
-    paymentConditionLabel: 'Crédito 30 días (3% desc.)',
-    priceList: 'OF',
-    line: 'neumaticos',
-    brand: 'michelin',
-    product: 'Michelin Energy XM2+ 195/60 R15',
-    unitPrice: 55.0,
-    expectedQty: 3,
-    promoDiscount: true,
-    promoType: 'discount',
-    promoDiscountAmount: 10.0,
-    promoLabel: '🎁 Descuento por Volumen (3+ cajas: -$10.00 USD)',
-    instructions: '1. Visitas: Inicia visita en Distribuidora Kanchis EIRL.\n2. Fotos: Registra fotos inicial y final obligatorias.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 3 cajas Energy XM2+ y activa el descuento de USD 10.\n5. Resumen: Verifica el 3% de crédito ($4.65) para un total de USD 150.35 y confirma.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-2",
+    "code": "B2C-02",
+    "title": "Caso 2: Venta a crédito 30 días con descuento en dinero",
+    "module": "Ventas B2C",
+    "client": "Distribuidora Kanchis EIRL",
+    "clientAddress": "AV. INDUSTRIAL 104 - SOCABAYA",
+    "paymentCondition": "credito_30",
+    "paymentConditionLabel": "Crédito 30 días (3% desc.)",
+    "priceList": "OF",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Energy XM2+ 195/60 R15",
+    "unitPrice": 55,
+    "expectedQty": 3,
+    "promoDiscount": true,
+    "promoType": "discount",
+    "promoDiscountAmount": 10,
+    "promoLabel": "🎁 Descuento por Volumen (3+ cajas: -$10.00 USD)",
+    "instructions": "1. Visitas: Inicia visita en Distribuidora Kanchis EIRL.\n2. Fotos: Registra fotos inicial y final obligatorias.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 3 cajas Energy XM2+ y activa el descuento de USD 10.\n5. Resumen: Verifica el 3% de crédito ($4.65) para un total de USD 150.35 y confirma.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Aplicar venta al crédito a 30 días con promoción de descuento comercial en dinero en línea Neumáticos.",
+      "pasoAPaso": [
+        "1. Seleccionar \"Distribuidora Kanchis EIRL\" en la ruta y pulsar \"Iniciar visita\".",
+        "2. Registrar fotos obligatorias de exhibición de local y continuar.",
+        "3. Configurar pedido: Crédito 30 días, Lista OF, Línea Neumáticos, Marca Michelin.",
+        "4. Seleccionar \"Michelin Energy XM2+ 195/60 R15\", cantidad 3 cajas y activar el toggle de Descuento por Volumen (-$10.00 USD).",
+        "5. En Resumen verificar: Subtotal 3×$55 = $165.00, menos promo $10 = $155.00 neto, menos 3% financiero ($4.65) = USD 150.35 total. Confirmar orden."
+      ],
+      "reglaNegocio": "El descuento financiero por plazo de pago (3% a 30 días) se calcula estrictamente sobre el subtotal neto posterior a los descuentos comerciales de volumen.",
+      "decisionClave": "Activar el descuento de USD 10 por 3 cajas y validar que el crédito aplique la tasa del 3%.",
+      "resultadoEsperado": "Total facturado neto de USD 150.35 a plazo de 30 días."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Distribuidora Kanchis EIRL',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('kanchis'),
-        errorMessage: 'Busca a Distribuidora Kanchis EIRL en el plan de visitas.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Distribuidora Kanchis",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('kanchis'),
+        "errorMessage": "Selecciona Distribuidora Kanchis EIRL."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Debes seleccionar "Iniciar visita".'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Presiona \"Iniciar visita\"."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Registrar fotos obligatorias',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Debes registrar ambas fotos (inicial y final).'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra ambas fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Crédito 30 días, Lista OF, Neumáticos Michelin',
-        validate: (p) => p.paymentCondition === 'credito_30' && p.priceList === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
-        errorMessage: 'Configuración incorrecta: Crédito 30 días, Lista OF, Neumáticos Michelin.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar crédito 30d OF Michelin",
+        "validate": (p) => p.paymentCondition === 'credito_30' && p.priceList === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
+        "errorMessage": "Configura: Crédito 30 días, Lista OF, Neumáticos Michelin."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 3 cajas Energy XM2+ con descuento de $10 USD',
-        validate: (p) => (p.product || '').toLowerCase().includes('energy') && Number(p.quantity) === 3 && Boolean(p.promoDiscount),
-        errorMessage: 'Debes seleccionar Michelin Energy XM2+, cantidad 3 cajas y activar el descuento de $10 USD.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 3 cajas con -$10 USD",
+        "validate": (p) => (p.product || '').toLowerCase().includes('energy') && Number(p.quantity) === 3 && Boolean(p.promoDiscount),
+        "errorMessage": "Agrega 3 cajas Energy XM2+ con el descuento de $10 USD activado."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden con total neto de USD 150.35',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Debes confirmar y enviar la orden de compra.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden de compra."
       }
     ]
   },
   {
-    id: 'case-3',
-    code: 'B2C-03',
-    title: 'Caso 3: Cliente corporativo B2B, crédito 60 días',
-    module: 'Ventas B2B',
-    client: 'Transportes del Sur SAC',
-    clientAddress: 'KM 12 VARIANTE DE UCHUMAYO',
-    paymentCondition: 'credito_60',
-    paymentConditionLabel: 'Crédito 60 días (1% desc.)',
-    priceList: 'EC',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Retinax HD2',
-    unitPrice: 320.0,
-    expectedQty: 1,
-    promoDiscount: false,
-    promoType: 'none',
-    promoLabel: 'Sin promoción aplicable',
-    instructions: '1. Inicia visita en Transportes del Sur SAC.\n2. Registra fotos obligatorias.\n3. Pedidos: Crea pedido a Crédito 60 días con Lista EC, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 1 cilindro Shell Retinax HD2 sin promoción.\n5. Resumen: Verifica el 1% de crédito ($3.20) para un total de USD 316.80 y confirma.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-3",
+    "code": "B2C-03",
+    "title": "Caso 3: Cliente corporativo B2B, crédito 60 días",
+    "module": "Ventas B2B",
+    "client": "Transportes del Sur SAC",
+    "clientAddress": "KM 12 VARIANTE DE UCHUMAYO",
+    "paymentCondition": "credito_60",
+    "paymentConditionLabel": "Crédito 60 días (1% desc.)",
+    "priceList": "EC",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Retinax HD2",
+    "unitPrice": 320,
+    "expectedQty": 1,
+    "promoDiscount": false,
+    "promoType": "none",
+    "promoLabel": "Sin promoción aplicable",
+    "instructions": "1. Inicia visita en Transportes del Sur SAC.\n2. Registra fotos obligatorias.\n3. Pedidos: Crea pedido a Crédito 60 días con Lista EC, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 1 cilindro Shell Retinax HD2 sin promoción.\n5. Resumen: Verifica el 1% de crédito ($3.20) para un total de USD 316.80 y confirma.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Atender una cuenta corporativa en zona industrial utilizando Lista Especial Corporativa (EC) a 60 días.",
+      "pasoAPaso": [
+        "1. Seleccionar a Transportes del Sur SAC en la ruta de Uchumayo e iniciar visita.",
+        "2. Capturar y guardar fotos de local.",
+        "3. Crear pedido configurando Crédito 60 días, Lista EC, Línea Lubricantes, Marca Shell.",
+        "4. Agregar 1 cilindro de Shell Retinax HD2 (55 Gal) sin promoción.",
+        "5. Verificar el total de USD 316.80 y confirmar orden."
+      ],
+      "reglaNegocio": "Cuentas corporativas asignadas a Lista EC tienen plazos autorizados de hasta 60 días. El pedido debe ser mono-línea.",
+      "decisionClave": "Seleccionar Lista EC y no Lista 1 o 2, respetando la categoría contractual del cliente.",
+      "resultadoEsperado": "Orden emitida a 60 días por USD 316.80."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Transportes del Sur SAC',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('transportes'),
-        errorMessage: 'Selecciona Transportes del Sur SAC.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Transportes del Sur SAC",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('transportes'),
+        "errorMessage": "Selecciona Transportes del Sur SAC."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos obligatorias',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita obligatorias.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Crédito 60 días, Lista EC, Lubricantes Shell',
-        validate: (p) => p.paymentCondition === 'credito_60' && p.priceList === 'EC' && p.line === 'lubricantes' && p.brand === 'shell',
-        errorMessage: 'Configura: Crédito 60 días, Lista EC, Línea Lubricantes y Marca Shell.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Crédito 60d Lista EC",
+        "validate": (p) => p.paymentCondition === 'credito_60' && p.priceList === 'EC' && p.line === 'lubricantes' && p.brand === 'shell',
+        "errorMessage": "Configura: Crédito 60 días, Lista EC, Lubricantes Shell."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 1 cilindro Retinax HD2 sin promo',
-        validate: (p) => (p.product || '').toLowerCase().includes('retinax') && Number(p.quantity) === 1,
-        errorMessage: 'Debes seleccionar Shell Retinax HD2, cantidad 1 y sin promo activada.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 1 cilindro Retinax",
+        "validate": (p) => (p.product || '').toLowerCase().includes('retinax') && Number(p.quantity) === 1,
+        "errorMessage": "Agrega 1 cilindro Shell Retinax HD2."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden de compra.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-4',
-    code: 'B2C-04',
-    title: 'Caso 4: [TRAMPA] Tracking de precio de competencia solo con foto',
-    module: 'Precios y Competencia',
-    client: 'Ferretería Los Andes S.A.C.',
-    clientAddress: 'AV. TOMAS TUYRUTUPAC 412',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '1',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix HX7 10W/40',
-    unitPrice: 22.0,
-    expectedQty: 2,
-    promoDiscount: false,
-    promoType: 'none',
-    instructions: '1. Inicia visita en Ferretería Los Andes S.A.C.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 2 baldes Helix HX7 y confirma el pedido.',
-    isTrap: true,
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 5, maxErrorsAllowed: 1, scale: 'vigesimal' },
-    rules: [
+    "id": "case-4",
+    "code": "B2C-04",
+    "title": "Caso 4: [TRAMPA] Tracking de precio de competencia solo con foto",
+    "module": "Precios y Competencia",
+    "client": "Ferretería Los Andes S.A.C.",
+    "clientAddress": "AV. TOMAS TUYRUTUPAC 412",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix HX7 10W/40",
+    "unitPrice": 22,
+    "expectedQty": 2,
+    "promoDiscount": false,
+    "promoType": "none",
+    "instructions": "1. Inicia visita en Ferretería Los Andes S.A.C.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 2 baldes Helix HX7 y confirma el pedido evitando dejar campos obligatorios en blanco.",
+    "isTrap": true,
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 5,
+      "maxErrorsAllowed": 1,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Identificar que en el registro de inteligencia de precios no basta con subir fotos; el valor numérico del competidor es un campo mandatorio en base de datos.",
+      "pasoAPaso": [
+        "1. Iniciar visita en Ferretería Los Andes S.A.C.",
+        "2. Registrar fotos de local obligatorias.",
+        "3. Configurar pedido a Contado, Lista 1, Lubricantes Shell.",
+        "4. Agregar 2 baldes Helix HX7 y verificar que todos los datos comerciales estén completos.",
+        "5. Confirmar y enviar la orden de compra."
+      ],
+      "reglaNegocio": "En el módulo de competencia (T4), adjuntar comprobante sin precio numérico no consolida la tarea en la base de datos de SOLAR.",
+      "decisionClave": "Completar el pedido regular sin omitir validaciones mandatorias.",
+      "resultadoEsperado": "Orden transmitida correctamente sin campos nulos."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar cliente Ferretería Los Andes',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('andes'),
-        errorMessage: 'Selecciona Ferretería Los Andes.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Ferretería Los Andes",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('andes'),
+        "errorMessage": "Selecciona Ferretería Los Andes."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita al cliente.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Registrar fotos obligatorias de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Debes registrar ambas fotos obligatorias.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Contado, Lista 1, Lubricantes Shell',
-        validate: (p) => p.paymentCondition === 'contado' && p.line === 'lubricantes',
-        errorMessage: 'Configura condición Contado y línea Lubricantes.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar pedido",
+        "validate": (p) => p.paymentCondition === 'contado' && p.line === 'lubricantes',
+        "errorMessage": "Configura condición Contado y línea Lubricantes."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar producto',
-        validate: (p) => Number(p.quantity) >= 1,
-        errorMessage: 'Agrega el producto requerido.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega el producto requerido."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-5',
-    code: 'B2C-05',
-    title: 'Caso 5: [TRAMPA] Cobranza sin consolidado al cierre',
-    module: 'Cobranzas',
-    client: 'Comercial Vega Hnos.',
-    clientAddress: 'CALLE MERCADERES 301',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '1',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix HX5 15W/40',
-    unitPrice: 20.0,
-    expectedQty: 2,
-    promoDiscount: false,
-    promoType: 'none',
-    instructions: '1. Inicia visita en Comercial Vega Hnos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 2 baldes Helix HX5 y confirma la orden.',
-    isTrap: true,
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 5, maxErrorsAllowed: 1, scale: 'vigesimal' },
-    rules: [
+    "id": "case-5",
+    "code": "B2C-05",
+    "title": "Caso 5: [TRAMPA] Cobranza sin consolidado al cierre",
+    "module": "Cobranzas",
+    "client": "Comercial Vega Hnos.",
+    "clientAddress": "CALLE MERCADERES 301",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix HX5 15W/40",
+    "unitPrice": 20,
+    "expectedQty": 2,
+    "promoDiscount": false,
+    "promoType": "none",
+    "instructions": "1. Inicia visita en Comercial Vega Hnos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 2 baldes Helix HX5 y confirma la orden completando el flujo formal.",
+    "isTrap": true,
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 5,
+      "maxErrorsAllowed": 1,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Evitar el error común de cerrar una visita con cobros en estado \"Reciente\" sin generar el documento de consolidado formal.",
+      "pasoAPaso": [
+        "1. Iniciar visita en Comercial Vega Hnos.",
+        "2. Tomar y registrar fotos inicial y final.",
+        "3. Configurar pedido a Contado, Lista 1, Lubricantes Shell.",
+        "4. Agregar 2 baldes Shell Helix HX5 15W/40.",
+        "5. Confirmar y enviar la orden consolidada."
+      ],
+      "reglaNegocio": "Los recibos electrónicos que no son consolidados en el cierre de visita quedan como borradores y no impactan la cuenta corriente en SOLAR.",
+      "decisionClave": "Completar y confirmar la transacción hasta obtener el estado \"Enviado\".",
+      "resultadoEsperado": "Transacción consolidada y enviada a servidor."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar cliente Comercial Vega Hnos.',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('vega'),
-        errorMessage: 'Busca a Comercial Vega Hnos.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Comercial Vega Hnos.",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('vega'),
+        "errorMessage": "Busca a Comercial Vega Hnos."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Registrar fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra ambas fotos requeridas.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra ambas fotos requeridas."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar pedido',
-        validate: (p) => Boolean(p.paymentCondition),
-        errorMessage: 'Selecciona condición de pago.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar pedido",
+        "validate": (p) => Boolean(p.paymentCondition),
+        "errorMessage": "Selecciona condición de pago."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar producto',
-        validate: (p) => Number(p.quantity) >= 1,
-        errorMessage: 'Agrega al menos 1 producto.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega al menos 1 producto."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-6',
-    code: 'B2C-06',
-    title: 'Caso 6: Consulta de nota de crédito histórica',
-    module: 'Documentos Electrónicos',
-    client: 'Comercial Vega Hnos.',
-    clientAddress: 'CALLE MERCADERES 301',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '1',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Rimula R4 X 15W-40',
-    unitPrice: 28.0,
-    expectedQty: 1,
-    promoDiscount: false,
-    promoType: 'none',
-    instructions: '1. Inicia visita en Comercial Vega Hnos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 1 balde Rimula R4 X y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-6",
+    "code": "B2C-06",
+    "title": "Caso 6: Consulta de nota de crédito histórica",
+    "module": "Documentos Electrónicos",
+    "client": "Comercial Vega Hnos.",
+    "clientAddress": "CALLE MERCADERES 301",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Rimula R4 X 15W-40",
+    "unitPrice": 28,
+    "expectedQty": 1,
+    "promoDiscount": false,
+    "promoType": "none",
+    "instructions": "1. Inicia visita en Comercial Vega Hnos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 1 balde Rimula R4 X y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Auditar la existencia de saldos a favor por Notas de Crédito previas antes de cerrar una nueva venta.",
+      "pasoAPaso": [
+        "1. Seleccionar Comercial Vega Hnos. e iniciar visita.",
+        "2. Registrar fotos de exhibición.",
+        "3. Configurar pedido a Contado con Lista 1, Lubricantes Shell.",
+        "4. Agregar 1 balde Rimula R4 X 15W-40.",
+        "5. Confirmar y enviar la orden de compra."
+      ],
+      "reglaNegocio": "Las notas de crédito emitidas figuran en el módulo de documentos electrónicos y reducen la deuda exigible.",
+      "decisionClave": "Configurar adecuadamente la lista de precios 1 autorizada para el cliente.",
+      "resultadoEsperado": "Orden emitida por USD 26.60 neto."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar a Comercial Vega Hnos.',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('vega'),
-        errorMessage: 'Selecciona a Comercial Vega Hnos.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Comercial Vega Hnos.",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('vega'),
+        "errorMessage": "Selecciona a Comercial Vega Hnos."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Presiona "Iniciar visita".'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Presiona \"Iniciar visita\"."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configuración comercial',
-        validate: (p) => Boolean(p.paymentCondition),
-        errorMessage: 'Configura la condición comercial.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configuración comercial",
+        "validate": (p) => Boolean(p.paymentCondition),
+        "errorMessage": "Configura la condición comercial."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar producto',
-        validate: (p) => Number(p.quantity) >= 1,
-        errorMessage: 'Selecciona el producto.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Selecciona el producto."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-7',
-    code: 'B2C-07',
-    title: 'Caso 7: Ver y compartir estado de cuenta',
-    module: 'Mis Clientes',
-    client: 'Grupo Ferretero Miraflores',
-    clientAddress: 'AV. SAN JERONIMO 210',
-    paymentCondition: 'credito_30',
-    paymentConditionLabel: 'Crédito 30 días (3% desc.)',
-    priceList: 'OF',
-    line: 'neumaticos',
-    brand: 'michelin',
-    product: 'Michelin Energy XM2+ 195/60 R15',
-    unitPrice: 55.0,
-    expectedQty: 2,
-    promoDiscount: false,
-    promoType: 'none',
-    instructions: '1. Inicia visita en Grupo Ferretero Miraflores.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Agrega 2 cajas Energy XM2+ y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-7",
+    "code": "B2C-07",
+    "title": "Caso 7: Ver y compartir estado de cuenta",
+    "module": "Mis Clientes",
+    "client": "Grupo Ferretero Miraflores",
+    "clientAddress": "AV. SAN JERONIMO 210",
+    "paymentCondition": "credito_30",
+    "paymentConditionLabel": "Crédito 30 días (3% desc.)",
+    "priceList": "OF",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Energy XM2+ 195/60 R15",
+    "unitPrice": 55,
+    "expectedQty": 2,
+    "promoDiscount": false,
+    "promoType": "none",
+    "instructions": "1. Inicia visita en Grupo Ferretero Miraflores.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Agrega 2 cajas Energy XM2+ y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Revisar la posición financiera del cliente en Mis Clientes y registrar un pedido al crédito autorizado.",
+      "pasoAPaso": [
+        "1. Localizar Grupo Ferretero Miraflores en visitas e iniciar atención.",
+        "2. Tomar y guardar fotos de visita.",
+        "3. Configurar pedido: Crédito 30 días, Lista OF, Neumáticos Michelin.",
+        "4. Agregar 2 cajas Energy XM2+.",
+        "5. Verificar el 3% de crédito ($3.30) para total USD 106.70 y confirmar."
+      ],
+      "reglaNegocio": "Compartir el estado de cuenta por WhatsApp formaliza la comunicación de deuda vencida y por vencer.",
+      "decisionClave": "Comprobar que el cliente cuenta con línea disponible antes de emitir a crédito.",
+      "resultadoEsperado": "Orden transmitida por USD 106.70."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Grupo Ferretero Miraflores',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('miraflores'),
-        errorMessage: 'Selecciona Grupo Ferretero Miraflores.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Grupo Ferretero Miraflores",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('miraflores'),
+        "errorMessage": "Selecciona Grupo Ferretero Miraflores."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Registrar fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra ambas fotos.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra ambas fotos."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar pedido crédito 30 días',
-        validate: (p) => p.paymentCondition === 'credito_30',
-        errorMessage: 'Selecciona Crédito 30 días.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar pedido crédito 30 días",
+        "validate": (p) => p.paymentCondition === 'credito_30',
+        "errorMessage": "Selecciona Crédito 30 días."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar producto',
-        validate: (p) => Number(p.quantity) >= 1,
-        errorMessage: 'Agrega el producto.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega el producto."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-8',
-    code: 'B2C-08',
-    title: 'Caso 8: Seguimiento de pedido emitido',
-    module: 'Pedidos',
-    client: 'Autopartes El Rápido',
-    clientAddress: 'JR. PIEROLA 540',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '1',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix Plus 10W-40',
-    unitPrice: 5.0,
-    expectedQty: 4,
-    promoDiscount: false,
-    promoType: 'none',
-    instructions: '1. Inicia visita en Autopartes El Rápido.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 4 botellas Helix Plus y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-8",
+    "code": "B2C-08",
+    "title": "Caso 8: Seguimiento de pedido emitido",
+    "module": "Pedidos",
+    "client": "Autopartes El Rápido",
+    "clientAddress": "JR. PIEROLA 540",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix Plus 10W-40",
+    "unitPrice": 5,
+    "expectedQty": 4,
+    "promoDiscount": false,
+    "promoType": "none",
+    "instructions": "1. Inicia visita en Autopartes El Rápido.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 4 botellas Helix Plus y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Emitir pedido y realizar la verificación de trazabilidad logística en el módulo Pedidos.",
+      "pasoAPaso": [
+        "1. Seleccionar Autopartes El Rápido e iniciar visita.",
+        "2. Completar fotos obligatorias.",
+        "3. Configurar Contado, Lista 1, Lubricantes Shell.",
+        "4. Agregar 4 botellas de Shell Helix Plus 10W-40 a USD 5.00 c/u.",
+        "5. Confirmar pedido con total neto de USD 19.00."
+      ],
+      "reglaNegocio": "El estado del pedido pasa secuencialmente por BORRADOR -> ENVIADO -> EN RUTA -> ENTREGADO.",
+      "decisionClave": "Configurar el pedido al contado con descuento del 5% sin agregar promociones no aplicables.",
+      "resultadoEsperado": "Orden registrada por USD 19.00."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Autopartes El Rápido',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('rapido') || (p.clientName || '').toLowerCase().includes('rápido'),
-        errorMessage: 'Selecciona Autopartes El Rápido.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Autopartes El Rápido",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('rapido') || (p.clientName || '').toLowerCase().includes('rápido'),
+        "errorMessage": "Selecciona Autopartes El Rápido."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Tomar fotos',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configuración comercial',
-        validate: (p) => Boolean(p.paymentCondition),
-        errorMessage: 'Configura la condición.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar pedido",
+        "validate": (p) => Boolean(p.paymentCondition),
+        "errorMessage": "Configura la condición."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar producto',
-        validate: (p) => Number(p.quantity) >= 1,
-        errorMessage: 'Agrega el producto.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega el producto."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-9',
-    code: 'B2C-09',
-    title: 'Caso 9: Venta con regalo por volumen (Lubricantes Shell)',
-    module: 'Ventas B2C',
-    client: 'Servicentro El Faro',
-    clientAddress: 'AV. DOLORES 880',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '2',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix HX7 10W/40',
-    unitPrice: 25.0,
-    expectedQty: 5,
-    promoDiscount: true,
-    promoType: 'gift',
-    promoLabel: '🎁 Regalo: 1 caja de botellas Shell Helix Plus',
-    instructions: '1. Inicia visita en Servicentro El Faro.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 2, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 5 baldes Helix HX7 y activa la promo de regalo.\n5. Resumen: Verifica el 5% de descuento al contado y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-9",
+    "code": "B2C-09",
+    "title": "Caso 9: Venta con regalo por volumen (Lubricantes Shell)",
+    "module": "Ventas B2C",
+    "client": "Servicentro El Faro",
+    "clientAddress": "AV. DOLORES 880",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "2",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix HX7 10W/40",
+    "unitPrice": 25,
+    "expectedQty": 5,
+    "promoDiscount": true,
+    "promoType": "gift",
+    "promoLabel": "🎁 Regalo: 1 caja de botellas Shell Helix Plus",
+    "instructions": "1. Inicia visita en Servicentro El Faro.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 2, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 5 baldes Helix HX7 y activa la promo de regalo.\n5. Resumen: Verifica el 5% de descuento al contado y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Aplicar escala de precios Lista 2 para servicentros con bonificación por compra de 5 baldes.",
+      "pasoAPaso": [
+        "1. Seleccionar Servicentro El Faro e iniciar visita.",
+        "2. Tomar fotos de exhibición.",
+        "3. Configurar Contado, Lista 2, Lubricantes Shell.",
+        "4. Agregar 5 baldes Helix HX7 a $25.00 c/u activando toggle de regalo.",
+        "5. Verificar total USD 118.75 (5×$25 = $125 - 5% = $118.75) y confirmar."
+      ],
+      "reglaNegocio": "La lista 2 tiene precios diferenciados para estaciones de servicio y lubricentros de alto giro.",
+      "decisionClave": "Seleccionar Lista 2 y activar la bonificación de regalo.",
+      "resultadoEsperado": "Orden emitida por USD 118.75 con bonificación registrada."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Servicentro El Faro',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('faro'),
-        errorMessage: 'Selecciona a Servicentro El Faro.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Servicentro El Faro",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('faro'),
+        "errorMessage": "Selecciona a Servicentro El Faro."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Registrar fotos',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar pedido (Contado, Lista 2, Lubricantes Shell)',
-        validate: (p) => p.paymentCondition === 'contado' && p.priceList === '2' && p.line === 'lubricantes' && p.brand === 'shell',
-        errorMessage: 'Configuración incorrecta: Contado, Lista 2, Lubricantes Shell.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Contado Lista 2 Shell",
+        "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '2' && p.line === 'lubricantes' && p.brand === 'shell',
+        "errorMessage": "Configura: Contado, Lista 2, Lubricantes Shell."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 5 baldes Helix HX7 con promo regalo',
-        validate: (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 5 && Boolean(p.promoDiscount),
-        errorMessage: 'Agrega 5 baldes Shell Helix HX7 y activa la promoción de regalo.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 5 baldes con regalo",
+        "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 5 && Boolean(p.promoDiscount),
+        "errorMessage": "Agrega 5 baldes Helix HX7 con la promoción de regalo activada."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-10',
-    code: 'B2C-10',
-    title: 'Caso 10: Pedido corporativo grande a crédito 45 días',
-    module: 'Ventas B2B',
-    client: 'Minera Andina Contratistas SAC',
-    clientAddress: 'PARQUE INDUSTRIAL MZ. C LOTE 4',
-    paymentCondition: 'credito_45',
-    paymentConditionLabel: 'Crédito 45 días (2% desc.)',
-    priceList: 'EC',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Retinax HD2',
-    unitPrice: 350.0,
-    expectedQty: 2,
-    promoDiscount: true,
-    promoType: 'discount',
-    promoDiscountAmount: 40.0,
-    promoLabel: '🎁 Descuento por Volumen: -$40.00 USD',
-    instructions: '1. Inicia visita en Minera Andina Contratistas SAC.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 45 días con Lista EC, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 2 cilindros Retinax HD2 y activa el descuento de $40 USD.\n5. Resumen: Verifica el 2% de crédito ($13.20) para total USD 646.80 y confirma.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-10",
+    "code": "B2C-10",
+    "title": "Caso 10: Pedido corporativo grande a crédito 45 días",
+    "module": "Ventas B2B",
+    "client": "Minera Andina Contratistas SAC",
+    "clientAddress": "PARQUE INDUSTRIAL MZ. C LOTE 4",
+    "paymentCondition": "credito_45",
+    "paymentConditionLabel": "Crédito 45 días (2% desc.)",
+    "priceList": "EC",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Retinax HD2",
+    "unitPrice": 350,
+    "expectedQty": 2,
+    "promoDiscount": true,
+    "promoType": "discount",
+    "promoDiscountAmount": 40,
+    "promoLabel": "🎁 Descuento por Volumen: -$40.00 USD",
+    "instructions": "1. Inicia visita en Minera Andina Contratistas SAC.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 45 días con Lista EC, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 2 cilindros Retinax HD2 y activa el descuento de $40 USD.\n5. Resumen: Verifica el 2% de crédito ($13.20) para total USD 646.80 y confirma.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Tramitar compra a crédito de gran volumen para cliente minero aplicando descuento comercial aprovisionado.",
+      "pasoAPaso": [
+        "1. Seleccionar Minera Andina Contratistas SAC en Parque Industrial e iniciar visita.",
+        "2. Registrar fotos de control de visita.",
+        "3. Configurar Crédito 45 días, Lista EC, Lubricantes Shell.",
+        "4. Agregar 2 cilindros Retinax HD2 a $350 c/u con descuento de $40 USD activado.",
+        "5. Verificar cálculo: 2×$350 = $700 - $40 = $660 neto, menos 2% crédito ($13.20) = USD 646.80. Confirmar orden."
+      ],
+      "reglaNegocio": "Descuentos aprovisionados en compras industriales requieren validación previa del supervisor comercial.",
+      "decisionClave": "Configurar Crédito 45 días con Lista EC y aplicar el descuento de $40.",
+      "resultadoEsperado": "Orden emitida por USD 646.80 a 45 días."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Minera Andina Contratistas SAC',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('minera') || (p.clientName || '').toLowerCase().includes('andina'),
-        errorMessage: 'Selecciona Minera Andina Contratistas SAC.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Minera Andina",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('minera') || (p.clientName || '').toLowerCase().includes('andina'),
+        "errorMessage": "Selecciona Minera Andina Contratistas SAC."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos obligatorias',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Crédito 45 días Lista EC Lubricantes Shell',
-        validate: (p) => p.paymentCondition === 'credito_45' && p.priceList === 'EC' && p.line === 'lubricantes' && p.brand === 'shell',
-        errorMessage: 'Configura: Crédito 45 días, Lista EC, Línea Lubricantes y Marca Shell.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Crédito 45d Lista EC",
+        "validate": (p) => p.paymentCondition === 'credito_45' && p.priceList === 'EC' && p.line === 'lubricantes' && p.brand === 'shell',
+        "errorMessage": "Configura: Crédito 45 días, Lista EC, Lubricantes Shell."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 2 cilindros con descuento por volumen',
-        validate: (p) => (p.product || '').toLowerCase().includes('retinax') && Number(p.quantity) === 2 && Boolean(p.promoDiscount),
-        errorMessage: 'Agrega 2 cilindros Shell Retinax HD2 y activa el descuento de $40 USD.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 2 cilindros con -$40",
+        "validate": (p) => (p.product || '').toLowerCase().includes('retinax') && Number(p.quantity) === 2 && Boolean(p.promoDiscount),
+        "errorMessage": "Agrega 2 cilindros Retinax con descuento de $40 USD."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-11',
-    code: 'B2C-11',
-    title: 'Caso 11: Cliente nuevo, primera compra con lista OF',
-    module: 'Ventas B2C',
-    client: 'Repuestos Central Chincha',
-    clientAddress: 'CALLE LIMA 420',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: 'OF',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix Plus 10W-40',
-    unitPrice: 5.0,
-    expectedQty: 3,
-    promoDiscount: false,
-    promoType: 'none',
-    promoLabel: 'Sin promoción aplicable',
-    instructions: '1. Inicia visita en Repuestos Central Chincha.\n2. Registra las fotos de visita obligatorias.\n3. Pedidos: Crea pedido a Contado con Lista OF (cliente nuevo), línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 3 botellas Shell Helix Plus.\n5. Resumen: Verifica el 5% de descuento al contado (USD 14.25) y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-11",
+    "code": "B2C-11",
+    "title": "Caso 11: Cliente nuevo, primera compra con lista OF",
+    "module": "Ventas B2C",
+    "client": "Repuestos Central Chincha",
+    "clientAddress": "CALLE LIMA 420",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "OF",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix Plus 10W-40",
+    "unitPrice": 5,
+    "expectedQty": 3,
+    "promoDiscount": false,
+    "promoType": "none",
+    "promoLabel": "Sin promoción aplicable",
+    "instructions": "1. Inicia visita en Repuestos Central Chincha.\n2. Registra las fotos de visita obligatorias.\n3. Pedidos: Crea pedido a Contado con Lista OF (cliente nuevo), línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 3 botellas Shell Helix Plus.\n5. Resumen: Verifica el 5% de descuento al contado (USD 14.25) y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Atender la primera compra de un cliente recién incorporado sin historial crediticio asignando Lista OF.",
+      "pasoAPaso": [
+        "1. Seleccionar a Repuestos Central Chincha e iniciar visita.",
+        "2. Registrar fotos de fachada y exhibición.",
+        "3. Configurar Contado con Lista OF (Oficina/estándar), Lubricantes Shell.",
+        "4. Agregar 3 botellas Shell Helix Plus 10W-40.",
+        "5. Verificar total neto USD 14.25 (3×$5 = $15 - 5% = $14.25) y confirmar orden."
+      ],
+      "reglaNegocio": "Clientes nuevos sin evaluación crediticia operan obligatoriamente bajo Lista OF al Contado.",
+      "decisionClave": "Asignar Lista OF por defecto según política de clientes sin historial.",
+      "resultadoEsperado": "Orden emitida por USD 14.25."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Repuestos Central Chincha',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('chincha') || (p.clientName || '').toLowerCase().includes('central'),
-        errorMessage: 'Selecciona Repuestos Central Chincha.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Repuestos Central Chincha",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('chincha') || (p.clientName || '').toLowerCase().includes('central'),
+        "errorMessage": "Selecciona Repuestos Central Chincha."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Contado Lista OF Lubricantes Shell',
-        validate: (p) => p.paymentCondition === 'contado' && p.priceList === 'OF' && p.line === 'lubricantes' && p.brand === 'shell',
-        errorMessage: 'Configuración incorrecta: Contado, Lista OF, Lubricantes Shell.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Contado Lista OF",
+        "validate": (p) => p.paymentCondition === 'contado' && p.priceList === 'OF' && p.line === 'lubricantes' && p.brand === 'shell',
+        "errorMessage": "Configura: Contado, Lista OF, Lubricantes Shell."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 3 botellas Helix Plus',
-        validate: (p) => (p.product || '').toLowerCase().includes('plus') && Number(p.quantity) === 3,
-        errorMessage: 'Agrega 3 botellas Shell Helix Plus 10W-40.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 3 botellas Helix Plus",
+        "validate": (p) => (p.product || '').toLowerCase().includes('plus') && Number(p.quantity) === 3,
+        "errorMessage": "Agrega 3 botellas Shell Helix Plus."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-12',
-    code: 'B2C-12',
-    title: 'Caso 12: Repuestos sin promoción aplicable',
-    module: 'Ventas B2C',
-    client: 'Taller Hyundai Express',
-    clientAddress: 'AV. PARRA 314',
-    paymentCondition: 'credito_15',
-    paymentConditionLabel: 'Crédito 15 días (4% desc.)',
-    priceList: '1',
-    line: 'repuestos',
-    brand: 'hyundai',
-    product: 'Disco de Freno HD35',
-    unitPrice: 40.0,
-    expectedQty: 2,
-    promoDiscount: false,
-    promoType: 'none',
-    promoLabel: 'Repuestos no participan de promociones',
-    instructions: '1. Inicia visita en Taller Hyundai Express.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 15 días con Lista 1, línea Repuestos, marca Hyundai.\n4. Catálogo: Agrega 2 unidades Disco de Freno HD35 sin promoción.\n5. Resumen: Verifica el 4% de crédito ($3.20) para total USD 76.80 y confirma.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-12",
+    "code": "B2C-12",
+    "title": "Caso 12: Repuestos sin promoción aplicable",
+    "module": "Ventas B2C",
+    "client": "Taller Hyundai Express",
+    "clientAddress": "AV. PARRA 314",
+    "paymentCondition": "credito_15",
+    "paymentConditionLabel": "Crédito 15 días (4% desc.)",
+    "priceList": "1",
+    "line": "repuestos",
+    "brand": "hyundai",
+    "product": "Disco de Freno HD35",
+    "unitPrice": 40,
+    "expectedQty": 2,
+    "promoDiscount": false,
+    "promoType": "none",
+    "promoLabel": "Repuestos no participan de promociones",
+    "instructions": "1. Inicia visita en Taller Hyundai Express.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 15 días con Lista 1, línea Repuestos, marca Hyundai.\n4. Catálogo: Agrega 2 unidades Disco de Freno HD35 sin promoción.\n5. Resumen: Verifica el 4% de crédito ($3.20) para total USD 76.80 y confirma.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Reconocer que la línea Repuestos opera con márgenes técnicos y no participa de promociones de volumen ni bonificaciones.",
+      "pasoAPaso": [
+        "1. Seleccionar Taller Hyundai Express e iniciar visita.",
+        "2. Registrar fotos de control de local.",
+        "3. Configurar Crédito 15 días, Lista 1, Línea Repuestos, Marca Hyundai.",
+        "4. Agregar 2 unidades de Disco de Freno HD35 sin intentar activar promociones.",
+        "5. Verificar el 4% de descuento financiero ($3.20) para un total de USD 76.80 y confirmar orden."
+      ],
+      "reglaNegocio": "La línea de repuestos originales no admite promociones comerciales de volumen en el catálogo de UYAPAY.",
+      "decisionClave": "No activar promociones en repuestos y validar la tasa de crédito 15 días (4%).",
+      "resultadoEsperado": "Orden emitida por USD 76.80."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Taller Hyundai Express',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('hyundai') || (p.clientName || '').toLowerCase().includes('express'),
-        errorMessage: 'Selecciona Taller Hyundai Express.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Taller Hyundai Express",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('hyundai') || (p.clientName || '').toLowerCase().includes('express'),
+        "errorMessage": "Selecciona Taller Hyundai Express."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Crédito 15 días Lista 1 Repuestos Hyundai',
-        validate: (p) => p.paymentCondition === 'credito_15' && p.priceList === '1' && p.line === 'repuestos' && p.brand === 'hyundai',
-        errorMessage: 'Configura: Crédito 15 días, Lista 1, Línea Repuestos y Marca Hyundai.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Crédito 15d Repuestos",
+        "validate": (p) => p.paymentCondition === 'credito_15' && p.priceList === '1' && p.line === 'repuestos' && p.brand === 'hyundai',
+        "errorMessage": "Configura: Crédito 15 días, Lista 1, Repuestos Hyundai."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 2 discos de freno sin promo',
-        validate: (p) => (p.product || '').toLowerCase().includes('freno') && Number(p.quantity) === 2,
-        errorMessage: 'Agrega 2 unidades de Disco de Freno HD35 sin promoción.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 2 discos sin promo",
+        "validate": (p) => (p.product || '').toLowerCase().includes('freno') && Number(p.quantity) === 2,
+        "errorMessage": "Agrega 2 unidades de Disco de Freno HD35 sin promoción."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-13',
-    code: 'B2C-13',
-    title: 'Caso 13: [TRAMPA] Condición de pago mal aplicada',
-    module: 'Ventas B2C',
-    client: 'Comercial San Martín',
-    clientAddress: 'CALLE SAN MARTIN 112',
-    paymentCondition: 'credito_30',
-    paymentConditionLabel: 'Crédito 30 días (3% desc.)',
-    priceList: 'OF',
-    line: 'neumaticos',
-    brand: 'michelin',
-    product: 'Michelin Energy XM2+ 195/60 R15',
-    unitPrice: 55.0,
-    expectedQty: 2,
-    promoDiscount: false,
-    promoType: 'none',
-    instructions: '1. Inicia visita en Comercial San Martín.\n2. Registra fotos obligatorias.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 2 cajas Energy XM2+.\n5. Resumen: Verifica que el descuento financiero corresponda al 3% ($3.30) y confirma la orden.',
-    isTrap: true,
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 5, maxErrorsAllowed: 1, scale: 'vigesimal' },
-    rules: [
+    "id": "case-13",
+    "code": "B2C-13",
+    "title": "Caso 13: [TRAMPA] Condición de pago mal aplicada",
+    "module": "Ventas B2C",
+    "client": "Comercial San Martín",
+    "clientAddress": "CALLE SAN MARTIN 112",
+    "paymentCondition": "credito_30",
+    "paymentConditionLabel": "Crédito 30 días (3% desc.)",
+    "priceList": "OF",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Energy XM2+ 195/60 R15",
+    "unitPrice": 55,
+    "expectedQty": 2,
+    "promoDiscount": false,
+    "promoType": "none",
+    "instructions": "1. Inicia visita en Comercial San Martín.\n2. Registra fotos obligatorias.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 2 cajas Energy XM2+.\n5. Resumen: Verifica que el descuento financiero corresponda al 3% ($3.30) y confirma la orden.",
+    "isTrap": true,
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 5,
+      "maxErrorsAllowed": 1,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Auditar los cálculos financieros en el resumen del pedido para evitar discrepancias de tasas entre Contado (5%) y Crédito 30d (3%).",
+      "pasoAPaso": [
+        "1. Seleccionar Comercial San Martín en el plan de visitas e iniciar visita.",
+        "2. Completar fotos de visita.",
+        "3. Configurar Crédito 30 días, Lista OF, Neumáticos Michelin.",
+        "4. Agregar 2 cajas Michelin Energy XM2+.",
+        "5. Verificar rigurosamente en el resumen que el descuento financiero sea del 3% ($3.30) y no del 5% antes de enviar."
+      ],
+      "reglaNegocio": "La tasa de descuento de Crédito 30 días es de 3%. Un error de tasa genera rechazo en facturación central.",
+      "decisionClave": "Verificar el cálculo financiero en el resumen previo a la confirmación.",
+      "resultadoEsperado": "Orden transmitida con total neto de USD 106.70."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Comercial San Martín',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('martin') || (p.clientName || '').toLowerCase().includes('martín'),
-        errorMessage: 'Busca a Comercial San Martín en visitas.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Comercial San Martín",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('martin') || (p.clientName || '').toLowerCase().includes('martín'),
+        "errorMessage": "Busca a Comercial San Martín en visitas."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Crédito 30 días Lista OF Neumáticos Michelin',
-        validate: (p) => p.paymentCondition === 'credito_30' && p.priceList === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
-        errorMessage: 'Configura: Crédito 30 días, Lista OF, Neumáticos Michelin.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Crédito 30d OF Michelin",
+        "validate": (p) => p.paymentCondition === 'credito_30' && p.priceList === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
+        "errorMessage": "Configura: Crédito 30 días, Lista OF, Neumáticos Michelin."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 2 cajas Energy XM2+',
-        validate: (p) => (p.product || '').toLowerCase().includes('energy') && Number(p.quantity) === 2,
-        errorMessage: 'Agrega 2 cajas Michelin Energy XM2+.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 2 cajas Energy XM2+",
+        "validate": (p) => (p.product || '').toLowerCase().includes('energy') && Number(p.quantity) === 2,
+        "errorMessage": "Agrega 2 cajas Michelin Energy XM2+."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden verificando 3% de crédito',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden de compra.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden de compra."
       }
     ]
   },
   {
-    id: 'case-14',
-    code: 'B2C-14',
-    title: 'Caso 14: Venta B2B con descuento por volumen y crédito 60 días',
-    module: 'Ventas B2B',
-    client: 'Constructora Vial Perú SAC',
-    clientAddress: 'AV. ALFONSO UGARTE 780',
-    paymentCondition: 'credito_60',
-    paymentConditionLabel: 'Crédito 60 días (1% desc.)',
-    priceList: 'EC',
-    line: 'neumaticos',
-    brand: 'michelin',
-    product: 'Michelin Latitude Tour HP',
-    unitPrice: 48.0,
-    expectedQty: 6,
-    promoDiscount: true,
-    promoType: 'discount',
-    promoDiscountAmount: 15.0,
-    promoLabel: '🎁 Descuento por Volumen B2B (5+ cajas: -$15.00 USD)',
-    instructions: '1. Inicia visita en Constructora Vial Perú SAC.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 60 días con Lista EC, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 6 cajas Latitude Tour HP y activa el descuento de $15 USD.\n5. Resumen: Verifica el 1% de crédito ($2.73) para un total de USD 270.27 y confirma.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-14",
+    "code": "B2C-14",
+    "title": "Caso 14: Venta B2B con descuento por volumen y crédito 60 días",
+    "module": "Ventas B2B",
+    "client": "Constructora Vial Perú SAC",
+    "clientAddress": "AV. ALFONSO UGARTE 780",
+    "paymentCondition": "credito_60",
+    "paymentConditionLabel": "Crédito 60 días (1% desc.)",
+    "priceList": "EC",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Latitude Tour HP",
+    "unitPrice": 48,
+    "expectedQty": 6,
+    "promoDiscount": true,
+    "promoType": "discount",
+    "promoDiscountAmount": 15,
+    "promoLabel": "🎁 Descuento por Volumen B2B (5+ cajas: -$15.00 USD)",
+    "instructions": "1. Inicia visita en Constructora Vial Perú SAC.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 60 días con Lista EC, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 6 cajas Latitude Tour HP y activa el descuento de $15 USD.\n5. Resumen: Verifica el 1% de crédito ($2.73) para un total de USD 270.27 y confirma.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Combinar escala B2B corporativa con promoción de volumen y plazo extendido de 60 días en neumáticos para flotas.",
+      "pasoAPaso": [
+        "1. Seleccionar Constructora Vial Perú SAC e iniciar visita.",
+        "2. Registrar fotos obligatorias de visita.",
+        "3. Configurar Crédito 60 días, Lista EC, Neumáticos Michelin.",
+        "4. Agregar 6 cajas Latitude Tour HP a $48.00 c/u y activar descuento de $15 USD por volumen.",
+        "5. Verificar cálculo: 6×$48 = $288 - $15 = $273 neto, menos 1% crédito ($2.73) = USD 270.27. Confirmar orden."
+      ],
+      "reglaNegocio": "Cuentas B2B pueden combinar descuentos de escala corporativa con promociones específicas de línea.",
+      "decisionClave": "Activar el descuento de $15 USD y verificar la tasa del 1% a 60 días.",
+      "resultadoEsperado": "Orden emitida por USD 270.27 a 60 días."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Constructora Vial Perú SAC',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('constructora') || (p.clientName || '').toLowerCase().includes('vial'),
-        errorMessage: 'Selecciona Constructora Vial Perú SAC.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Constructora Vial",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('constructora') || (p.clientName || '').toLowerCase().includes('vial'),
+        "errorMessage": "Selecciona Constructora Vial Perú SAC."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Crédito 60 días Lista EC Neumáticos Michelin',
-        validate: (p) => p.paymentCondition === 'credito_60' && p.priceList === 'EC' && p.line === 'neumaticos' && p.brand === 'michelin',
-        errorMessage: 'Configura: Crédito 60 días, Lista EC, Neumáticos Michelin.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Crédito 60d Lista EC",
+        "validate": (p) => p.paymentCondition === 'credito_60' && p.priceList === 'EC' && p.line === 'neumaticos' && p.brand === 'michelin',
+        "errorMessage": "Configura: Crédito 60 días, Lista EC, Neumáticos Michelin."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 6 cajas con promo de $15 activada',
-        validate: (p) => (p.product || '').toLowerCase().includes('latitude') && Number(p.quantity) === 6 && Boolean(p.promoDiscount),
-        errorMessage: 'Agrega 6 cajas Michelin Latitude Tour HP y activa el descuento de $15 USD.'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 6 cajas con -$15 USD",
+        "validate": (p) => (p.product || '').toLowerCase().includes('latitude') && Number(p.quantity) === 6 && Boolean(p.promoDiscount),
+        "errorMessage": "Agrega 6 cajas Michelin Latitude Tour HP y activa el descuento de $15 USD."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
       }
     ]
   },
   {
-    id: 'case-15',
-    code: 'B2C-15',
-    title: 'Caso 15: Revisión de historial de visitas antes de nueva venta',
-    module: 'Ventas B2C',
-    client: 'Bodega y Ferretería Dos Hermanos',
-    clientAddress: 'CALLE DEAN VALDIVIA 509',
-    paymentCondition: 'contado',
-    paymentConditionLabel: 'Contado (5% desc.)',
-    priceList: '1',
-    line: 'lubricantes',
-    brand: 'shell',
-    product: 'Shell Helix HX5 15W/40',
-    unitPrice: 20.0,
-    expectedQty: 4,
-    promoDiscount: false,
-    promoType: 'none',
-    promoLabel: 'Sin promoción (ya entregada en visita previa)',
-    instructions: '1. Inicia visita en Bodega y Ferretería Dos Hermanos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 4 baldes Shell Helix HX5 SIN activar regalo (ya fue entregado en el mes).\n5. Resumen: Verifica el 5% de descuento al contado (USD 76.00) y confirma la orden.',
-    active: true,
-    scoring: { maxScore: 20, penaltyPerError: 4, maxErrorsAllowed: 2, scale: 'vigesimal' },
-    rules: [
+    "id": "case-15",
+    "code": "B2C-15",
+    "title": "Caso 15: Revisión de historial de visitas antes de nueva venta",
+    "module": "Ventas B2C",
+    "client": "Bodega y Ferretería Dos Hermanos",
+    "clientAddress": "CALLE DEAN VALDIVIA 509",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix HX5 15W/40",
+    "unitPrice": 20,
+    "expectedQty": 4,
+    "promoDiscount": false,
+    "promoType": "none",
+    "promoLabel": "Sin promoción (ya entregada en visita previa)",
+    "instructions": "1. Inicia visita en Bodega y Ferretería Dos Hermanos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 4 baldes Shell Helix HX5 SIN activar regalo (ya fue entregado en el mes).\n5. Resumen: Verifica el 5% de descuento al contado (USD 76.00) y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Validar en el historial de visitas que el cliente ya recibió su regalo mensual por volumen, evitando duplicidad indebida de bonificaciones.",
+      "pasoAPaso": [
+        "1. Seleccionar Bodega y Ferretería Dos Hermanos e iniciar visita.",
+        "2. Registrar fotos de local.",
+        "3. Configurar Contado, Lista 1, Lubricantes Shell.",
+        "4. Agregar 4 baldes Shell Helix HX5 15W/40 sin activar promoción de regalo.",
+        "5. Verificar total neto USD 76.00 (4×$20 = $80 - 5% = $76.00) y confirmar orden."
+      ],
+      "reglaNegocio": "Las promociones de regalo por volumen tienen un tope de 1 entrega por mes por cliente.",
+      "decisionClave": "No activar el toggle de regalo en el catálogo tras constatar la entrega previa en el historial.",
+      "resultadoEsperado": "Orden emitida por USD 76.00 sin duplicar bonificación."
+    },
+    "rules": [
       {
-        stepIndex: 0,
-        eventName: 'SELECT_CLIENT',
-        description: 'Seleccionar Bodega y Ferretería Dos Hermanos',
-        validate: (p) => (p.clientName || '').toLowerCase().includes('hermanos'),
-        errorMessage: 'Selecciona Bodega y Ferretería Dos Hermanos.'
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Bodega Dos Hermanos",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('hermanos'),
+        "errorMessage": "Selecciona Bodega y Ferretería Dos Hermanos."
       },
       {
-        stepIndex: 1,
-        eventName: 'SELECT_ACTION',
-        description: 'Iniciar visita',
-        validate: (p) => p.action === 'iniciar',
-        errorMessage: 'Inicia la visita.'
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
       },
       {
-        stepIndex: 2,
-        eventName: 'SAVE_PHOTOS',
-        description: 'Fotos de visita',
-        validate: (p) => p.initialPhoto && p.finalPhoto,
-        errorMessage: 'Registra las fotos de visita.'
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
       },
       {
-        stepIndex: 3,
-        eventName: 'CREATE_ORDER_CONFIG',
-        description: 'Configurar Contado Lista 1 Lubricantes Shell',
-        validate: (p) => p.paymentCondition === 'contado' && p.priceList === '1' && p.line === 'lubricantes' && p.brand === 'shell',
-        errorMessage: 'Configuración incorrecta: Contado, Lista 1, Lubricantes Shell.'
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Contado Lista 1",
+        "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '1' && p.line === 'lubricantes' && p.brand === 'shell',
+        "errorMessage": "Configura: Contado, Lista 1, Lubricantes Shell."
       },
       {
-        stepIndex: 4,
-        eventName: 'ADD_PRODUCT',
-        description: 'Agregar 4 baldes Helix HX5 sin regalo duplicado',
-        validate: (p) => (p.product || '').toLowerCase().includes('hx5') && Number(p.quantity) === 4 && !p.promoDiscount,
-        errorMessage: 'Agrega 4 baldes Shell Helix HX5 SIN activar promoción de regalo (ya fue entregada en visita previa).'
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 4 baldes HX5 sin regalo",
+        "validate": (p) => (p.product || '').toLowerCase().includes('hx5') && Number(p.quantity) === 4 && !p.promoDiscount,
+        "errorMessage": "Agrega 4 baldes Shell Helix HX5 SIN activar promoción de regalo."
       },
       {
-        stepIndex: 5,
-        eventName: 'SUBMIT_ORDER',
-        description: 'Confirmar orden',
-        validate: (p) => p.confirmed === true,
-        errorMessage: 'Confirma la orden.'
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden."
+      }
+    ]
+  },
+  {
+    "id": "case-16",
+    "code": "B2C-16",
+    "title": "Caso 16: [GPS] Intento de inicio presencial a >50m y bypass por visita telefónica",
+    "module": "Visitas y Georreferenciación",
+    "client": "Distribuidora Kanchis EIRL",
+    "clientAddress": "AV. INDUSTRIAL 104 - SOCABAYA",
+    "paymentCondition": "credito_30",
+    "paymentConditionLabel": "Crédito 30 días (3% desc.)",
+    "priceList": "OF",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Energy XM2+ 195/60 R15",
+    "unitPrice": 55,
+    "expectedQty": 2,
+    "isPhoneVisit": true,
+    "instructions": "1. Visitas: Intenta iniciar visita presencial en Distribuidora Kanchis EIRL.\n2. GPS: Al encontrarse a 250m (>50m de geocerca), el sistema restringe el inicio presencial. Selecciona la modalidad \"Visita Telefónica\" (isPhoneVisit) para continuar legalmente.\n3. Pedidos: Configura Crédito 30 días, Lista OF, Neumáticos Michelin.\n4. Catálogo: Agrega 2 cajas Energy XM2+.\n5. Resumen: Verifica las condiciones comerciales y confirma la orden telefónica.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Comprender la restricción de geocerca GPS de 50 metros (visit_validations.dart) y el bypass operativo formal mediante visita telefónica.",
+      "pasoAPaso": [
+        "1. En el Plan de Visitas pulsar sobre \"Distribuidora Kanchis EIRL\" y seleccionar \"Iniciar visita\".",
+        "2. Ante la advertencia de geocerca (ubicación a más de 50m), no intentar falsear la presencia presencial: seleccionar la opción \"Iniciar Visita Telefónica (Llamada)\".",
+        "3. El sistema activa el flag isPhoneVisit=true y permite el acceso directo al cliente.",
+        "4. Configurar pedido: Crédito 30 días, Lista OF, Neumáticos Michelin.",
+        "5. Agregar 2 cajas Energy XM2+ y confirmar la orden de compra telefónica."
+      ],
+      "reglaNegocio": "Según visit_validations.dart (maxDistanceInMeters = 50), las visitas presenciales requieren proximidad estricta. Si el asesor atiende en remoto o por llamada, debe registrar formalmente como Visita Telefónica (visitTypeId = 2), lo cual desactiva el bloqueo de geocerca.",
+      "decisionClave": "Activar la modalidad de Visita Telefónica en lugar de forzar el inicio presencial fuera de rango.",
+      "resultadoEsperado": "Visita iniciada y orden registrada formalmente como atención telefónica."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Distribuidora Kanchis",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('kanchis'),
+        "errorMessage": "Selecciona Distribuidora Kanchis EIRL."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Presiona \"Iniciar visita\"."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "SELECT_VISIT_TYPE",
+        "description": "Activar Visita Telefónica",
+        "validate": (p) => p.visitType === 'telefonica' || p.isPhoneVisit === true,
+        "errorMessage": "Debes seleccionar \"Visita Telefónica\" para operar a distancia de forma autorizada."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar pedido Crédito 30d",
+        "validate": (p) => p.paymentCondition === 'credito_30' && p.line === 'neumaticos',
+        "errorMessage": "Configura: Crédito 30 días, Línea Neumáticos."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 2 cajas Energy XM2+",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega las cajas de Energy XM2+ requeridas."
+      },
+      {
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden telefónica",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden de compra."
+      }
+    ]
+  },
+  {
+    "id": "case-17",
+    "code": "B2C-17",
+    "title": "Caso 17: [Tareas] Cierre de visita con justificación formal de no emisión de pedido (T5)",
+    "module": "Visitas y Tareas",
+    "client": "Comercial Vega Hnos.",
+    "clientAddress": "CALLE MERCADERES 301",
+    "instructions": "1. Visitas: Inicia visita en Comercial Vega Hnos.\n2. Fotos: Registra fotos obligatorias de fachada y góndola.\n3. Tareas: El cliente no puede realizar compras hoy por descarga de contenedores. Abre \"¿Por qué no completó la tarea?\" en Pedidos (T5) y selecciona \"Cliente muy ocupado\".\n4. Cierre: Finaliza la visita formalmente con la justificación registrada sin abandonar la ruta.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Manejar la justificación estructurada de tareas obligatorias incompletas (IncompleteVisitTaskPanel) para cerrar visitas sin penalización comercial.",
+      "pasoAPaso": [
+        "1. Seleccionar Comercial Vega Hnos. e iniciar visita presencial.",
+        "2. Capturar y guardar las fotos de visita obligatorias.",
+        "3. En el menú de tareas de visita pulsar sobre \"¿Por qué no completó la tarea?\".",
+        "4. Seleccionar el motivo oficial: \"Cliente muy ocupado\" y presionar \"Guardar Justificación y Finalizar\".",
+        "5. El sistema registra el cierre formal de la visita cumpliendo el 100% de la pauta de ruta."
+      ],
+      "reglaNegocio": "La tarea T5 (\"Asesorar en el proceso de pedido\") es obligatoria (15%). Si el cliente no compra, el asesor no debe abandonar la app ni forzar un pedido falso; debe seleccionar un motivo de la tabla visit_task para no afectar su porcentaje de cumplimiento.",
+      "decisionClave": "Seleccionar \"Cliente muy ocupado\" en el panel de justificación de tareas incompletas.",
+      "resultadoEsperado": "Visita finalizada en verde con justificación formal transmitida al supervisor."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Comercial Vega Hnos.",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('vega'),
+        "errorMessage": "Selecciona Comercial Vega Hnos."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Presiona \"Iniciar visita\"."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos obligatorias."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "JUSTIFY_INCOMPLETE_TASK",
+        "description": "Justificar tarea incompleta",
+        "validate": (p) => p.taskId === 'T5' || (p.reason || '').toLowerCase().includes('ocupado'),
+        "errorMessage": "Debes seleccionar el motivo \"Cliente muy ocupado\" para justificar la no emisión de pedido."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "FINISH_VISIT",
+        "description": "Finalizar visita",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la finalización de la visita."
+      }
+    ]
+  },
+  {
+    "id": "case-18",
+    "code": "B2C-18",
+    "title": "Caso 18: [Cotización] Registro de propuesta comercial formal como Cotización (Tipo 3)",
+    "module": "Pedidos y Cotizaciones",
+    "client": "Grupo Ferretero Miraflores",
+    "clientAddress": "AV. SAN JERONIMO 210",
+    "paymentCondition": "credito_30",
+    "paymentConditionLabel": "Crédito 30 días (3% desc.)",
+    "priceList": "OF",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Energy XM2+ 195/60 R15",
+    "unitPrice": 55,
+    "expectedQty": 2,
+    "instructions": "1. Visitas: Inicia visita en Grupo Ferretero Miraflores.\n2. Fotos: Registra fotos obligatorias.\n3. Pedidos: Configura Crédito 30 días, Lista OF, Neumáticos Michelin.\n4. Catálogo: Agrega 2 cajas Energy XM2+.\n5. Resumen: El decisor de compra no está para firmar; presiona \"📄 Guardar como Cotización (Tipo 3)\" para registrar la propuesta formal sin comprometer stock ni línea de crédito de forma prematura.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Distinguir entre Orden de Compra (Tipo 2) y Cotización (Tipo 3) en el cierre de ventas según el nivel de compromiso del cliente.",
+      "pasoAPaso": [
+        "1. Iniciar visita en Grupo Ferretero Miraflores y capturar fotos.",
+        "2. Configurar pedido: Crédito 30 días, Lista OF, Neumáticos Michelin.",
+        "3. Agregar 2 cajas Michelin Energy XM2+.",
+        "4. En el Resumen de Orden, pulsar el botón secundario: \"📄 Guardar como Cotización (Tipo 3)\".",
+        "5. Verificar que el documento quede registrado como Cotización sin consumir línea de crédito disponible."
+      ],
+      "reglaNegocio": "Emitir una Orden de Compra reserva inventario físico en almacén y reduce el saldo de crédito del cliente. Cuando la propuesta está en evaluación, la política UYAPAY exige emitir una Cotización (documentTypeId = 3), la cual puede ser convertida a orden definitiva en una visita posterior.",
+      "decisionClave": "Presionar \"Guardar como Cotización (Tipo 3)\" en lugar de \"Actualizar Orden de Compra\".",
+      "resultadoEsperado": "Cotización guardada exitosamente en el módulo de pedidos."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Grupo Ferretero Miraflores",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('miraflores'),
+        "errorMessage": "Selecciona Grupo Ferretero Miraflores."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configuración comercial",
+        "validate": (p) => p.paymentCondition === 'credito_30' && p.line === 'neumaticos',
+        "errorMessage": "Configura Crédito 30 días y Neumáticos."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar producto",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega las 2 cajas de neumáticos."
+      },
+      {
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Guardar como Cotización",
+        "validate": (p) => p.confirmed === true && (p.documentType === 'cotizacion' || p.documentTypeId === 3),
+        "errorMessage": "Debes presionar \"Guardar como Cotización (Tipo 3)\"."
+      }
+    ]
+  },
+  {
+    "id": "case-19",
+    "code": "B2C-19",
+    "title": "Caso 19: [Cobranzas] Cobranza mixta de facturas (Efectivo + Depósito con voucher)",
+    "module": "Cobranzas",
+    "client": "Taller Hyundai Express",
+    "clientAddress": "AV. PARRA 314",
+    "instructions": "1. Visitas: Inicia visita en Taller Hyundai Express.\n2. Fotos: Registra fotos de visita.\n3. Cobranza: Ingresa a \"3. Cobranza de facturas / Letras\".\n4. Pagos: Registra USD 200.00 en Efectivo y USD 150.00 en Depósito Bancario con foto de voucher.\n5. Consolidado: Emite y confirma los recibos provisionales de cobranza.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Procesar un cobro mixto aplicando pagos fraccionados en efectivo y depósito bancario con sustento fotográfico de voucher.",
+      "pasoAPaso": [
+        "1. Iniciar visita en Taller Hyundai Express y tomar fotos.",
+        "2. En el menú de tareas pulsar sobre \"💰 3. Cobranza de facturas / Letras\".",
+        "3. En el formulario de cobranza registrar: Pago en Efectivo USD 200.00 y Pago en Depósito USD 150.00 (adjuntando foto del comprobante de transferencia).",
+        "4. Presionar \"Emitir Recibos Provisionales Consolidados\".",
+        "5. Validar la emisión de ambos recibos electrónicos en la pestaña \"Recientes\"."
+      ],
+      "reglaNegocio": "UYAPAY permite amortizaciones multi-medio. Todo abono bancario requiere obligatoriamente foto del voucher de depósito para su posterior validación en tesorería.",
+      "decisionClave": "Registrar ambos medios de pago y confirmar la emisión consolidada de recibos provisionales.",
+      "resultadoEsperado": "Recaudación registrada por USD 350.00 con comprobante bancario validado."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Taller Hyundai Express",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('hyundai') || (p.clientName || '').toLowerCase().includes('express'),
+        "errorMessage": "Selecciona Taller Hyundai Express."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos obligatorias."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "COLLECT_DEBTS",
+        "description": "Registrar cobro mixto",
+        "validate": (p) => Number(p.cashAmount) > 0 && Number(p.depositAmount) > 0,
+        "errorMessage": "Registra tanto el cobro en efectivo como el depósito bancario."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "CONFIRM_RECEIPTS",
+        "description": "Confirmar recibos provisionales",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la emisión consolidada de recibos."
+      }
+    ]
+  },
+  {
+    "id": "case-20",
+    "code": "B2C-20",
+    "title": "Caso 20: [Promociones] Exclusión mutua de promociones del mismo combo (Condición 4000)",
+    "module": "Ventas B2C",
+    "client": "Servicentro El Faro",
+    "clientAddress": "AV. DOLORES 880",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "2",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix HX7 10W/40",
+    "unitPrice": 25,
+    "expectedQty": 5,
+    "promoDiscount": true,
+    "promoType": "gift",
+    "instructions": "1. Inicia visita en Servicentro El Faro.\n2. Registra fotos obligatorias.\n3. Configura Contado, Lista 2, Lubricantes Shell.\n4. Catálogo: Agrega 5 baldes Helix HX7 y activa la promoción oficial de regalo sin seleccionar combos excluyentes (Condición 4000).\n5. Resumen: Verifica el total neto y confirma la orden de compra.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Aplicar la regla de exclusión mutua de promociones (condición 4000 del motor de pedidos) donde no se pueden acumular dos beneficios del mismo paquete promocional.",
+      "pasoAPaso": [
+        "1. Seleccionar Servicentro El Faro e iniciar visita.",
+        "2. Tomar fotos de exhibición.",
+        "3. Configurar pedido: Contado, Lista 2, Lubricantes Shell.",
+        "4. En el catálogo agregar 5 baldes Shell Helix HX7 y activar la promoción de regalo oficial.",
+        "5. No intentar marcar descuentos directos en dinero incompatibles del mismo paquete (evitando error 400). Confirmar orden."
+      ],
+      "reglaNegocio": "Según OrderCustomerController.cs:4543 (condition_4000), las promociones agrupadas en un mismo promotion_package son mutuamente excluyentes (Count <= 1). Intentar activar bono en producto más descuento en dinero de la misma campaña es rechazado por el backend.",
+      "decisionClave": "Activar únicamente la promoción autorizada sin solapar incentivos incompatibles.",
+      "resultadoEsperado": "Orden confirmada válidamente con el beneficio oficial aplicado."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar Servicentro El Faro",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('faro'),
+        "errorMessage": "Selecciona Servicentro El Faro."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos obligatorias."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar Contado Lista 2",
+        "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '2',
+        "errorMessage": "Configura Contado con Lista 2."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 5 baldes con promo oficial",
+        "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 5 && Boolean(p.promoDiscount),
+        "errorMessage": "Agrega 5 baldes Shell Helix HX7 con la promoción oficial activada."
+      },
+      {
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden de compra."
+      }
+    ]
+  },
+  {
+    "id": "case-21",
+    "code": "B2C-21",
+    "title": "Caso 21: [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día",
+    "module": "Plan de Visitas",
+    "client": "Distribuidora Kanchis EIRL",
+    "clientAddress": "AV. INDUSTRIAL 104 - SOCABAYA",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "OF",
+    "line": "neumaticos",
+    "brand": "michelin",
+    "product": "Michelin Energy XM2+ 195/60 R15",
+    "unitPrice": 55,
+    "expectedQty": 1,
+    "instructions": "1. Plan de Visitas: En la barra superior de filtros presiona \"Deuda vencida\" para filtrar la cartera morosa del día.\n2. Identifica al cliente moroso resaltado: Distribuidora Kanchis EIRL.\n3. Abre las opciones y consulta el perfil crediticio (Deuda vencida: USD 840.00).\n4. Inicia la visita presencial y toma fotos.\n5. Pedidos: Realiza venta a Contado para no incrementar el saldo vencido y confirma la orden.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Utilizar las herramientas de inteligencia de ruta para filtrar clientes con morosidad vencida (over_due_date en SellerController) y aplicar política de venta al contado.",
+      "pasoAPaso": [
+        "1. En la pantalla principal de Visitas (s-visitas), deslizar la barra de filtros y presionar la pastilla \"Deuda vencida\".",
+        "2. El sistema filtra la lista mostrando a Distribuidora Kanchis EIRL con badge de alerta morosa (USD 840.00).",
+        "3. Pulsar sobre el cliente para auditar su perfil crediticio.",
+        "4. Iniciar visita presencial y registrar fotos obligatorias.",
+        "5. Por política de control de riesgo ante deuda vencida, configurar pedido a Contado (Lista OF) y confirmar orden."
+      ],
+      "reglaNegocio": "El endpoint /Seller/visit_plans/seller/{id}/v2?over_due_date=true ejecuta un CTE sobre v_app_movement_debts aislando los clientes con mora vencida. Ante deuda vencida no subsanada, la app restringe nuevos créditos.",
+      "decisionClave": "Filtrar por \"Deuda vencida\" al inicio de ruta y cotizar al contado para evitar bloqueo financiero.",
+      "resultadoEsperado": "Cartera morosa auditada y orden procesada al contado."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "SELECT_FILTER",
+        "description": "Filtrar por Deuda Vencida",
+        "validate": (p) => p.filter === 'deuda_vencida',
+        "errorMessage": "En la barra superior debes presionar la pastilla \"Deuda vencida\"."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_CLIENT",
+        "description": "Seleccionar cliente con deuda",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('kanchis'),
+        "errorMessage": "Selecciona a Distribuidora Kanchis EIRL."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "VIEW_DEBTS",
+        "description": "Consultar perfil de deuda",
+        "validate": (p) => p.verified === true || p.viewed === true,
+        "errorMessage": "Consulta el perfil crediticio y el saldo moroso del cliente."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita al cliente."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos de visita",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
+      },
+      {
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden al contado",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden de compra."
+      }
+    ]
+  },
+  {
+    "id": "case-22",
+    "code": "B2C-22",
+    "title": "Caso 22: [Fuera de Ruta] Alta de visita fuera de ruta para despacho urgente en zona",
+    "module": "Plan de Visitas",
+    "client": "Autopartes El Rápido",
+    "clientAddress": "JR. PIEROLA 540",
+    "paymentCondition": "contado",
+    "paymentConditionLabel": "Contado (5% desc.)",
+    "priceList": "1",
+    "line": "lubricantes",
+    "brand": "shell",
+    "product": "Shell Helix Plus 10W-40",
+    "unitPrice": 5,
+    "expectedQty": 4,
+    "instructions": "1. Visitas: En la parte inferior del plan presiona \"➕ Agregar visita fuera de ruta\".\n2. En el modal selecciona a \"Autopartes El Rápido\" con dirección \"JR. PIEROLA 540\" y confirma el alta.\n3. Inicia la visita fuera de ruta y toma las fotos obligatorias.\n4. Pedidos: Configura Contado, Lista 1, Lubricantes Shell y agrega 4 botellas Helix Plus.\n5. Confirma la orden fuera de ruta.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 4,
+      "maxErrorsAllowed": 2,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Incorporar una atención no programada en el día (NewOutRoutVisitFormPage) vinculando cliente de cartera, dirección fiscal y tareas asignadas.",
+      "pasoAPaso": [
+        "1. En el Plan de Visitas presionar el botón \"➕ Agregar visita fuera de ruta\".",
+        "2. En el formulario seleccionar: Cliente = Autopartes El Rápido, Dirección = JR. PIEROLA 540, Marcar Tareas de Pedidos y Fotos. Presionar \"Registrar Visita Fuera de Ruta\".",
+        "3. El cliente se inserta en el plan del día. Seleccionar \"Iniciar visita\".",
+        "4. Tomar fotos de exhibición.",
+        "5. Configurar pedido al Contado (Lista 1, Shell Helix Plus 4 botellas) y confirmar orden."
+      ],
+      "reglaNegocio": "Las visitas fuera de ruta permiten atender contingencias de clientes de cartera sin alterar la programación semanal de SOLAR, quedando registradas con el flag out_route = true.",
+      "decisionClave": "Crear la visita fuera de ruta con la dirección correspondiente antes de intentar emitir el pedido.",
+      "resultadoEsperado": "Visita fuera de ruta incorporada y pedido emitido con éxito."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "CREATE_OUT_ROUTE_VISIT",
+        "description": "Crear visita fuera de ruta",
+        "validate": (p) => (p.clientName || '').toLowerCase().includes('rapido') || (p.clientName || '').toLowerCase().includes('rápido'),
+        "errorMessage": "Crea la visita fuera de ruta para Autopartes El Rápido."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SELECT_ACTION",
+        "description": "Iniciar visita fuera de ruta",
+        "validate": (p) => p.action === 'iniciar',
+        "errorMessage": "Inicia la visita."
+      },
+      {
+        "stepIndex": 2,
+        "eventName": "SAVE_PHOTOS",
+        "description": "Fotos obligatorias",
+        "validate": (p) => p.initialPhoto && p.finalPhoto,
+        "errorMessage": "Registra las fotos de visita."
+      },
+      {
+        "stepIndex": 3,
+        "eventName": "CREATE_ORDER_CONFIG",
+        "description": "Configurar pedido Contado",
+        "validate": (p) => p.paymentCondition === 'contado' && p.line === 'lubricantes',
+        "errorMessage": "Configura Contado y Lubricantes."
+      },
+      {
+        "stepIndex": 4,
+        "eventName": "ADD_PRODUCT",
+        "description": "Agregar 4 botellas",
+        "validate": (p) => Number(p.quantity) >= 1,
+        "errorMessage": "Agrega las botellas de lubricante."
+      },
+      {
+        "stepIndex": 5,
+        "eventName": "SUBMIT_ORDER",
+        "description": "Confirmar orden",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Confirma la orden fuera de ruta."
+      }
+    ]
+  },
+  {
+    "id": "case-23",
+    "code": "B2C-23",
+    "title": "Caso 23: [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada",
+    "module": "Liquidación de Ventas",
+    "client": "Liquidación General de Ruta",
+    "instructions": "1. Visitas: Al término del día presiona \"📊 Liquidación de cobranza diaria\".\n2. Revisa el arqueo consolidado: total recaudado en efectivo (Soles y Dólares), depósitos bancarios y control de recibos anulados.\n3. Presiona \"Confirmar y Cerrar Arqueo Diario\" para transmitir el cierre de jornada a SOLAR.",
+    "active": true,
+    "scoring": {
+      "maxScore": 20,
+      "penaltyPerError": 5,
+      "maxErrorsAllowed": 1,
+      "scale": "vigesimal"
+    },
+    "solutionFlow": {
+      "objetivo": "Ejecutar el proceso formal de liquidación de cobranza (SalesSettlement) al cierre de la jornada operativa antes de la entrega de valores en agencia.",
+      "pasoAPaso": [
+        "1. En el Plan de Visitas presionar el botón \"📊 Liquidación de cobranza diaria\".",
+        "2. En el panel de liquidación auditar los subtotales: Efectivo Soles/Dólares, Depósitos bancarios validados y verificación de cero recibos pendientes de envío.",
+        "3. Revisar el porcentaje de cumplimiento del objetivo de recuperación de deuda.",
+        "4. Presionar \"Confirmar y Cerrar Arqueo Diario\"."
+      ],
+      "reglaNegocio": "El cierre de liquidación (sales_settlement) consolida todos los recibos electrónicos emitidos en el día por el vendedor, generando el balance de cuadre de caja obligatorio para tesorería.",
+      "decisionClave": "Auditar los totales y confirmar el cierre definitivo de liquidación.",
+      "resultadoEsperado": "Liquidación diaria cerrada y transmitida sin descuadres a tesorería."
+    },
+    "rules": [
+      {
+        "stepIndex": 0,
+        "eventName": "VIEW_SETTLEMENT",
+        "description": "Abrir liquidación diaria",
+        "validate": (p) => p.viewed === true,
+        "errorMessage": "Abre el panel de \"Liquidación de cobranza diaria\"."
+      },
+      {
+        "stepIndex": 1,
+        "eventName": "SUBMIT_SETTLEMENT",
+        "description": "Confirmar y cerrar liquidación",
+        "validate": (p) => p.confirmed === true,
+        "errorMessage": "Presiona \"Confirmar y Cerrar Arqueo Diario\"."
       }
     ]
   }

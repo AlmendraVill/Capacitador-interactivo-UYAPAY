@@ -190,6 +190,128 @@
 6. Completar → verificar que el total solo incluya el 5% de descuento por contado
 7. Confirmación → Actualizar orden de compra → Finalizar visita
 
+
+---
+
+## Caso 16 — [GPS] Intento de inicio presencial a >50m y bypass por visita telefónica
+
+**Objetivo:** Comprender la restricción de geocerca GPS de 50 metros (`visit_validations.dart`) y el bypass operativo formal mediante visita telefónica (`isPhoneVisit`).
+
+1. **Visitas** → seleccionar cliente (ej. Distribuidora Kanchis EIRL) → **Iniciar visita**.
+2. **Validación Geocerca GPS:** El sistema detecta que el smartphone se encuentra a 250m (>50m de geocerca) y despliega la advertencia restrictiva.
+3. El asesor no debe falsear la georreferenciación presencial; selecciona formalmente **"Iniciar Visita Telefónica (isPhoneVisit)"** (`visitTypeId = 2`).
+4. Se habilita el acceso a la ficha del cliente con la modalidad telefónica registrada en auditoría.
+5. **Pedidos** → + Crear pedido o cotización → Crédito 30 días → Lista **OF**.
+6. Línea de negocio: **Neumáticos** → Marca: **Michelin** → Agregar 2 cajas Energy XM2+.
+7. Confirmar y emitir la orden de compra telefónica.
+**Regla técnica:** `visit_validations.dart:8 (maxDistanceInMeters = 50)`. Las visitas presenciales quedan bloqueadas fuera de radio; la atención remota debe tipificarse como visita telefónica oficial.
+
+---
+
+## Caso 17 — [Tareas] Cierre de visita con justificación formal de no emisión de pedido (T5)
+
+**Objetivo:** Manejar la justificación estructurada de tareas obligatorias incompletas (`IncompleteVisitTaskPanel`) para cerrar visitas sin penalización comercial cuando el cliente no realiza compras.
+
+1. **Visitas** → seleccionar Comercial Vega Hnos. → **Iniciar visita**.
+2. **Fotos:** Registrar fotos obligatorias de fachada y góndola (Inicial / Final) → Guardar.
+3. El cliente no puede realizar pedidos por descarga operativa de mercadería.
+4. En el menú de tareas de la visita, pulsar sobre **"⚠️ ¿Por qué no completó la tarea?"** correspondiente a la tarea T5 ("Asesorar en el proceso de pedido").
+5. Seleccionar el motivo oficial: **"Cliente muy ocupado"** (o "Decisor ausente" / "Stock completo" según corresponda).
+6. Presionar **"💾 Guardar Justificación y Finalizar Visita"**.
+**Regla técnica:** La tarea T5 tiene una ponderación del 15% y es obligatoria en ruta. Si el asesor abandona la app sin justificar formalmente en la tabla `visit_task`, su cumplimiento cae. Justificar formalmente permite cerrar la visita al 100% de cumplimiento.
+
+---
+
+## Caso 18 — [Cotización] Registro de propuesta comercial formal como Cotización (Tipo 3)
+
+**Objetivo:** Distinguir entre Orden de Compra (Tipo 2) y Cotización (Tipo 3) en el cierre de ventas según el nivel de compromiso del cliente, protegiendo stock y saldo crediticio.
+
+1. **Visitas** → Grupo Ferretero Miraflores → **Iniciar visita** → Registrar fotos obligatorias.
+2. **Pedidos** → + Crear pedido o cotización → Crédito 30 días → Lista **OF**.
+3. Línea de negocio: **Neumáticos** → Marca: **Michelin** → Agregar 2 cajas Energy XM2+.
+4. En la pantalla **Resumen de Orden**, ante la ausencia del decisor final para firmar la compra, presionar: **"📄 Guardar como Cotización (Tipo 3)"** en lugar de actualizar la orden de compra.
+5. El sistema registra el documento bajo `documentTypeId = 3` en estado borrador/vigente.
+**Regla técnica:** Una Orden de Compra (`documentTypeId = 2`) reserva inventario en el ERP y compromete la línea de crédito. La Cotización (`documentTypeId = 3`) formaliza precios y plazos sin bloquear cupo comercial hasta su confirmación.
+
+---
+
+## Caso 19 — [Cobranzas] Cobranza mixta de facturas (Efectivo + Depósito con voucher)
+
+**Objetivo:** Procesar una recaudación mixta aplicando pagos fraccionados en efectivo y depósito bancario con sustento fotográfico de voucher conforme a la política de créditos y cobranzas.
+
+1. **Visitas** → Taller Hyundai Express → **Iniciar visita** → Registrar fotos de local.
+2. Menú de tareas → **"💰 3. Cobranza de facturas / Letras"**.
+3. Seleccionar factura vencida por USD 350.00.
+4. En el formulario de cobranza registrar:
+   - **Monto Efectivo:** USD 200.00
+   - **Monto Depósito / Transferencia:** USD 150.00
+   - **Adjunto:** Cargar fotografía obligatoria del comprobante/voucher de transferencia bancaria (`voucher.jpg`).
+5. Presionar **"💰 Emitir Recibos Provisionales Consolidados"**.
+6. Validar que ambos recibos queden emitidos en estado formal para su posterior rendición a tesorería.
+**Regla técnica:** Todo cobro que involucre transferencia bancaria o depósito exige foto de voucher en la app móvil para que tesorería concilie el abono en cuenta.
+
+---
+
+## Caso 20 — [Promociones] Exclusión mutua de promociones del mismo combo (Condición 4000)
+
+**Objetivo:** Aplicar la regla de exclusión mutua de promociones (condición 4000 del backend) donde no se pueden acumular dos beneficios de un mismo paquete promocional.
+
+1. **Visitas** → Servicentro El Faro → **Iniciar visita** → Fotos obligatorias.
+2. **Pedidos** → Contado (5% desc.) → Lista **2** → Línea: **Lubricantes** → Marca: **Shell**.
+3. **Catálogo:** Agregar 5 baldes Shell Helix HX7 10W/40.
+4. Activar el toggle de la **promoción oficial de regalo** (ej. botellas Shell Helix Plus).
+5. **Decisión clave:** NO intentar forzar simultáneamente descuentos directos en dinero incompatibles del mismo paquete promocional para evitar que el backend rechace la transacción por incompatibilidad (Condición 4000).
+6. Revisar el total a facturar y presionar **"Actualizar Orden de Compra y Enviar"**.
+**Regla técnica:** `OrderCustomerController.cs:4543` valida que para paquetes con `condition_id == 4000`, la cantidad de promociones seleccionadas sea `<= 1`. Infringir esto genera un error HTTP 400 de negocio.
+
+---
+
+## Caso 21 — [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día
+
+**Objetivo:** Utilizar las herramientas de inteligencia de ruta para filtrar clientes con morosidad vencida (`over_due_date` en `SellerController`) y aplicar política de venta al contado.
+
+1. **Plan de Visitas (s-visitas):** En la barra horizontal de filtros superiores, presionar la pastilla **"Deuda vencida"** (`over_due_date = true`).
+2. El sistema filtra dinámicamente la cartera del día, aislando a los clientes con mora (ej. Distribuidora Kanchis EIRL con saldo moroso de USD 840.00).
+3. Presionar sobre el cliente y seleccionar **"Consultar perfil / deuda vencida"** para auditar el importe y días de atraso.
+4. **Iniciar visita presencial** y registrar fotos obligatorias.
+5. Por política de riesgo ante deuda vencida no subsanada, cotizar el nuevo pedido a condición **Contado** (Lista OF).
+6. Confirmar y emitir la orden de compra.
+**Regla técnica:** `SellerController.cs:1387` ejecuta un CTE sobre `v_app_movement_debts` filtrando exclusivamente cuentas con saldo vencido cuando `over_due_date = true`. Un cliente con mora vencida no es elegible para pedidos a crédito.
+
+---
+
+## Caso 22 — [Fuera de Ruta] Alta de visita fuera de ruta para despacho urgente en zona
+
+**Objetivo:** Incorporar una atención comercial no programada en el día (`NewOutRoutVisitFormPage`) vinculando cliente de cartera, dirección fiscal y tareas asignadas sin alterar el plan maestro.
+
+1. **Plan de Visitas:** En la parte inferior de la lista presionar el botón **"➕ Agregar visita fuera de ruta"**.
+2. En el modal de alta:
+   - **Cliente:** Seleccionar "Autopartes El Rápido".
+   - **Dirección:** Verificar dirección fiscal "JR. PIEROLA 540".
+   - **Tareas:** Asignar fotos, pedidos y cobranza.
+3. Presionar **"➕ Registrar Visita Fuera de Ruta"**. El cliente queda agregado con etiqueta dorada "FUERA DE RUTA".
+4. Seleccionar al cliente e **Iniciar visita** → Registrar fotos obligatorias.
+5. **Pedidos:** Configurar Contado, Lista 1, Lubricantes Shell → Agregar 4 botellas Shell Helix Plus 10W-40.
+6. Confirmar y enviar la orden de compra fuera de ruta.
+**Regla técnica:** Las visitas fuera de ruta permiten atender contingencias sin romper la programación de ruta periódica de SOLAR, quedando registradas con el flag `out_route = true`.
+
+---
+
+## Caso 23 — [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada
+
+**Objetivo:** Ejecutar el proceso formal de liquidación de cobranza (`SalesSettlement`) al cierre de la jornada operativa antes de la entrega de valores en tesorería.
+
+1. **Plan de Visitas:** Al término de la ruta presionar el botón **"📊 Liquidación de cobranza diaria"**.
+2. En el arqueo consolidado auditar:
+   - Recaudación Efectivo Soles: S/ 1,480.00
+   - Recaudación Efectivo Dólares: USD 200.00
+   - Depósitos Bancarios con Voucher: USD 150.00
+   - Recibos pendientes de envío: 0 (todos transmitidos a SOLAR)
+   - Recibos anulados: 0
+3. Presionar **"🔒 Confirmar y Cerrar Arqueo Diario"**.
+4. El sistema transmite el cierre contable a SOLAR y bloquea modificaciones en los recibos de la fecha.
+**Regla técnica:** El módulo `sales_settlement.dart` consolida todos los recibos emitidos durante la jornada. Un arqueo cerrado exitosamente cuadra los valores físicos con el libro de bancos de tesorería.
+
 ---
 
 ## Nota para el evaluador

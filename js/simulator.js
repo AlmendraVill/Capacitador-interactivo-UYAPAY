@@ -1,6 +1,8 @@
 /**
  * Controlador del Simulador Móvil UYAPAY
  * Soporta Catálogo Dinámico Multi-Marca (Shell, Michelin, BFGoodrich, Hyundai)
+ * Soporta Flujos Borde: GPS Bypass telefónico, justificación de tareas incompletas, cotizaciones tipo 3,
+ * cobranza mixta con voucher, exclusión mutua de promociones, filtro de deuda vencida, visitas fuera de ruta y liquidación.
  * Totalmente desacoplado: emite eventos hacia el Evaluador sin calcular notas internamente.
  */
 
@@ -11,6 +13,7 @@
     currentTabIndex: 0,
     selectedClient: '',
     photos: { 1: false, 2: false },
+    isPhoneVisit: false,
     orderConfig: {
       paymentCondition: '',
       priceList: '',
@@ -91,7 +94,6 @@
     const currentCase = getCaseData();
     if (!currentCase) return;
 
-    // Inicializar estado del carrito por defecto con los valores del caso
     state.selectedClient = currentCase.client;
     state.cart = {
       productId: '',
@@ -131,7 +133,8 @@
         { name: 'Transportes del Sur SAC', address: 'KM 12 VARIANTE UCHUMAYO' },
         { name: 'Grupo Ferretero Miraflores', address: 'AV. SAN JERONIMO 210' },
         { name: 'Autopartes El Rápido', address: 'JR. PIEROLA 540' },
-        { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' }
+        { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' },
+        { name: 'Taller Hyundai Express', address: 'AV. PARRA 314' }
       ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
 
       let html = `
@@ -172,7 +175,39 @@
     navigateTo('s-visitas');
   }
 
-  // 3. Visitas y Opciones
+  // 3. Filtros del Plan de Visitas
+  function selectFilter(filterKey) {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    const pillMap = {
+      'todos': 'pill-todos',
+      'deuda_vencida': 'pill-deuda',
+      'sin_visita': 'pill-sin-visita',
+      'sin_compra': 'pill-sin-compra',
+      'documentos': 'pill-documentos'
+    };
+    const targetPill = document.getElementById(pillMap[filterKey] || 'pill-todos');
+    if (targetPill) targetPill.classList.add('active');
+
+    emitSimulatorEvent('SELECT_FILTER', { filter: filterKey });
+
+    const listContainer = document.getElementById('client-list-cards');
+    if (listContainer && filterKey === 'deuda_vencida') {
+      listContainer.innerHTML = `
+        <div class="client-card" style="border-left: 4px solid #e74c3c;" onclick="window.UyapaySimulator.openOptions('Distribuidora Kanchis EIRL')">
+          <div class="pin" style="color:#e74c3c;">⚠️</div>
+          <div>
+            <div class="client-name">DISTRIBUIDORA KANCHIS EIRL <span style="background:#e74c3c; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">DEUDA VENCIDA</span></div>
+            <div class="client-address">AV. INDUSTRIAL 104 - Saldo Moroso: USD 840.00</div>
+          </div>
+        </div>
+      `;
+      showHint('Filtro aplicado: Clientes con deuda vencida.', false);
+    } else if (filterKey === 'todos') {
+      initializeCaseEnvironment();
+    }
+  }
+
+  // 4. Visitas y Opciones del Cliente
   function openClientOptions(clientName) {
     state.selectedClient = clientName;
     const modal = document.getElementById('optionsModal');
@@ -189,6 +224,12 @@
   function selectOption(actionKey) {
     closeClientOptions();
 
+    if (actionKey === 'ver_deuda') {
+      emitSimulatorEvent('VIEW_DEBTS', { verified: true, viewed: true, clientName: state.selectedClient });
+      showHint(`Perfil auditado: ${state.selectedClient} registra saldo moroso vencido de USD 840.00.`, false);
+      return;
+    }
+
     // 1. Notificar selección del cliente
     emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
 
@@ -196,13 +237,192 @@
     emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
 
     if (actionKey === 'iniciar') {
+      if (state.currentCaseId === 'case-16') {
+        openGpsModal();
+        return;
+      }
       const cliHeader = document.getElementById('cli-nombre-header');
       if (cliHeader) cliHeader.textContent = state.selectedClient;
       navigateTo('s-cliente-inicio');
     }
   }
 
-  // 4. Fotos de Visita
+  // 5. Validación Geocerca GPS (Caso 16)
+  function openGpsModal() {
+    const modal = document.getElementById('gpsModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeGpsModal() {
+    const modal = document.getElementById('gpsModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function confirmVisitType(visitType) {
+    closeGpsModal();
+    const isPhone = visitType === 'telefonica';
+    state.isPhoneVisit = isPhone;
+    emitSimulatorEvent('SELECT_VISIT_TYPE', {
+      visitType: visitType,
+      isPhoneVisit: isPhone
+    });
+    if (isPhone) {
+      showHint('Visita Telefónica activada (bypass geocerca 50m autorizado).', false);
+      const cliHeader = document.getElementById('cli-nombre-header');
+      if (cliHeader) cliHeader.textContent = state.selectedClient + ' (Telefónica)';
+      navigateTo('s-cliente-inicio');
+    } else {
+      showHint('Bloqueo GPS: No se puede iniciar visita presencial a más de 50 metros.', true);
+    }
+  }
+
+  // 6. Justificación de Tareas Incompletas (Caso 17)
+  function openIncompleteTasksModal() {
+    const modal = document.getElementById('incompleteTaskModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeIncompleteTasksModal() {
+    const modal = document.getElementById('incompleteTaskModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitIncompleteTask() {
+    const selTask = document.getElementById('sel-incomplete-task');
+    const selReason = document.getElementById('sel-incomplete-reason');
+    const taskId = selTask ? selTask.value : 'T5';
+    const reason = selReason ? selReason.value : 'Cliente muy ocupado';
+
+    emitSimulatorEvent('JUSTIFY_INCOMPLETE_TASK', {
+      taskId: taskId,
+      reason: reason
+    });
+
+    emitSimulatorEvent('FINISH_VISIT', {
+      confirmed: true,
+      justified: true,
+      taskId: taskId,
+      reason: reason
+    });
+
+    closeIncompleteTasksModal();
+    const finishTitle = document.getElementById('finish-title');
+    const finishDesc = document.getElementById('finish-desc');
+    if (finishTitle) finishTitle.textContent = '¡Visita Finalizada con Justificación!';
+    if (finishDesc) finishDesc.innerHTML = `Se registró formalmente el cierre de visita con motivo: <b>${reason}</b> para la tarea ${taskId}.`;
+    navigateTo('s-dashboard');
+  }
+
+  // 7. Cobranza Mixta (Caso 19)
+  function openCobranzaModal() {
+    const modal = document.getElementById('cobranzaModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeCobranzaModal() {
+    const modal = document.getElementById('cobranzaModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitCobranza() {
+    const cashVal = parseFloat(document.getElementById('cobranza-cash')?.value || '200');
+    const depVal = parseFloat(document.getElementById('cobranza-deposit')?.value || '150');
+
+    emitSimulatorEvent('COLLECT_DEBTS', {
+      cashAmount: cashVal,
+      depositAmount: depVal,
+      voucher: 'OP-948201.jpg',
+      currency: 'USD'
+    });
+
+    emitSimulatorEvent('CONFIRM_RECEIPTS', {
+      confirmed: true,
+      total: cashVal + depVal,
+      receiptsCount: 2
+    });
+
+    closeCobranzaModal();
+    showHint('Recibos provisionales emitidos y confirmados exitosamente.', false);
+
+    if (state.currentCaseId === 'case-19') {
+      const finishTitle = document.getElementById('finish-title');
+      const finishDesc = document.getElementById('finish-desc');
+      if (finishTitle) finishTitle.textContent = '¡Cobranza Mixta Consolidada!';
+      if (finishDesc) finishDesc.innerHTML = `Se emitieron y transmitieron los recibos provisionales por <b>USD ${(cashVal + depVal).toFixed(2)}</b> (Efectivo + Depósito bancario con voucher).`;
+      navigateTo('s-dashboard');
+    }
+  }
+
+  // 8. Visitas Fuera de Ruta (Caso 22)
+  function openOutRouteModal() {
+    const modal = document.getElementById('outRouteModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeOutRouteModal() {
+    const modal = document.getElementById('outRouteModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitOutRouteVisit() {
+    const selClient = document.getElementById('sel-outroute-client');
+    const clientName = selClient ? selClient.value : 'Autopartes El Rápido';
+    const address = document.getElementById('outroute-address')?.value || 'JR. PIEROLA 540';
+
+    emitSimulatorEvent('CREATE_OUT_ROUTE_VISIT', {
+      clientName: clientName,
+      address: address,
+      outRoute: true
+    });
+
+    closeOutRouteModal();
+    showHint(`Visita fuera de ruta agregada: ${clientName}`, false);
+
+    const listContainer = document.getElementById('client-list-cards');
+    if (listContainer) {
+      const newCard = `
+        <div class="client-card" style="border-left: 4px solid #f39c12;" onclick="window.UyapaySimulator.openOptions('${clientName}')">
+          <div class="pin" style="color:#f39c12;">➕</div>
+          <div>
+            <div class="client-name">${clientName.toUpperCase()} <span style="background:#f39c12; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">FUERA DE RUTA</span></div>
+            <div class="client-address">${address}</div>
+          </div>
+        </div>
+      `;
+      listContainer.innerHTML = newCard + listContainer.innerHTML;
+    }
+  }
+
+  // 9. Liquidación de Cobranza Diaria (Caso 23)
+  function openSettlementModal() {
+    emitSimulatorEvent('VIEW_SETTLEMENT', { viewed: true });
+    const modal = document.getElementById('settlementModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeSettlementModal() {
+    const modal = document.getElementById('settlementModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitSettlement() {
+    emitSimulatorEvent('SUBMIT_SETTLEMENT', {
+      confirmed: true,
+      totalCashSol: 1480,
+      totalCashUsd: 200,
+      totalDepositUsd: 150,
+      pendingReceipts: 0
+    });
+
+    closeSettlementModal();
+    const finishTitle = document.getElementById('finish-title');
+    const finishDesc = document.getElementById('finish-desc');
+    if (finishTitle) finishTitle.textContent = '¡Liquidación de Cobranza Cerrada!';
+    if (finishDesc) finishDesc.innerHTML = 'Se transmitió el arqueo de cobranza diaria a SOLAR sin descuadres.';
+    navigateTo('s-dashboard');
+  }
+
+  // 10. Fotos de Visita
   function takePhoto(photoId) {
     state.photos[photoId] = true;
     const btn = document.getElementById(`btn-foto-${photoId}`);
@@ -236,7 +456,7 @@
     navigateTo('s-pedidos-menu');
   }
 
-  // 5. Configuración del Pedido
+  // 11. Configuración del Pedido
   function submitOrderConfig() {
     const condicion = document.getElementById('sel-condicion').value;
     const lista = document.getElementById('sel-lista').value;
@@ -260,7 +480,7 @@
     navigateTo('s-catalogo-producto');
   }
 
-  // 6. Renderizado del Catálogo de Productos según Línea y Marca
+  // 12. Renderizado del Catálogo de Productos según Línea y Marca
   function renderCatalogProducts(linea, marca) {
     const container = document.getElementById('catalog-products-container');
     const brandBadge = document.getElementById('catalog-brand-badge');
@@ -276,7 +496,6 @@
     // Filtrar productos por línea y marca
     let matchingProducts = allProducts.filter(p => p.line === linea && p.brand === marca);
 
-    // Si por algún motivo la marca no coincide exactamente, mostrar todos los de la marca o los del catálogo
     if (matchingProducts.length === 0) {
       matchingProducts = allProducts.filter(p => p.brand === marca);
     }
@@ -304,11 +523,9 @@
         (currentCase.brand === prod.brand && currentCase.line === prod.line)
       );
 
-      // Pre-cargar cantidad esperada si es el producto target
       const initialQty = isTarget && currentCase.expectedQty ? currentCase.expectedQty : 1;
       state.catalogQuantities[prod.id] = state.catalogQuantities[prod.id] || initialQty;
 
-      // Pre-cargar estado de promoción
       const initialPromo = isTarget ? (currentCase.promoDiscount !== false) : prod.hasPromo;
       if (state.catalogPromos[prod.id] === undefined) {
         state.catalogPromos[prod.id] = initialPromo;
@@ -316,8 +533,6 @@
 
       const currentQty = state.catalogQuantities[prod.id];
       const promoChecked = state.catalogPromos[prod.id];
-
-      // Texto de promoción
       const promoText = (isTarget && currentCase.promoLabel) ? currentCase.promoLabel : prod.promoLabel;
 
       cardsHtml += `
@@ -398,7 +613,7 @@
     state.catalogPromos[prodId] = checked;
   }
 
-  // 7. Seleccionar Producto y pasar al Resumen de Liquidación
+  // 13. Seleccionar Producto y pasar al Resumen de Liquidación
   function selectProduct(prodId) {
     const allProducts = getMasterProducts();
     const prod = allProducts.find(p => p.id === prodId);
@@ -408,7 +623,6 @@
     const qty = state.catalogQuantities[prodId] || 1;
     const promoChecked = state.catalogPromos[prodId] !== undefined ? state.catalogPromos[prodId] : false;
 
-    // Detectar si la promoción otorga descuento en dinero o regalo
     let promoDiscountAmount = 0.0;
     let promoType = prod.promoType || 'none';
     let promoLabel = prod.promoLabel || '';
@@ -435,7 +649,6 @@
       promoLabel: promoLabel
     };
 
-    // Emitir evento desacoplado hacia el evaluador
     emitSimulatorEvent('ADD_PRODUCT', {
       product: state.cart.product,
       sku: state.cart.sku,
@@ -453,12 +666,11 @@
     navigateTo('s-resumen-pedido');
   }
 
-  // 8. Cálculos de Liquidación Dinámicos basados en la Condición Elegida
+  // 14. Cálculos de Liquidación Dinámicos basados en la Condición Elegida
   function updateReceiptCalculations() {
     const currentCase = getCaseData();
     const cond = state.orderConfig.paymentCondition || 'contado';
 
-    // Tasas financieras oficiales de UYAPAY
     let rate = 0.05;
     let condLabel = 'Desc. Contado (5%):';
     if (cond === 'credito_15') { rate = 0.04; condLabel = 'Desc. Crédito 15 días (4%):'; }
@@ -468,7 +680,6 @@
 
     const rawTotal = state.cart.qty * state.cart.unitPrice;
 
-    // Descuento de promoción (solo si es tipo 'discount' y está activado)
     let promoDiscountValue = 0.0;
     const rowPromo = document.getElementById('row-promo-desc');
     const promoDescLabel = document.getElementById('receipt-promo-desc-label');
@@ -491,7 +702,6 @@
     const finDiscount = subtotalAfterPromo * rate;
     const finalTotal = Number((subtotalAfterPromo - finDiscount).toFixed(2));
 
-    // Actualizar elementos del DOM en el recibo
     const itemSummaryEl = document.getElementById('receipt-items-summary');
     if (itemSummaryEl) itemSummaryEl.textContent = `${state.cart.qty}x ${state.cart.product} (@ $${state.cart.unitPrice.toFixed(2)})`;
 
@@ -525,15 +735,28 @@
     state.finalOrderTotal = finalTotal;
   }
 
-  // 9. Confirmación y Envío Final de la Orden
-  function submitFinalOrder() {
+  // 15. Confirmación y Envío Final (Orden vs Cotización Tipo 3)
+  function submitFinalOrder(docType = 'orden') {
+    const isCotizacion = docType === 'cotizacion';
     emitSimulatorEvent('SUBMIT_ORDER', {
       confirmed: true,
       total: state.finalOrderTotal || 0,
       product: state.cart.product,
       quantity: state.cart.qty,
-      paymentCondition: state.orderConfig.paymentCondition
+      paymentCondition: state.orderConfig.paymentCondition,
+      documentType: isCotizacion ? 'cotizacion' : 'orden',
+      documentTypeId: isCotizacion ? 3 : 2
     });
+
+    const finishTitle = document.getElementById('finish-title');
+    const finishDesc = document.getElementById('finish-desc');
+    if (isCotizacion) {
+      if (finishTitle) finishTitle.textContent = '¡Cotización Registrada con Éxito!';
+      if (finishDesc) finishDesc.innerHTML = 'Se guardó la propuesta comercial como <b>Cotización (Tipo 3)</b> sin comprometer stock ni línea de crédito.';
+    } else {
+      if (finishTitle) finishTitle.textContent = '¡Orden Enviada con Éxito!';
+      if (finishDesc) finishDesc.innerHTML = 'Se actualizó la orden de compra en el sistema central en estado <b>ENVIADO</b>. Has completado el flujo oficial del manual.';
+    }
 
     navigateTo('s-dashboard');
   }
@@ -557,6 +780,9 @@
       if (event.data.message) {
         showHint(event.data.message, false);
       }
+      if (event.data.nextScreen) {
+        navigateTo(event.data.nextScreen);
+      }
     }
   });
 
@@ -564,9 +790,25 @@
   window.UyapaySimulator = {
     login: handleAppLogin,
     go: navigateTo,
+    selectFilter: selectFilter,
     openOptions: openClientOptions,
     closeOptions: closeClientOptions,
     checkOption: selectOption,
+    openGpsModal: openGpsModal,
+    closeGpsModal: closeGpsModal,
+    confirmVisitType: confirmVisitType,
+    openIncompleteTasksModal: openIncompleteTasksModal,
+    closeIncompleteTasksModal: closeIncompleteTasksModal,
+    submitIncompleteTask: submitIncompleteTask,
+    openCobranzaModal: openCobranzaModal,
+    closeCobranzaModal: closeCobranzaModal,
+    submitCobranza: submitCobranza,
+    openOutRouteModal: openOutRouteModal,
+    closeOutRouteModal: closeOutRouteModal,
+    submitOutRouteVisit: submitOutRouteVisit,
+    openSettlementModal: openSettlementModal,
+    closeSettlementModal: closeSettlementModal,
+    submitSettlement: submitSettlement,
     takePhoto: takePhoto,
     submitPhotos: submitPhotos,
     submitOrderConfig: submitOrderConfig,
