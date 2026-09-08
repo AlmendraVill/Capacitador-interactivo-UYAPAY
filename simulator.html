@@ -417,6 +417,9 @@
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('ver_deuda')">
         <div>Consultar perfil / deuda vencida <span class="opcion-desc">Ver saldo moroso y línea de crédito.</span></div> <span>›</span>
       </div>
+      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('historial')">
+        <div>Historial de visitas previas <span class="opcion-desc">Consultar auditoría de visitas anteriores.</span></div> <span>›</span>
+      </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('llegar')">
         <div>Cómo llegar al cliente <span class="opcion-desc">Ver mapa y distancia de ruta.</span></div> <span>›</span>
       </div>
@@ -428,6 +431,33 @@
       </div>
       <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('cambiar')">
         <div>Cambiar dirección de visita <span class="opcion-desc">Seleccione una nueva dirección.</span></div> <span>›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: HISTORIAL DE VISITAS PREVIAS (CASO 15) ================= -->
+  <div class="modal-overlay" id="historyModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        HISTORIAL DE VISITAS AL CLIENTE
+        <span class="close-btn" onclick="window.UyapaySimulator.closeHistoryModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div class="card-task" style="margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700;">Última visita registrada en el sistema:</div>
+          <div style="font-size:13px; color:#2980b9; font-weight:700; margin:4px 0;">📅 Fecha: 14/08/2026</div>
+          <div style="font-size:11px; color:var(--text-light); line-height:1.4;">
+            Asesor: Álvaro Rodríguez | Pedido: 8 baldes Shell Helix HX7<br>
+            🎁 <b>Promoción entregada:</b> 2 botellas Shell Helix Plus 10W-40 (Ya bonificado en el mes)
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Registra la fecha de la última visita encontrada (DD/MM/AAAA):</label>
+          <input type="text" id="historial-fecha-input" class="form-select" placeholder="DD/MM/AAAA" value="14/08/2026" style="padding:8px 10px;">
+        </div>
+        <button class="login-btn" style="background:#2980b9;" onclick="window.UyapaySimulator.submitHistoryDate()">
+          ✓ Registrar Respuesta de Auditoría
+        </button>
       </div>
     </div>
   </div>
@@ -530,7 +560,8 @@
       <div style="padding:10px 0;">
         <div class="form-group">
           <label class="form-label">Cliente de cartera:</label>
-          <select id="sel-outroute-client" class="form-select">
+          <select id="sel-outroute-client" class="form-select" onchange="window.UyapaySimulator.onOutRouteClientChange(this.value)">
+            <option value="Repuestos Central Chincha">Repuestos Central Chincha (Cliente Nuevo - RUC: 20601928415)</option>
             <option value="Autopartes El Rápido">Autopartes El Rápido (RUC: 20551928410)</option>
             <option value="Servicentro San Jerónimo">Servicentro San Jerónimo</option>
             <option value="Lubricantes del Sur">Lubricantes del Sur</option>
@@ -538,7 +569,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Dirección fiscal asignada:</label>
-          <input type="text" id="outroute-address" class="form-select" value="JR. PIEROLA 540" readonly style="background:#f9f9f9; padding:8px 10px;">
+          <input type="text" id="outroute-address" class="form-select" value="CALLE COMERCIO 120 - CHINCHA" readonly style="background:#f9f9f9; padding:8px 10px;">
         </div>
         <div class="form-group">
           <label class="form-label">Tareas asignadas:</label>
@@ -573,7 +604,7 @@
           <div class="profile-row"><span>Recibos Anulados:</span><b>0</b></div>
         </div>
         <button class="login-btn" style="background:#2c3e50;" onclick="window.UyapaySimulator.submitSettlement()">
-          🔒 Confirmar y Cerrar Arqueo Diario
+          Generar Consolidado de Cobranzas y Finalizar
         </button>
       </div>
     </div>

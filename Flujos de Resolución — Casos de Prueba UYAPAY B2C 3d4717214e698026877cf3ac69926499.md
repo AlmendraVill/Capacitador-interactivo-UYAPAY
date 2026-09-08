@@ -138,34 +138,15 @@
 
 ---
 
-## Caso 11 — Cliente nuevo, primera compra
+## Caso 11 — Cliente nuevo, primera compra con lista Oficina
 
-1. Menú secundario → **Mis clientes** → verificar que el cliente no existe en la búsqueda
-2. Registrar cliente nuevo (datos obligatorios de perfil comercial)
-3. Visitas → localizar al cliente recién creado → Iniciar visita (por dirección o llamada si aplica)
-4. Inicio → Continuar → Fotos → Guardar
-5. Pedidos → + Crear pedido o cotización → Contado → Lista **OF** (por defecto, cliente sin historial)
-6. Línea: Lubricantes → Marca: Shell → Agregar 3 botellas Helix Plus → Completar → Actualizar orden de compra
-7. Finalizar visita
-
----
-
-## Caso 12 — Repuestos sin promoción
-
-1. Visitas → cliente → Iniciar visita → Inicio → Continuar → Fotos → Guardar
-2. Pedidos → + Crear pedido o cotización → Crédito 15 días → Lista **1**
-3. Línea de negocio: **Repuestos** (marca según vehículo: Hyundai)
-4. Agregar producto: disco de freno HD35, bujías Grand i10, collarín Accent — **sin activar ninguna promoción** (el asesor reconoce que Repuestos no tiene promos de volumen)
-5. Completar → verificar que el sistema aplique solo el descuento de crédito 4%
-6. Confirmación → Actualizar orden de compra → Finalizar visita
-
----
-
-## Caso 13 — [TRAMPA] Condición de pago mal aplicada
-
-1. Pedidos → + Crear pedido o cotización → seleccionar **Crédito**, plazo **30 días**
-2. Al revisar el resumen antes de Completar, el asesor nota (o el evaluador debe notar) que el descuento mostrado es de 5% en vez del 3% que corresponde a crédito 30 días
-**Resultado esperado:** esta inconsistencia no debería ocurrir en el sistema real (el descuento se calcula automático según la condición elegida) — si aparece, es un caso trampa para que el evaluador detecte que el asesor no verificó el resumen antes de confirmar el pedido. La acción correcta del asesor es revisar el resumen y corregir la condición de pago antes de presionar Completar.
+1. **Plan de Visitas:** En la parte inferior presionar **"➕ Agregar visita fuera de ruta"**.
+2. Seleccionar el cliente nuevo **"Repuestos Central Chincha"** con dirección **"CALLE COMERCIO 120 - CHINCHA"** y confirmar el alta.
+3. Localizar al cliente recién creado en la lista de visitas e **Iniciar visita**.
+4. Registrar las fotos obligatorias de local.
+5. **Pedidos:** Crear pedido en condición **Contado** con Lista **OF** (por defecto para clientes sin historial).
+6. Línea: **Lubricantes**, Marca: **Shell** → Agregar 3 botellas Shell Helix Plus (108203) a USD 5 c/u.
+7. Verificar total (USD 15.00 − 5% = USD 14.25) y confirmar la orden de compra.
 
 ---
 
@@ -182,13 +163,13 @@
 
 ## Caso 15 — Revisión de historial antes de nueva venta
 
-1. Menú secundario → **Historial de visitas**
-2. Filtrar por cliente / mes anterior → localizar la última visita y verificar si ya se entregó un regalo por volumen
-3. Volver a Visitas → cliente → Iniciar visita → Inicio → Continuar → Fotos → Guardar
-4. Pedidos → + Crear pedido o cotización → Contado → Lista **1**
-5. Línea: Lubricantes → Marca: Shell → Agregar 4 baldes Helix HX5 → **NO activar** ninguna promoción de regalo (ya fue entregada antes)
-6. Completar → verificar que el total solo incluya el 5% de descuento por contado
-7. Confirmación → Actualizar orden de compra → Finalizar visita
+1. **Plan de Visitas:** Seleccionar a **Bodega y Ferretería Dos Hermanos**.
+2. En las opciones del cliente, seleccionar **"Historial de visitas previas"**.
+3. Auditar el historial de compras y registrar la fecha de la última visita (**14/08/2026**) en el recuadro de auditoría del simulador.
+4. **Iniciar visita** y registrar fotos obligatorias de visita.
+5. **Pedidos:** Crear pedido a condición **Contado** con Lista **1**.
+6. Línea: **Lubricantes**, Marca: **Shell** → Agregar 4 baldes Shell Helix HX5 15W/40 a USD 18 c/u **SIN activar promoción de regalo** (ya fue entregada en la visita anterior).
+7. Verificar total neto USD 68.40 (4×$18 = $72 − 5% = $68.40) y confirmar la orden.
 
 
 ---
@@ -268,15 +249,13 @@
 
 ## Caso 21 — [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día
 
-**Objetivo:** Utilizar las herramientas de inteligencia de ruta para filtrar clientes con morosidad vencida (`over_due_date` en `SellerController`) y aplicar política de venta al contado.
+**Objetivo:** Utilizar las herramientas de inteligencia de ruta para filtrar clientes con morosidad vencida (`over_due_date` en `SellerController`) y auditar su perfil de cuenta corriente.
 
 1. **Plan de Visitas (s-visitas):** En la barra horizontal de filtros superiores, presionar la pastilla **"Deuda vencida"** (`over_due_date = true`).
-2. El sistema filtra dinámicamente la cartera del día, aislando a los clientes con mora (ej. Distribuidora Kanchis EIRL con saldo moroso de USD 840.00).
-3. Presionar sobre el cliente y seleccionar **"Consultar perfil / deuda vencida"** para auditar el importe y días de atraso.
-4. **Iniciar visita presencial** y registrar fotos obligatorias.
-5. Por política de riesgo ante deuda vencida no subsanada, cotizar el nuevo pedido a condición **Contado** (Lista OF).
-6. Confirmar y emitir la orden de compra.
-**Regla técnica:** `SellerController.cs:1387` ejecuta un CTE sobre `v_app_movement_debts` filtrando exclusivamente cuentas con saldo vencido cuando `over_due_date = true`. Un cliente con mora vencida no es elegible para pedidos a crédito.
+2. El sistema filtra dinámicamente la cartera del día, aislando a los clientes con mora crítica: **Distribuidora Kanchis EIRL** con saldo moroso de USD 840.00.
+3. Presionar sobre el cliente y seleccionar **"Consultar perfil / deuda vencida"** para auditar el importe vencido y estado de mora.
+4. Con la auditoría completada, la cartera morosa queda priorizada formalmente.
+**Regla técnica:** `SellerController.cs:1387` ejecuta un CTE sobre `v_app_movement_debts` filtrando exclusivamente cuentas con saldo vencido cuando `over_due_date = true`.
 
 ---
 
@@ -299,18 +278,17 @@
 
 ## Caso 23 — [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada
 
-**Objetivo:** Ejecutar el proceso formal de liquidación de cobranza (`SalesSettlement`) al cierre de la jornada operativa antes de la entrega de valores en tesorería.
+**Objetivo:** Ejecutar el proceso formal de consolidación y liquidación de cobranza (`SalesSettlement`) al cierre de la jornada operativa para validar cobranzas.
 
 1. **Plan de Visitas:** Al término de la ruta presionar el botón **"📊 Liquidación de cobranza diaria"**.
 2. En el arqueo consolidado auditar:
-   - Recaudación Efectivo Soles: S/ 1,480.00
-   - Recaudación Efectivo Dólares: USD 200.00
-   - Depósitos Bancarios con Voucher: USD 150.00
+   - Cobranzas en Efectivo Soles: S/ 1,480.00
+   - Cobranzas en Efectivo Dólares: USD 200.00
+   - Cobranzas por Depósito / Transferencia: USD 150.00
    - Recibos pendientes de envío: 0 (todos transmitidos a SOLAR)
-   - Recibos anulados: 0
-3. Presionar **"🔒 Confirmar y Cerrar Arqueo Diario"**.
-4. El sistema transmite el cierre contable a SOLAR y bloquea modificaciones en los recibos de la fecha.
-**Regla técnica:** El módulo `sales_settlement.dart` consolida todos los recibos emitidos durante la jornada. Un arqueo cerrado exitosamente cuadra los valores físicos con el libro de bancos de tesorería.
+3. Presionar **"Generar Consolidado de Cobranzas y Finalizar"**.
+4. El sistema transmite el consolidado a SOLAR para validar cobranzas y finaliza la jornada.
+**Regla técnica:** El módulo `sales_settlement.dart` consolida todos los recibos emitidos durante la jornada para validar las cobranzas físicas y electrónicas recaudadas.
 
 ---
 

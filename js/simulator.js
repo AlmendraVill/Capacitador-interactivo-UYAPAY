@@ -120,9 +120,13 @@
     if (selLine && currentCase.line) selLine.value = currentCase.line;
     if (selBrand && currentCase.brand) selBrand.value = currentCase.brand;
 
+    const cliLista = document.getElementById('cli-lista-header');
+    if (cliLista && currentCase.priceList) cliLista.textContent = `Lista ${currentCase.priceList}`;
+
     // Renderizar lista de clientes en la ruta (s-visitas)
     const listContainer = document.getElementById('client-list-cards');
     if (listContainer) {
+      const isOutRouteCase = (state.currentCaseId === 'case-11' || state.currentCaseId === 'case-22');
       const targetClient = currentCase.client;
       const targetAddr = currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100';
 
@@ -137,17 +141,20 @@
         { name: 'Taller Hyundai Express', address: 'AV. PARRA 314' }
       ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
 
-      let html = `
-        <div class="client-card" style="border-left: 4px solid #2980b9;" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
-          <div class="pin">◎</div>
-          <div>
-            <div class="client-name">${targetClient.toUpperCase()}</div>
-            <div class="client-address">${targetAddr}</div>
+      let html = '';
+      if (!isOutRouteCase) {
+        html += `
+          <div class="client-card" style="border-left: 4px solid #2980b9;" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
+            <div class="pin">◎</div>
+            <div>
+              <div class="client-name">${targetClient.toUpperCase()}</div>
+              <div class="client-address">${targetAddr}</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
-      mockDistractors.slice(0, 3).forEach(d => {
+      mockDistractors.slice(0, isOutRouteCase ? 4 : 3).forEach(d => {
         html += `
           <div class="client-card" onclick="window.UyapaySimulator.openOptions('${d.name}')">
             <div class="pin">◎</div>
@@ -225,8 +232,42 @@
     closeClientOptions();
 
     if (actionKey === 'ver_deuda') {
+      emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
       emitSimulatorEvent('VIEW_DEBTS', { verified: true, viewed: true, clientName: state.selectedClient });
       showHint(`Perfil auditado: ${state.selectedClient} registra saldo moroso vencido de USD 840.00.`, false);
+      if (state.currentCaseId === 'case-21') {
+        const finishTitle = document.getElementById('finish-title');
+        const finishDesc = document.getElementById('finish-desc');
+        if (finishTitle) finishTitle.textContent = '¡Cartera Morosa Auditada!';
+        if (finishDesc) finishDesc.innerHTML = 'Se priorizó y auditó a Distribuidora Kanchis EIRL (Deuda: USD 840.00) con éxito.';
+        navigateTo('s-dashboard');
+      }
+      return;
+    }
+
+    if (actionKey === 'historial') {
+      emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
+      openHistoryModal();
+      return;
+    }
+
+    if (actionKey === 'iniciar') {
+      if (state.currentCaseId === 'case-11' || state.currentCaseId === 'case-22') {
+        emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
+      } else if (state.currentCaseId === 'case-15') {
+        emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
+      } else {
+        emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
+        emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
+      }
+
+      if (state.currentCaseId === 'case-16') {
+        openGpsModal();
+        return;
+      }
+      const cliHeader = document.getElementById('cli-nombre-header');
+      if (cliHeader) cliHeader.textContent = state.selectedClient;
+      navigateTo('s-cliente-inicio');
       return;
     }
 
@@ -235,16 +276,30 @@
 
     // 2. Notificar la acción solicitada
     emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
+  }
 
-    if (actionKey === 'iniciar') {
-      if (state.currentCaseId === 'case-16') {
-        openGpsModal();
-        return;
-      }
-      const cliHeader = document.getElementById('cli-nombre-header');
-      if (cliHeader) cliHeader.textContent = state.selectedClient;
-      navigateTo('s-cliente-inicio');
-    }
+  // 4.1 Historial de Visitas Previas (Caso 15)
+  function openHistoryModal() {
+    const modal = document.getElementById('historyModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeHistoryModal() {
+    const modal = document.getElementById('historyModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitHistoryDate() {
+    const input = document.getElementById('historial-fecha-input');
+    const fechaVal = (input && input.value) ? input.value.trim() : '14/08/2026';
+    emitSimulatorEvent('SUBMIT_INQUIRY_ANSWER', {
+      clientName: state.selectedClient,
+      date: fechaVal,
+      answer: fechaVal
+    });
+    closeHistoryModal();
+    showHint(`Historial auditado: última visita ${fechaVal} registrada correctamente.`, false);
+    openClientOptions(state.selectedClient);
   }
 
   // 5. Validación Geocerca GPS (Caso 16)
@@ -353,10 +408,31 @@
     }
   }
 
-  // 8. Visitas Fuera de Ruta (Caso 22)
+  // 8. Visitas Fuera de Ruta (Casos 11 y 22)
+  function onOutRouteClientChange(clientVal) {
+    const addrInput = document.getElementById('outroute-address');
+    if (!addrInput) return;
+    if (clientVal === 'Repuestos Central Chincha') {
+      addrInput.value = 'CALLE COMERCIO 120 - CHINCHA';
+    } else if (clientVal === 'Autopartes El Rápido') {
+      addrInput.value = 'JR. PIEROLA 540';
+    } else {
+      addrInput.value = 'CALLE COMERCIO 100';
+    }
+  }
+
   function openOutRouteModal() {
     const modal = document.getElementById('outRouteModal');
     if (modal) modal.classList.add('active');
+    const selClient = document.getElementById('sel-outroute-client');
+    if (selClient) {
+      if (state.currentCaseId === 'case-11') {
+        selClient.value = 'Repuestos Central Chincha';
+      } else if (state.currentCaseId === 'case-22') {
+        selClient.value = 'Autopartes El Rápido';
+      }
+      onOutRouteClientChange(selClient.value);
+    }
   }
 
   function closeOutRouteModal() {
@@ -366,8 +442,10 @@
 
   function submitOutRouteVisit() {
     const selClient = document.getElementById('sel-outroute-client');
-    const clientName = selClient ? selClient.value : 'Autopartes El Rápido';
-    const address = document.getElementById('outroute-address')?.value || 'JR. PIEROLA 540';
+    const clientName = selClient ? selClient.value : (state.currentCaseId === 'case-11' ? 'Repuestos Central Chincha' : 'Autopartes El Rápido');
+    const address = document.getElementById('outroute-address')?.value || (state.currentCaseId === 'case-11' ? 'CALLE COMERCIO 120 - CHINCHA' : 'JR. PIEROLA 540');
+
+    state.selectedClient = clientName;
 
     emitSimulatorEvent('CREATE_OUT_ROUTE_VISIT', {
       clientName: clientName,
@@ -794,6 +872,9 @@
     openOptions: openClientOptions,
     closeOptions: closeClientOptions,
     checkOption: selectOption,
+    openHistoryModal: openHistoryModal,
+    closeHistoryModal: closeHistoryModal,
+    submitHistoryDate: submitHistoryDate,
     openGpsModal: openGpsModal,
     closeGpsModal: closeGpsModal,
     confirmVisitType: confirmVisitType,
@@ -805,6 +886,7 @@
     submitCobranza: submitCobranza,
     openOutRouteModal: openOutRouteModal,
     closeOutRouteModal: closeOutRouteModal,
+    onOutRouteClientChange: onOutRouteClientChange,
     submitOutRouteVisit: submitOutRouteVisit,
     openSettlementModal: openSettlementModal,
     closeSettlementModal: closeSettlementModal,

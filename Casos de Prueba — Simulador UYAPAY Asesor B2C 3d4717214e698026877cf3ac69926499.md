@@ -105,26 +105,12 @@
 ### Caso 11 — Cliente nuevo, primera compra con lista Oficina
 
 **Cliente:** Repuestos Central Chincha (cliente nuevo, primer registro en el sistema)
-**Acción del asesor:** Debe registrar al cliente nuevo antes de poder facturar, luego aplicar la lista de precios Oficina (por defecto para clientes sin historial) y registrar el pedido: 3 botellas Shell Helix Plus (108203) a USD 5 c/u = USD 15.
+**Acción del asesor:** Debe agregar al cliente nuevo fuera de ruta antes de poder emitir el pedido, luego aplicar la lista de precios Oficina (por defecto para clientes sin historial) y registrar el pedido: 3 botellas Shell Helix Plus (108203) a USD 5 c/u = USD 15.
 **Condición de pago:** Contado
 **Resultado esperado:** Cliente creado correctamente con todos los datos obligatorios; venta registrada con lista Oficina; total USD 15 con 5% descuento (USD 0.75) → USD 14.25.
 
 ---
 
-### Caso 12 — Repuestos sin promoción aplicable
-
-**Cliente:** Taller Hyundai Express (B2C, lista de precios 3)
-**Pedido:** 1 disco de freno HD35 (0K40C33251) + 1 juego de bujías Grand i10 (1882709087) + 1 collarín Accent (4142126100)
-**Condición de pago:** Crédito 15 días
-**Resultado esperado:** El asesor debe reconocer que los repuestos no participan de promociones de volumen (solo lubricantes/llantas) y aplicar únicamente el descuento de crédito de 4% sobre el total.
-
----
-
-### Caso 13 — [TRAMPA] Condición de pago mal aplicada
-
-**Cliente:** Comercial San Martín
-**Contexto:** El asesor arma un pedido a crédito 30 días pero, al momento de aplicar el descuento, selecciona por error el descuento de "contado" (5%) en lugar del 3% correspondiente a crédito 30 días.
-**Resultado esperado del sistema:** El descuento aplicado no corresponde a la condición de pago seleccionada. El evaluador debe detectar la inconsistencia entre condición de pago y porcentaje aplicado, ya que el sistema real no debería permitir esta combinación.
 
 ---
 
@@ -141,9 +127,9 @@
 ### Caso 15 — Revisión de historial de visitas antes de nueva venta
 
 **Cliente:** Bodega y Ferretería Dos Hermanos
-**Acción del asesor:** Antes de registrar el pedido del día, debe revisar el historial de visitas anteriores al cliente para verificar la última compra y evitar duplicar una promoción de regalo ya entregada en la visita previa.
+**Acción del asesor:** Antes de registrar el pedido del día, debe revisar el historial de visitas anteriores al cliente para verificar la última compra 
 **Pedido nuevo:** 4 baldes Shell Helix HX5 a USD 18 c/u = USD 72, contado
-**Resultado esperado:** El asesor identifica que el regalo por volumen ya fue entregado en la visita anterior y no lo aplica nuevamente; registra la venta solo con el 5% de descuento por contado → USD 68.40.
+**Resultado esperado:** El asesor identifica y registra la última fecha de visita al cliente en un recuadro aparte del simulador como respuesta a la pregunta
 
 ---
 
@@ -184,7 +170,7 @@
 **Cliente:** Taller Hyundai Express (AV. PARRA 314)
 **Contexto:** El cliente mantiene una factura pendiente por USD 350.00 y desea cancelarla fraccionando el pago en dos modalidades: USD 200.00 en efectivo y USD 150.00 mediante depósito bancario en cuenta corriente.
 **Acción requerida:** En el módulo de cobranza (`collect_debts_page.dart`), ingresar la amortización mixta registrando el efectivo y adjuntando de manera mandatoria la fotografía del voucher de la transferencia bancaria para el abono en cuenta.
-**Resultado esperado:** Emisión consolidada de los recibos provisionales de cobranza con comprobante bancario listo para validación y conciliación en tesorería.
+**Resultado esperado:** Emisión consolidada de los recibos provisionales de cobranza con comprobante bancario listo para validación y conciliación en créditos.
 
 ---
 
@@ -201,12 +187,12 @@
 ### Caso 21 — [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día
 
 **Cliente:** Distribuidora Kanchis EIRL (AV. INDUSTRIAL 104 - SOCABAYA)
-**Contexto:** Al inicio de la jornada comercial, el asesor planifica el orden de atención de su cartera mediante las herramientas de inteligencia de ruta.
+**Contexto:** Al inicio de la jornada comercial, el asesor recibe su planificación y el orden de atención de su cartera por defecto.
 **Acción requerida:**
 1. Deslizar la barra de filtros del plan de visitas y presionar la pastilla **"Deuda vencida"** (`over_due_date = true` en `SellerController.cs`).
 2. Identificar a Distribuidora Kanchis EIRL como cliente crítico con saldo vencido de USD 840.00.
-3. Consultar su perfil de cuenta corriente y, durante la visita presencial, aplicar la política de control de riesgo cotizando exclusivamente a condición **Contado**.
-**Resultado esperado:** Cartera morosa priorizada y nuevo pedido emitido sin incrementar el riesgo crediticio de la empresa.
+3. Consultar su perfil de cuenta corriente.
+**Resultado esperado:** Cartera morosa priorizada.
 
 ---
 
@@ -223,22 +209,22 @@
 
 **Módulo:** Liquidación General de Ventas y Cobranza (`SalesSettlement`)
 **Contexto:** Al término de la jornada de visitas, antes de acudir a la agencia o caja central, el asesor debe cuadrar los valores recaudados en ruta.
-**Acción requerida:** En el menú principal de visitas, presionar **"📊 Liquidación de cobranza diaria"**, auditar el arqueo consolidado (Efectivo Soles, Efectivo Dólares, Depósitos bancarios y cero recibos pendientes de envío) y presionar **"Confirmar y Cerrar Arqueo Diario"**.
-**Resultado esperado:** Arqueo transmitido y bloqueado en SOLAR, conciliando con exactitud los valores físicos a entregar en tesorería.
+**Acción requerida:** En el menú principal de visitas, presionar **"📊 Liquidación de cobranza diaria"**, auditar el arqueo consolidado (Efectivo Soles, Efectivo Dólares, Depósitos bancarios y cero recibos pendientes de envío) y finalizar visita
+**Resultado esperado:** consolidado generado para validar cobranzas.
 
 ---
 
-## Resumen de cobertura evaluada (23 Casos Oficiales)
+## Resumen de cobertura evaluada (21 Casos Oficiales)
 
 | Caso | Tipo de flujo evaluado |
 | --- | --- |
 | 1, 2, 9, 10, 14 | Ventas con promociones (regalo / descuento en dinero) |
-| 3, 12 | Ventas sin promoción, distintas listas de precio y mono-línea |
-| 4, 5, 13 | Errores de proceso y trampas (tracking incompleto, cobranza sin consolidado, condición errónea) |
+| 3 | Ventas sin promoción, crédito corporativo y mono-línea |
+| 4, 5 | Errores de proceso y trampas (tracking incompleto, cobranza sin consolidado) |
 | 6 | Consulta histórica (nota de crédito) |
 | 7 | Estado de cuenta + flujo de compartir |
 | 8 | Seguimiento y detalle de pedido |
-| 11 | Alta de cliente nuevo |
+| 11 | Alta de visita fuera de ruta / compra con lista Oficina |
 | 15 | Historial de visitas / prevención de duplicidad de promociones |
 | 16 | Geocerca GPS (50m) y bypass regulado por visita telefónica (`isPhoneVisit`) |
 | 17 | Justificación formal de tareas incompletas (`IncompleteVisitTaskPanel`) |
