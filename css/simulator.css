@@ -1,124 +1,283 @@
+/**
+ * Estilos del Simulador Móvil UYAPAY B2C
+ * Réplica idéntica de la aplicación Flutter (appSellerV1).
+ * Incluye fuentes oficiales AFRetrospecta, paleta de colores oficial y componentes visuales exactos.
+ */
+
+@font-face {
+  font-family: 'AFRetrospecta';
+  src: url('../fonts/AFRetrospecta-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
 :root {
-  --yellow: #F4A81D;
-  --bg: #EFEFEF;
-  --card: #ffffff;
-  --text: #1a1a1a;
-  --muted: #6b6b6b;
-  --border: #e2e2e2;
-  --danger: #d32f2f;
-  --success: #27ae60;
+  --primary-yellow: #FFBB33;
+  --primary-dark: #7A7A7A;
+  --bg-primary: #F0F0F0;
+  --surface-neutral: #FAFAFA;
+  --text-dark: #141414;
+  --text-medium: #3D3D3D;
+  --text-light: #7A7A7A;
+  --border-color: #E0E0E0;
+  --border-dark: #7A7A7A;
+  --success-color: #7BB83D;
+  --warning-color: #F58300;
+  --error-color: #F55200;
+  --info-color: #187ADC;
 }
 
 * {
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  padding: 0;
 }
 
 html, body {
   width: 100%;
   height: 100%;
-  margin: 0;
-  padding: 0;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--bg-primary);
+  color: var(--text-dark);
 }
 
-/* Teléfono contenedor: se adapta al 100% del marco del iframe o pantalla */
 .phone {
   width: 100%;
   height: 100%;
-  background: var(--bg);
+  background: var(--bg-primary);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-  margin: 0;
 }
 
-/* Barra de estado superior */
+/* ================= 1. STATUSBAR NATIVA ================= */
 .statusbar {
-  background: var(--yellow);
-  font-size: 12px;
-  padding: 8px 16px 4px;
+  background: var(--primary-yellow);
+  font-size: 11px;
+  padding: 6px 14px 2px;
   display: flex;
   justify-content: space-between;
-  font-weight: 600;
-  color: #1a1a1a;
+  align-items: center;
+  font-weight: 700;
+  color: var(--text-dark);
   flex-shrink: 0;
 }
 
+.statusbar-time {
+  font-size: 12px;
+}
+
+.statusbar-icons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ================= 2. PANTALLAS Y NAVEGACIÓN ================= */
 .screen {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   display: none;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--bg-primary);
 }
 
 .screen.active {
   display: flex;
 }
 
-/* Topbar y Navegación de la App */
+/* ================= 3. PANTALLA LOGIN EXACTA ================= */
+#s-login {
+  background: var(--bg-primary);
+  padding: 24px 20px;
+  justify-content: flex-start;
+}
+
+.login-back-btn {
+  font-size: 20px;
+  color: var(--text-dark);
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.login-greeting {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-medium);
+  text-align: center;
+  line-height: 1.3;
+  margin-bottom: 36px;
+}
+
+.uyapay-font {
+  font-family: 'AFRetrospecta', sans-serif;
+  font-size: 26px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--text-medium);
+}
+
+.login-field-group {
+  margin-bottom: 16px;
+}
+
+.login-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.login-field-label span {
+  color: var(--error-color);
+}
+
+.login-input-container {
+  background: #ffffff;
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-container input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-dark);
+}
+
+.login-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text-medium);
+}
+
+.login-checkbox-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-yellow);
+}
+
+.login-btn {
+  background: var(--primary-yellow);
+  color: var(--text-dark);
+  border: none;
+  border-radius: 6px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  width: 100%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s;
+}
+
+.login-btn:hover {
+  opacity: 0.95;
+}
+
+.login-bottom-logo {
+  margin-top: auto;
+  text-align: center;
+  padding-top: 20px;
+}
+
+.login-bottom-logo img {
+  height: 38px;
+  object-fit: contain;
+}
+
+/* ================= 4. APPBAR Y SUB-NAVBAR OFICIAL ================= */
 .topbar-app {
-  background: var(--yellow);
-  padding: 10px 16px;
+  background: var(--primary-yellow);
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   font-size: 17px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 700;
+  color: var(--text-dark);
   flex-shrink: 0;
 }
 
 .topbar-app .menu-icon {
-  margin-right: 15px;
+  margin-right: 12px;
   font-size: 20px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
 }
 
-.topbar-app .tc {
+.topbar-app .tc-pill {
   margin-left: auto;
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
+.topbar-app .bell-icon {
+  font-size: 16px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/* 4 Tabs Superiores con iconos SVG oficiales */
 .tabs-app {
   display: flex;
-  background: var(--yellow);
+  background: var(--primary-yellow);
   justify-content: space-around;
-  padding: 0 10px;
-  border-bottom: 2px solid #df9a1b;
+  padding: 0 4px;
+  border-bottom: 2px solid #e09f1a;
   flex-shrink: 0;
 }
 
 .tab-item {
-  padding: 8px 12px;
+  padding: 6px 10px 8px;
   font-size: 11px;
   font-weight: 600;
-  color: #5a3d00;
+  color: var(--text-medium);
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 3px;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.tab-item img {
+  width: 20px;
+  height: 20px;
 }
 
 .tab-item.active {
-  border-bottom-color: #fff;
-  color: #1a1a1a;
+  border-bottom-color: #ffffff;
+  color: var(--text-dark);
 }
 
-/* Elementos del Plan de Visitas */
+/* ================= 5. SECCIÓN PLAN DE VISITAS ================= */
 .section-box {
-  background: #fff;
+  background: #ffffff;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   font-size: 13px;
@@ -131,8 +290,8 @@ html, body {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 10px 16px;
-  background: var(--bg);
+  padding: 10px 14px;
+  background: var(--bg-primary);
   flex-shrink: 0;
 }
 
@@ -141,77 +300,92 @@ html, body {
 }
 
 .filter-pill {
-  background: #fff;
-  border: 1px solid var(--yellow);
+  background: #ffffff;
+  border: 1px solid var(--primary-yellow);
   border-radius: 16px;
   padding: 5px 12px;
   font-size: 11px;
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.2s;
+  font-weight: 500;
+  color: var(--text-dark);
 }
 
 .filter-pill.active {
-  background: var(--yellow);
-  font-weight: bold;
+  background: var(--primary-yellow);
+  font-weight: 700;
 }
 
 .zone-header {
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--bg);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  background: #f8f8f8;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+/* Tarjetas de Clientes Oficiales */
+.client-card {
+  background: #ffffff;
+  margin: 6px 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.client-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+.client-pin-svg {
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
-.client-card {
-  display: flex;
-  gap: 12px;
-  background: #fff;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.client-card:active {
-  background-color: #f7f7f7;
-}
-
-.client-card .pin {
-  color: var(--yellow);
-  font-size: 18px;
-  margin-top: 2px;
+.client-info {
+  flex: 1;
 }
 
 .client-name {
   font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 2px;
 }
 
 .client-address {
   font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
+  color: var(--text-light);
 }
 
-/* Bottom Sheet (Modal Opciones de Visita) */
+.client-chevron {
+  font-size: 18px;
+  color: var(--text-light);
+}
+
+/* ================= 6. BOTTOM SHEET (MODAL DE OPCIONES) ================= */
 .modal-overlay {
-  display: none;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  justify-content: center;
+  display: none;
   align-items: flex-end;
+  z-index: 100;
 }
 
 .modal-overlay.active {
@@ -219,50 +393,49 @@ html, body {
 }
 
 .bottom-sheet {
-  background: #fff;
+  background: #ffffff;
   width: 100%;
-  border-radius: 18px 18px 0 0;
-  padding: 16px 18px 20px;
-  transform: translateY(100%);
-  transition: transform 0.25s ease-out;
-  max-height: 80%;
-  overflow-y: auto;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 16px 20px 24px;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+  animation: slideUp 0.25s ease-out;
 }
 
-.modal-overlay.active .bottom-sheet {
-  transform: translateY(0);
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .bs-header {
-  text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--muted);
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 8px;
-  position: relative;
-}
-
-.bs-header .close-btn {
-  position: absolute;
-  right: 0;
-  top: -4px;
-  font-size: 22px;
-  cursor: pointer;
-  padding: 0 8px;
-  line-height: 1;
-}
-
-.opcion-row {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
+  color: var(--text-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.5px;
+}
+
+.bs-header .close-btn {
+  font-size: 20px;
   cursor: pointer;
+  color: var(--text-dark);
+}
+
+.opcion-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid #f2f2f2;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
 }
 
 .opcion-row:last-child {
@@ -270,97 +443,65 @@ html, body {
 }
 
 .opcion-desc {
+  display: block;
   font-size: 11px;
-  color: var(--muted);
-  display: block;
-  margin-top: 3px;
+  font-weight: 400;
+  color: var(--text-light);
+  margin-top: 1px;
 }
 
-/* Utilidades generales */
-.content {
-  padding: 18px 16px;
+/* ================= 7. TAREAS Y DETALLE DE VISITA ================= */
+.card-task {
+  background: #ffffff;
+  margin: 10px 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
-.btn {
-  width: 100%;
-  background: var(--yellow);
-  border: none;
-  border-radius: 24px;
-  padding: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 12px;
-  font-size: 14px;
-  transition: opacity 0.2s;
+.card-title-sm {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
-.btn:active {
-  opacity: 0.85;
-}
-
-.hint {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #222;
-  color: #fff;
-  font-size: 12px;
-  padding: 10px 16px;
-  border-radius: 20px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 200;
-  pointer-events: none;
-  text-align: center;
-  width: 85%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.hint.show {
-  opacity: 1;
-}
-
-.hint.error-hint {
-  background: #c0392b;
-}
-
-.hint.success-hint {
-  background: #27ae60;
-}
-
-/* ================= COMPONENTES FLUJO MANUAL 2025 ================= */
-.form-group {
-  margin-bottom: 14px;
-}
-
-.form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #333;
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
   margin-bottom: 6px;
 }
 
-.form-select, .form-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
+.profile-row b {
+  color: var(--text-dark);
+}
+
+.task-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fdfdfd;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #fff;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
   font-size: 13px;
-  color: var(--text);
-  outline: none;
+  font-weight: 600;
 }
 
-.form-select:focus, .form-input:focus {
-  border-color: var(--yellow);
+.task-item-btn:hover {
+  background: #fafafa;
+  border-color: var(--primary-yellow);
 }
 
+/* ================= 8. FOTOS DE EXHIBICIÓN ================= */
 .photo-card {
-  background: #fff;
-  border-radius: 10px;
-  border: 1px dashed #bbb;
+  background: #ffffff;
+  border: 1.5px dashed var(--border-color);
+  border-radius: 8px;
   padding: 14px;
   margin-bottom: 12px;
   display: flex;
@@ -369,49 +510,89 @@ html, body {
 }
 
 .photo-card.taken {
-  border: 1px solid var(--success);
-  background: #f4faf6;
-}
-
-.photo-info {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-}
-
-.photo-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
+  border-color: var(--success-color);
+  background: #f7fcf4;
 }
 
 .photo-badge {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: #eee;
-  color: #555;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .photo-badge.ready {
-  background: #d4edda;
-  color: #155724;
+  background: var(--success-color);
+  color: #ffffff;
+  border-color: var(--success-color);
+}
+
+/* ================= 9. FORMULARIOS Y SELECTORES ================= */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-medium);
+  margin-bottom: 5px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 13px;
+  color: var(--text-dark);
+  outline: none;
+}
+
+.form-select:focus {
+  border-color: var(--primary-yellow);
+}
+
+/* ================= 10. PRODUCTO Y PROMOCIÓN ================= */
+.product-icon-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.product-icon-brand img {
+  width: 24px;
+  height: 24px;
+}
+
+.brand-badge {
+  background: #eef2f7;
+  color: #187ADC;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
 .qty-control {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 12px 0;
+  gap: 8px;
+  margin: 10px 0;
 }
 
 .qty-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
@@ -420,33 +601,29 @@ html, body {
   justify-content: center;
 }
 
-.qty-btn:active {
-  background: #eee;
-}
-
 .qty-display {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-  min-width: 32px;
+  min-width: 24px;
   text-align: center;
 }
 
 .promo-toggle-card {
-  background: #fff9e6;
-  border: 1px solid #ffd574;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin: 14px 0;
+  background: #fff8e8;
+  border: 1px solid #ffe1a6;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 12px;
 }
 
-/* Switch iOS style */
+/* Toggle Switch */
 .switch {
   position: relative;
   display: inline-block;
-  width: 44px;
+  width: 42px;
   height: 24px;
 }
 
@@ -478,42 +655,74 @@ html, body {
 }
 
 input:checked + .slider {
-  background-color: var(--success);
+  background-color: var(--primary-yellow);
 }
 
 input:checked + .slider:before {
-  transform: translateX(20px);
+  transform: translateX(18px);
 }
 
+/* ================= 11. TICKET Y RESUMEN ================= */
 .receipt-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  margin-bottom: 14px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 14px;
+  margin-bottom: 12px;
 }
 
 .receipt-row {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
-  margin-bottom: 8px;
-  color: #444;
+  font-size: 12.5px;
+  margin-bottom: 6px;
 }
 
 .receipt-row.discount {
-  color: var(--success);
-  font-weight: 600;
+  color: var(--error-color);
 }
 
 .receipt-total {
   display: flex;
   justify-content: space-between;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
-  margin-top: 10px;
+  border-top: 1.5px solid #222;
   padding-top: 10px;
-  border-top: 1px solid var(--border);
-  color: #1a1a1a;
+  margin-top: 8px;
 }
 
+/* ================= 12. NOTIFICACIÓN FLOTANTE (HINT) ================= */
+.hint {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  background: #333333;
+  color: #ffffff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  display: none;
+  z-index: 200;
+  animation: fadeIn 0.2s;
+}
+
+.hint.show {
+  display: block;
+}
+
+.hint.error-hint {
+  background: var(--error-color);
+}
+
+.hint.success-hint {
+  background: var(--success-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

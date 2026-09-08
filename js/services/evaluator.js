@@ -1,12 +1,7 @@
 /**
  * Motor de Evaluación y Puntuación Desacoplado (EvaluatorService)
- * Implementa los requisitos RF-MVP-026 a RF-MVP-035.
- * 
- * Responsabilidades:
- * 1. Control del cronómetro de resolución en tiempo real (RF-MVP-019/024/034).
- * 2. Validación de eventos recibidos del simulador contra las reglas del caso (RF-MVP-028/029).
- * 3. Detección de errores y omisiones de proceso (RF-MVP-022).
- * 4. Cálculo configurable de la calificación en escala vigesimal (RF-MVP-032/033).
+ * Soporta Evaluación Multi-Caso en Pestañas (5 casos en tabs) y cronómetro continuo.
+ * Implementa los requisitos RF-MVP-026 a RF-MVP-035 y nuevo Flujo 2.
  */
 window.UyapayServices = window.UyapayServices || {};
 
@@ -26,26 +21,41 @@ window.UyapayServices = window.UyapayServices || {};
 
   window.UyapayServices.Evaluator = {
     /**
-     * Inicia una nueva sesión de evaluación
+     * Inicia una sesión de evaluación multi-caso (5 casos en pestañas)
      * @param {object} user - Usuario evaluado
-     * @param {object} caseData - Caso práctico a evaluar
-     * @param {function} onTick - Callback para actualizar la UI del cronómetro cada segundo
+     * @param {Array} casesArray - Batería de 5 casos seleccionados
+     * @param {function} onTick - Callback del cronómetro continuo cada segundo
      */
-    startEvaluation(user, caseData, onTick) {
+    startMultiEvaluation(user, casesArray, onTick) {
       this.stopTimer();
+
+      const cases = Array.isArray(casesArray) && casesArray.length > 0
+        ? casesArray
+        : (window.UyapayData && window.UyapayData.CASES ? window.UyapayData.CASES.slice(0, 5) : []);
 
       activeEvaluation = {
         user: user || { username: 'alvaro', name: 'Alvaro Rodriguez' },
-        caseData: caseData,
+        cases: cases,
+        activeTabIndex: 0,
         startTime: Date.now(),
         elapsedSeconds: 0,
-        currentRuleIndex: 0,
-        errors: 0,
-        actionsLog: [],
+        caseStates: cases.map(c => ({
+          caseId: c.id,
+          caseCode: c.code,
+          caseTitle: c.title,
+          client: c.client,
+          currentRuleIndex: 0,
+          errors: 0,
+          completed: false,
+          actionsLog: [],
+          numericScore: 20,
+          score: '20 / 20'
+        })),
+        totalErrors: 0,
         status: 'IN_PROGRESS'
       };
 
-      // Iniciar cronómetro en vivo
+      // Cronómetro global continuo para toda la evaluación (no se reinicia al cambiar de tab)
       timerInterval = setInterval(() => {
         if (!activeEvaluation) return;
         activeEvaluation.elapsedSeconds = Math.floor((Date.now() - activeEvaluation.startTime) / 1000);
@@ -57,8 +67,37 @@ window.UyapayServices = window.UyapayServices || {};
       return activeEvaluation;
     },
 
+    // Compatibilidad monocaso
+    startEvaluation(user, singleCase, onTick) {
+      return this.startMultiEvaluation(user, [singleCase], onTick);
+    },
+
     getActiveEvaluation() {
       return activeEvaluation;
+    },
+
+    getActiveTab() {
+      return activeEvaluation ? activeEvaluation.activeTabIndex : 0;
+    },
+
+    switchActiveTab(newIndex) {
+      if (!activeEvaluation || newIndex < 0 || newIndex >= activeEvaluation.cases.length) return;
+      activeEvaluation.activeTabIndex = newIndex;
+    },
+
+    getActiveCase() {
+      if (!activeEvaluation) return null;
+      return activeEvaluation.cases[activeEvaluation.activeTabIndex] || null;
+    },
+
+    getActiveCaseState() {
+      if (!activeEvaluation) return null;
+      return activeEvaluation.caseStates[activeEvaluation.activeTabIndex] || null;
+    },
+
+    getAllCaseStates() {
+      if (!activeEvaluation) return [];
+      return activeEvaluation.caseStates;
     },
 
     stopTimer() {
@@ -69,8 +108,8 @@ window.UyapayServices = window.UyapayServices || {};
     },
 
     /**
-     * Procesa y audita un evento emitido por el simulador móvil
-     * @param {string} eventName - Nombre del evento ('SELECT_CLIENT', 'SELECT_ACTION', etc.)
+     * Procesa y audita un evento emitido por el simulador móvil en la pestaña activa
+     * @param {string} eventName - Nombre del evento ('SELECT_CLIENT', 'CREATE_ORDER_CONFIG', etc.)
      * @param {object} payload - Información asociada a la acción del usuario
      */
     processAction(eventName, payload = {}) {
@@ -78,25 +117,41 @@ window.UyapayServices = window.UyapayServices || {};
         return { success: false, message: 'No hay evaluación activa en curso.', isCaseComplete: false };
       }
 
-      const caseData = activeEvaluation.caseData;
-      const expectedRule = (caseData.rules && caseData.rules[activeEvaluation.currentRuleIndex]) || null;
+      const activeTab = activeEvaluation.activeTabIndex;
+      const currentCase = activeEvaluation.cases[activeTab];
+      const caseState = activeEvaluation.caseStates[activeTab];
       const timeStamp = new Date().toLocaleTimeString('es-PE');
 
-      // 1. Manejo de eventos informativos o de navegación interna
+      // Si el caso ya fue completado
+      if (caseState.completed && eventName !== 'MOBILE_LOGIN') {
+        return {
+          success: true,
+          isInformative: true,
+          message: 'Este caso ya ha sido completado.',
+          progress: 'Caso completado',
+          isCaseComplete: true,
+          tabIndex: activeTab,
+          caseState: caseState
+        };
+      }
+
+      // Eventos puramente informativos
       if (eventName === 'MOBILE_LOGIN') {
         const logEntry = {
           time: timeStamp,
           type: 'INFO',
-          step: 'Login Móvil',
+          step: `[Tab ${activeTab + 1}] Login Móvil`,
           detail: `Asesor ingresó al móvil como: ${payload.username}`
         };
-        activeEvaluation.actionsLog.push(logEntry);
+        caseState.actionsLog.push(logEntry);
         return {
           success: true,
           isInformative: true,
           logEntry: logEntry,
           progress: 'Revisando Plan de Visitas',
-          errors: activeEvaluation.errors
+          errors: caseState.errors,
+          totalErrors: activeEvaluation.totalErrors,
+          tabIndex: activeTab
         };
       }
 
@@ -104,20 +159,24 @@ window.UyapayServices = window.UyapayServices || {};
         const logEntry = {
           time: timeStamp,
           type: 'INFO',
-          step: 'Apertura de Opciones',
-          detail: `Abrió opciones del cliente: ${payload.clientName}`
+          step: `[Tab ${activeTab + 1}] Apertura de Opciones`,
+          detail: `Abrió opciones de: ${payload.clientName}`
         };
-        activeEvaluation.actionsLog.push(logEntry);
+        caseState.actionsLog.push(logEntry);
         return {
           success: true,
           isInformative: true,
           logEntry: logEntry,
-          progress: `Consultando a ${payload.clientName}`,
-          errors: activeEvaluation.errors
+          progress: `Consultando cliente`,
+          errors: caseState.errors,
+          totalErrors: activeEvaluation.totalErrors,
+          tabIndex: activeTab
         };
       }
 
-      // 2. Validación de regla esperada
+      // Validación contra las reglas del caso en este tab
+      const expectedRule = (currentCase.rules && currentCase.rules[caseState.currentRuleIndex]) || null;
+
       if (expectedRule && expectedRule.eventName === eventName) {
         let isCorrect = false;
         if (typeof expectedRule.validate === 'function') {
@@ -127,57 +186,103 @@ window.UyapayServices = window.UyapayServices || {};
         }
 
         if (isCorrect) {
-          // Acción aprobada
-          activeEvaluation.currentRuleIndex++;
-          const isCaseComplete = activeEvaluation.currentRuleIndex >= caseData.rules.length;
+          caseState.currentRuleIndex++;
+          const isCaseComplete = caseState.currentRuleIndex >= (currentCase.rules ? currentCase.rules.length : 1);
+          
+          if (isCaseComplete) {
+            caseState.completed = true;
+            caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
+            caseState.score = `${caseState.numericScore} / 20`;
+          }
+
           const logEntry = {
             time: timeStamp,
             type: 'SUCCESS',
-            step: expectedRule.description || eventName,
-            detail: `Correcto: ${expectedRule.description || eventName}`
+            step: `[Tab ${activeTab + 1}] ${expectedRule.description || eventName}`,
+            detail: `Correcto en ${currentCase.code}: ${expectedRule.description || eventName}`
           };
-          activeEvaluation.actionsLog.push(logEntry);
+          caseState.actionsLog.push(logEntry);
 
           return {
             success: true,
             isCorrect: true,
             isCaseComplete: isCaseComplete,
             logEntry: logEntry,
-            progress: isCaseComplete ? 'Visita iniciada con éxito' : `Paso ${activeEvaluation.currentRuleIndex} completado`,
-            errors: activeEvaluation.errors
+            progress: isCaseComplete ? `Caso ${activeTab + 1} completado` : `Paso ${caseState.currentRuleIndex} completado`,
+            errors: caseState.errors,
+            totalErrors: activeEvaluation.totalErrors,
+            tabIndex: activeTab,
+            caseState: caseState
           };
         } else {
-          // Acción errónea (cliente equivocado o acción no requerida)
-          activeEvaluation.errors++;
+          // Error en el paso esperado
+          caseState.errors++;
+          activeEvaluation.totalErrors++;
+          caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
+          caseState.score = `${caseState.numericScore} / 20`;
+
           const logEntry = {
             time: timeStamp,
             type: 'ERROR',
-            step: 'Acción Incorrecta',
-            detail: expectedRule.errorMessage || 'Acción no coincide con el caso.'
+            step: `[Tab ${activeTab + 1}] Acción Incorrecta`,
+            detail: expectedRule.errorMessage || `Error en ${currentCase.code}`
           };
-          activeEvaluation.actionsLog.push(logEntry);
+          caseState.actionsLog.push(logEntry);
 
           return {
             success: false,
             isCorrect: false,
-            message: expectedRule.errorMessage || 'Acción incorrecta para este caso.',
+            message: expectedRule.errorMessage || 'Acción no coincide con los datos del caso.',
             logEntry: logEntry,
-            progress: `Error en paso ${activeEvaluation.currentRuleIndex + 1}`,
-            errors: activeEvaluation.errors
+            progress: `Error en paso ${caseState.currentRuleIndex + 1}`,
+            errors: caseState.errors,
+            totalErrors: activeEvaluation.totalErrors,
+            tabIndex: activeTab,
+            caseState: caseState
           };
         }
       }
 
-      // 3. Acción inesperada fuera de flujo
-      activeEvaluation.errors++;
-      const unexpectedError = 'Acción fuera del flujo esperado para este caso.';
+      // Si es SUBMIT_ORDER o SUBMIT_EVALUATION fuera del índice estricto pero finaliza el caso
+      if (eventName === 'SUBMIT_ORDER' || eventName === 'SUBMIT_EVALUATION') {
+        caseState.completed = true;
+        caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
+        caseState.score = `${caseState.numericScore} / 20`;
+        const logEntry = {
+          time: timeStamp,
+          type: 'SUCCESS',
+          step: `[Tab ${activeTab + 1}] Cierre de Orden`,
+          detail: `Caso ${currentCase.code} finalizado.`
+        };
+        caseState.actionsLog.push(logEntry);
+
+        return {
+          success: true,
+          isCorrect: true,
+          isCaseComplete: true,
+          logEntry: logEntry,
+          progress: `Caso ${activeTab + 1} completado`,
+          errors: caseState.errors,
+          totalErrors: activeEvaluation.totalErrors,
+          tabIndex: activeTab,
+          caseState: caseState
+        };
+      }
+
+      // Acción fuera de secuencia
+      caseState.errors++;
+      activeEvaluation.totalErrors++;
+      caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
+      caseState.score = `${caseState.numericScore} / 20`;
+
+      const unexpectedError = `Acción fuera del flujo esperado para ${currentCase.code}.`;
       const logEntry = {
         time: timeStamp,
         type: 'ERROR',
-        step: 'Fuera de Secuencia',
+        step: `[Tab ${activeTab + 1}] Fuera de Secuencia`,
         detail: unexpectedError
       };
-      activeEvaluation.actionsLog.push(logEntry);
+      caseState.actionsLog.push(logEntry);
 
       return {
         success: false,
@@ -185,49 +290,74 @@ window.UyapayServices = window.UyapayServices || {};
         message: unexpectedError,
         logEntry: logEntry,
         progress: 'Secuencia interrumpida',
-        errors: activeEvaluation.errors
+        errors: caseState.errors,
+        totalErrors: activeEvaluation.totalErrors,
+        tabIndex: activeTab,
+        caseState: caseState
       };
     },
 
     /**
-     * Finaliza la evaluación, computa la calificación vigesimal y consolida el resultado
+     * Finaliza la evaluación global consolidando los 5 casos y el tiempo total
      */
-    finishEvaluation() {
+    finishMultiEvaluation() {
       if (!activeEvaluation) return null;
 
       this.stopTimer();
       activeEvaluation.status = 'COMPLETED';
 
       const durationSeconds = activeEvaluation.elapsedSeconds;
-      const scoring = activeEvaluation.caseData.scoring || {
-        maxScore: 20,
-        penaltyPerError: 4,
-        maxErrorsAllowed: 2
-      };
+      const totalCases = activeEvaluation.caseStates.length;
+      
+      // Asegurar que cada caso calcule su nota
+      activeEvaluation.caseStates.forEach(cs => {
+        if (!cs.completed && cs.currentRuleIndex === 0) {
+          // Caso no intentado: nota proporcional o mínima
+          cs.numericScore = Math.max(0, 20 - (cs.errors * 4) - 10);
+        } else {
+          cs.numericScore = Math.max(0, 20 - (cs.errors * 4));
+        }
+        cs.score = `${cs.numericScore} / 20`;
+      });
 
-      const numericScore = Math.max(0, scoring.maxScore - (activeEvaluation.errors * scoring.penaltyPerError));
-      const passed = activeEvaluation.errors <= scoring.maxErrorsAllowed;
+      // Calificación consolidada: promedio de los casos
+      const sumScores = activeEvaluation.caseStates.reduce((acc, cs) => acc + cs.numericScore, 0);
+      const avgScore = totalCases > 0 ? Math.round(sumScores / totalCases) : 20;
+      const totalErrors = activeEvaluation.totalErrors;
+      const completedCount = activeEvaluation.caseStates.filter(cs => cs.completed).length;
+
+      // Criterio de aprobación: promedio >= 11 y errores <= 6 en los 5 casos
+      const passed = avgScore >= 11 && totalErrors <= 6;
+
+      const casesCodes = activeEvaluation.cases.map(c => c.code).join(', ');
 
       const result = {
         id: 'eval-' + Date.now(),
-        caseId: activeEvaluation.caseData.id,
-        caseCode: activeEvaluation.caseData.code,
-        caseTitle: activeEvaluation.caseData.title,
+        caseId: 'multi-5-cases',
+        caseCode: '5 Casos B2C',
+        caseTitle: `Evaluación de 5 Casos (${casesCodes})`,
         username: activeEvaluation.user.username,
         advisorName: activeEvaluation.user.name,
-        errors: activeEvaluation.errors,
-        maxErrorsAllowed: scoring.maxErrorsAllowed,
-        numericScore: numericScore,
-        score: `${numericScore} / ${scoring.maxScore}`,
+        errors: totalErrors,
+        maxErrorsAllowed: 6,
+        numericScore: avgScore,
+        score: `${avgScore} / 20`,
         status: passed ? 'Aprobado' : 'Desaprobado',
         durationSeconds: durationSeconds,
         formattedDuration: formatTime(durationSeconds),
         completedAt: new Date().toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium' }),
-        interactions: activeEvaluation.actionsLog
+        completedCasesCount: completedCount,
+        totalCasesCount: totalCases,
+        casesDetails: activeEvaluation.caseStates,
+        interactions: activeEvaluation.caseStates.flatMap(cs => cs.actionsLog)
       };
 
       activeEvaluation = null;
       return result;
+    },
+
+    finishEvaluation() {
+      return this.finishMultiEvaluation();
     },
 
     cancelEvaluation() {

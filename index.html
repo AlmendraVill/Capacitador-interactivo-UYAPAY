@@ -129,32 +129,51 @@
     <div class="section-header">
       <h2>Evaluación Práctica</h2>
     </div>
-    <div class="card" style="text-align:center; padding: 36px 20px;">
-      <h3 style="font-size:22px; margin-bottom:8px; color:var(--yellow-dark);">Módulo de Capacitación B2C</h3>
-      <p style="color:var(--text-muted); max-width:540px; margin:0 auto 20px auto; line-height:1.5; font-size:13px;">
-        Selecciona el caso práctico a evaluar e interactúa con el simulador móvil UYAPAY cumpliendo los flujos reales del manual:
+    <div class="card" style="text-align:center; padding: 40px 24px;">
+      <div style="display:inline-block; background:#fff9e6; color:var(--yellow-dark); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:12px;">
+        UYAPAY B2C • ASESORES COMERCIALES
+      </div>
+      <h3 style="font-size:24px; margin-bottom:10px; color:var(--text-dark);">Evaluación de Desempeño Práctico</h3>
+      <p style="color:var(--text-muted); max-width:580px; margin:0 auto; line-height:1.5; font-size:14px;">
+        Esta evaluación medirá tu conocimiento de los procesos comerciales, gestión de clientes y configuración de pedidos. Al presionar <b>Iniciar Evaluación</b>, se cargarán <b>5 casos prácticos</b> de los 15 disponibles, organizados en pestañas individuales (tabs).
       </p>
 
-      <div style="max-width:480px; margin:0 auto 20px auto; text-align:left;">
-        <label style="font-size:12px; font-weight:700; color:#333; display:block; margin-bottom:6px;">Caso práctico a resolver:</label>
-        <select id="eval-case-selector" style="padding:10px 12px; font-size:13px; border:1px solid #ccc; border-radius:8px; width:100%; background:#fff;" onchange="window.UyapayPortal.updateCasePreview(this.value)">
-          <option value="case-2" selected>⭐ Caso 2: Venta a crédito 30 días con descuento en dinero (Kanchis)</option>
-          <option value="case-1">Caso 1: Venta simple contado con regalo por volumen (Los Andes)</option>
-        </select>
+      <div class="eval-feature-grid">
+        <div class="eval-feature-box">
+          <div class="eval-feature-icon">📑</div>
+          <div>
+            <div class="eval-feature-title">5 Casos en Pestañas</div>
+            <div class="eval-feature-desc">Cada caso se evalúa de manera individual en una pestaña interactiva.</div>
+          </div>
+        </div>
+
+        <div class="eval-feature-box">
+          <div class="eval-feature-icon">⏱️</div>
+          <div>
+            <div class="eval-feature-title">Cronómetro Continuo</div>
+            <div class="eval-feature-desc">El tiempo total de resolución se contabiliza y sirve como criterio de desempate.</div>
+          </div>
+        </div>
+
+        <div class="eval-feature-box">
+          <div class="eval-feature-icon">🎯</div>
+          <div>
+            <div class="eval-feature-title">Escala Vigesimal (0-20)</div>
+            <div class="eval-feature-desc">Penalización por errores en la selección de clientes, promociones y liquidación.</div>
+          </div>
+        </div>
+
+        <div class="eval-feature-box">
+          <div class="eval-feature-icon">🏆</div>
+          <div>
+            <div class="eval-feature-title">Ranking Oficial y Podio</div>
+            <div class="eval-feature-desc">Tus resultados ingresan al Podio Top 3 y tabla de posiciones de la empresa.</div>
+          </div>
+        </div>
       </div>
 
-      <div id="case-preview-box" class="card" style="text-align:left; background:#fcfcfc; border-left:4px solid var(--yellow); padding:16px; margin:0 auto 24px auto; max-width:500px; box-shadow:none;">
-        <h4 id="preview-title" style="margin:0 0 6px 0; color:#222; font-size:14px;">Caso 2: Venta a crédito 30 días con descuento en dinero</h4>
-        <p id="preview-desc" style="font-size:12px; color:#555; margin:0; line-height:1.5;">
-          • <b>Cliente:</b> Distribuidora Kanchis EIRL (Crédito 30d, Lista OF)<br>
-          • <b>Fotos obligatorias:</b> Registro de fotos inicial y final de visita.<br>
-          • <b>Pedido:</b> 3 cajas Michelin Energy XM2+ ($55 c/u) con promo de $10 USD.<br>
-          • <b>Resultado esperado:</b> Liquidación neta de <b>USD 150.35</b> tras aplicar 3% de crédito.
-        </p>
-      </div>
-
-      <button class="btn-primary" style="width:auto; padding:14px 36px; font-size:15px;" onclick="window.UyapayPortal.startExam()">
-        Iniciar Evaluación en el Celular
+      <button class="btn-primary" style="width:auto; padding:15px 44px; font-size:16px; font-weight:700;" onclick="window.UyapayPortal.startExam()">
+        Iniciar Evaluación
       </button>
     </div>
   </div>
@@ -228,21 +247,41 @@
   <div id="evaluation-arena">
     <div class="exam-top-bar">
       <div style="display:flex; align-items:center; gap:16px;">
-        <span id="case-code" style="font-weight:600; color:var(--text-muted); font-size:13px;">Módulo B2C</span>
+        <span id="case-code" style="font-weight:700; color:var(--text-dark); font-size:13px;">Caso 1 de 5</span>
         <div class="timer-chip">
           <span class="timer-icon">⏱️</span>
           <span id="exam-timer">00:00</span>
         </div>
       </div>
-      <button class="btn-secondary" onclick="window.UyapayPortal.cancelExam()">Salir de la Evaluación</button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="btn-secondary" style="font-size:12px; padding:8px 14px;" onclick="window.UyapayPortal.cancelExam()">Cancelar Evaluación</button>
+      </div>
     </div>
 
     <div class="exam-workspace">
-      <!-- INSTRUCCIONES DEL CASO -->
+      <!-- BARRA DE 5 PESTAÑAS (TABS) -->
+      <div class="eval-tabs-bar" id="eval-tabs-bar">
+        <!-- Generado dinámicamente por JS con los 5 casos seleccionados -->
+      </div>
+
+      <!-- INSTRUCCIONES DEL CASO ACTIVO -->
       <div class="exam-instructions">
         <div class="card" style="border-left: 5px solid var(--yellow); margin-bottom:0;">
-          <h3 id="case-title" style="color:var(--yellow-dark); margin:0 0 6px 0; font-size:16px;">Cargando caso...</h3>
-          <p id="case-instructions" style="margin:0; font-size:13px; line-height:1.4; color:var(--text-dark);">Cargando instrucciones...</p>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <span id="case-module-badge" style="background:#f0f0f0; color:#444; font-size:11px; padding:3px 8px; border-radius:6px; font-weight:700;">Módulo B2C</span>
+            <span id="case-tab-status" class="badge badge-warning">⏳ En curso</span>
+          </div>
+          <h3 id="case-title" style="color:var(--yellow-dark); margin:0 0 6px 0; font-size:15px;">Cargando caso...</h3>
+          <div id="case-client-box" style="font-size:12px; font-weight:600; color:#222; margin-bottom:8px; padding-bottom:6px; border-bottom:1px dashed #eee;">
+            Cliente asignado: <span id="case-client-name" style="color:#2980b9;">-</span>
+          </div>
+          <p id="case-instructions" style="margin:0; font-size:12.5px; line-height:1.45; color:var(--text-dark); white-space:pre-line;">Cargando instrucciones...</p>
+          
+          <div class="tab-nav-buttons">
+            <button class="btn-secondary" id="btn-prev-tab" style="padding:8px 14px; font-size:12px;" onclick="window.UyapayPortal.prevTab()">‹ Anterior</button>
+            <button class="btn-primary" id="btn-next-tab" style="width:auto; padding:8px 18px; font-size:12px;" onclick="window.UyapayPortal.nextTab()">Siguiente Caso ›</button>
+            <button class="btn-primary" id="btn-finish-exam" style="display:none; width:auto; padding:8px 18px; font-size:12px; background:var(--success);" onclick="window.UyapayPortal.finishFullExam()">Finalizar y Enviar Evaluación ✓</button>
+          </div>
         </div>
       </div>
 

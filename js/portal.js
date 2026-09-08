@@ -299,72 +299,149 @@
     }).join('');
   }
 
-  // ================= EVALUACIÓN / SIMULADOR =================
+  // ================= EVALUACIÓN MULTI-CASO EN PESTAÑAS (5 CASOS) =================
+  let evaluationCases = [];
+  let currentActiveTab = 0;
+
+  function selectFiveEvaluationCases() {
+    const all = [...Cases];
+    // Algoritmo de barajado Fisher-Yates
+    for (let i = all.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [all[i], all[j]] = [all[j], all[i]];
+    }
+    return all.slice(0, 5);
+  }
+
   function startExam() {
     const user = Auth.getCurrentUser();
     if (!user) return;
 
-    const selector = document.getElementById('eval-case-selector');
-    const selectedCaseId = selector ? selector.value : 'case-2';
-    const activeCase = Cases.find(c => c.id === selectedCaseId) || Cases[1] || Cases[0];
-    currentCaseIndex = Cases.findIndex(c => c.id === activeCase.id);
+    // 1. Cargar 5 de los 15 casos disponibles
+    evaluationCases = selectFiveEvaluationCases();
+    currentActiveTab = 0;
 
+    // 2. Ocultar portal y activar arena de examen
     document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
     document.getElementById('top-navbar').style.display = 'none';
     document.getElementById('evaluation-arena').style.display = 'flex';
 
-    // Cargar información del caso
-    document.getElementById('case-title').textContent = activeCase.title;
-    document.getElementById('case-instructions').textContent = activeCase.instructions;
-    document.getElementById('case-code').textContent = `Módulo: ${activeCase.module} (${activeCase.code})`;
-
     const timerEl = document.getElementById('exam-timer');
     if (timerEl) timerEl.textContent = '00:00';
 
-    // Iniciar cronómetro y motor de evaluación desacoplado
-    Evaluator.startEvaluation(user, activeCase, (seconds, formatted) => {
+    // 3. Iniciar cronómetro continuo y motor multi-caso
+    Evaluator.startMultiEvaluation(user, evaluationCases, (seconds, formatted) => {
       if (timerEl) timerEl.textContent = formatted;
     });
 
     const liveAdvisorEl = document.getElementById('live-advisor');
     if (liveAdvisorEl) liveAdvisorEl.textContent = user.name;
 
-    // Cargar iframe con el caso seleccionado
-    const frame = document.getElementById('simulador-frame');
-    frame.src = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}`;
+    // 4. Renderizar pestañas y cargar el primer caso
+    renderEvaluationTabs();
+    loadCaseInTab(0);
   }
 
-  function updateCasePreview(caseId) {
-    const c = Cases.find(item => item.id === caseId);
-    if (!c) return;
+  function renderEvaluationTabs() {
+    const tabsBar = document.getElementById('eval-tabs-bar');
+    if (!tabsBar) return;
 
-    const titleEl = document.getElementById('preview-title');
-    const descEl = document.getElementById('preview-desc');
-    if (titleEl) titleEl.textContent = c.title;
+    const caseStates = Evaluator.getAllCaseStates();
 
-    if (descEl) {
-      if (c.id === 'case-2') {
-        descEl.innerHTML = `
-          • <b>Cliente:</b> Distribuidora Kanchis EIRL (Crédito 30d, Lista OF)<br>
-          • <b>Fotos obligatorias:</b> Registro de fotos inicial y final de visita.<br>
-          • <b>Pedido:</b> 3 cajas Michelin Energy XM2+ ($55 c/u) con promo de $10 USD.<br>
-          • <b>Resultado esperado:</b> Liquidación neta de <b>USD 150.35</b> tras aplicar 3% de crédito.
-        `;
-      } else if (c.id === 'case-1') {
-        descEl.innerHTML = `
-          • <b>Cliente:</b> Ferretería Los Andes S.A.C. (Juan Perez - Contado, Lista 1)<br>
-          • <b>Pedido:</b> 8 baldes Shell Helix HX7 10W/40 ($22 c/u = $176).<br>
-          • <b>Promoción:</b> Regalo de 2 botellas Shell Helix Plus.<br>
-          • <b>Resultado esperado:</b> Total USD 176 - 5% contado ($8.80) → <b>USD 167.20</b> + regalo.
-        `;
+    tabsBar.innerHTML = evaluationCases.map((c, index) => {
+      const state = caseStates[index] || {};
+      const isCompleted = state.completed;
+      const isActive = index === currentActiveTab;
+
+      let classes = 'eval-tab-item';
+      if (isActive) classes += ' active';
+      if (isCompleted) classes += ' completed';
+
+      const statusIcon = isCompleted ? '✅' : (isActive ? '⏳' : '⚪');
+
+      return `
+        <button class="${classes}" id="tab-btn-${index}" onclick="window.UyapayPortal.switchCaseTab(${index})">
+          <span class="tab-pill-num">${index + 1}</span>
+          <span>${c.code}</span>
+          <span id="tab-status-icon-${index}">${statusIcon}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  function loadCaseInTab(tabIndex) {
+    if (tabIndex < 0 || tabIndex >= evaluationCases.length) return;
+    currentActiveTab = tabIndex;
+    Evaluator.switchActiveTab(tabIndex);
+
+    const activeCase = evaluationCases[tabIndex];
+    const caseState = Evaluator.getActiveCaseState() || {};
+    const user = Auth.getCurrentUser();
+
+    // Actualizar encabezados y panel izquierdo
+    const caseCodeEl = document.getElementById('case-code');
+    const moduleBadgeEl = document.getElementById('case-module-badge');
+    const tabStatusEl = document.getElementById('case-tab-status');
+    const titleEl = document.getElementById('case-title');
+    const clientNameEl = document.getElementById('case-client-name');
+    const instructionsEl = document.getElementById('case-instructions');
+
+    if (caseCodeEl) caseCodeEl.textContent = `Caso ${tabIndex + 1} de 5 • ${activeCase.code}`;
+    if (moduleBadgeEl) moduleBadgeEl.textContent = activeCase.module || 'Ventas B2C';
+    if (titleEl) titleEl.textContent = activeCase.title;
+    if (clientNameEl) clientNameEl.textContent = activeCase.client || 'Cliente en ruta';
+    if (instructionsEl) instructionsEl.textContent = activeCase.instructions;
+
+    if (tabStatusEl) {
+      if (caseState.completed) {
+        tabStatusEl.textContent = '✅ Completado';
+        tabStatusEl.className = 'badge badge-success';
       } else {
-        descEl.textContent = c.instructions;
+        tabStatusEl.textContent = '⏳ En evaluación';
+        tabStatusEl.className = 'badge badge-warning';
       }
+    }
+
+    // Actualizar botones de navegación
+    const btnPrev = document.getElementById('btn-prev-tab');
+    const btnNext = document.getElementById('btn-next-tab');
+    const btnFinish = document.getElementById('btn-finish-exam');
+
+    if (btnPrev) btnPrev.style.visibility = tabIndex === 0 ? 'hidden' : 'visible';
+    
+    // Verificar si todos los casos están completos
+    const allCompleted = Evaluator.getAllCaseStates().every(cs => cs.completed);
+    if (btnFinish) {
+      btnFinish.style.display = (allCompleted || tabIndex === evaluationCases.length - 1) ? 'inline-block' : 'none';
+    }
+    if (btnNext) {
+      btnNext.style.display = tabIndex === evaluationCases.length - 1 ? 'none' : 'inline-block';
+    }
+
+    // Refrescar clases de tabs
+    renderEvaluationTabs();
+
+    // Cargar simulador móvil para este caso específico
+    const frame = document.getElementById('simulador-frame');
+    if (frame && user) {
+      frame.src = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}`;
+    }
+  }
+
+  function nextTab() {
+    if (currentActiveTab < evaluationCases.length - 1) {
+      loadCaseInTab(currentActiveTab + 1);
+    }
+  }
+
+  function prevTab() {
+    if (currentActiveTab > 0) {
+      loadCaseInTab(currentActiveTab - 1);
     }
   }
 
   function cancelExam() {
-    if (confirm("¿Estás seguro de cancelar la evaluación? Se perderá el avance actual.")) {
+    if (confirm("¿Estás seguro de cancelar la evaluación? Se perderá el avance de los 5 casos.")) {
       Evaluator.cancelEvaluation();
       const frame = document.getElementById('simulador-frame');
       frame.src = '';
@@ -387,7 +464,31 @@
         const payload = event.data.payload || {};
 
         if (eventName === 'SUBMIT_EVALUATION') {
-          await handleEvaluationCompleted();
+          // Caso completado en el simulador
+          const currentTab = currentActiveTab;
+          const evalResult = Evaluator.processAction('SUBMIT_ORDER', { confirmed: true });
+
+          renderEvaluationTabs();
+          loadCaseInTab(currentTab);
+
+          const allCompleted = Evaluator.getAllCaseStates().every(cs => cs.completed);
+          if (allCompleted) {
+            setTimeout(() => {
+              if (confirm("🎉 ¡Has completado los 5 casos de la evaluación!\n\n¿Deseas finalizar y enviar tu evaluación ahora?")) {
+                finishFullExam();
+              }
+            }, 400);
+          } else {
+            // Avanzar automáticamente a la siguiente pestaña no completada
+            const nextIncomplete = Evaluator.getAllCaseStates().findIndex((cs, i) => !cs.completed && i > currentTab);
+            const targetTab = nextIncomplete !== -1 ? nextIncomplete : Evaluator.getAllCaseStates().findIndex(cs => !cs.completed);
+            if (targetTab !== -1) {
+              setTimeout(() => {
+                alert(`✅ Caso ${currentTab + 1} completado. Avanzando al Caso ${targetTab + 1}.`);
+                loadCaseInTab(targetTab);
+              }, 300);
+            }
+          }
           return;
         }
 
@@ -398,7 +499,7 @@
         const stepEl = document.getElementById('live-step');
         const errorsEl = document.getElementById('live-errors');
         if (stepEl) stepEl.textContent = evalResult.progress || '-';
-        if (errorsEl) errorsEl.textContent = evalResult.errors !== undefined ? evalResult.errors : 0;
+        if (errorsEl) errorsEl.textContent = evalResult.totalErrors !== undefined ? evalResult.totalErrors : 0;
 
         if (evalResult.logEntry) {
           appendLiveFeed(evalResult.logEntry);
@@ -410,8 +511,18 @@
             step: evalResult.logEntry.step,
             detail: evalResult.logEntry.detail,
             type: evalResult.logEntry.type,
-            errors: evalResult.errors || 0
+            errors: evalResult.totalErrors || 0
           });
+        }
+
+        // Si la regla completó el caso
+        if (evalResult.isCaseComplete) {
+          renderEvaluationTabs();
+          const tabStatusEl = document.getElementById('case-tab-status');
+          if (tabStatusEl) {
+            tabStatusEl.textContent = '✅ Completado';
+            tabStatusEl.className = 'badge badge-success';
+          }
         }
 
         // Responder al simulador
@@ -421,8 +532,8 @@
               frameWindow.postMessage({
                 type: 'EVALUATOR_STEP_APPROVED',
                 nextScreen: 's-dashboard',
-                stepLabel: 'Visita Iniciada con Éxito',
-                message: '¡Excelente! Iniciaste la visita indicada.'
+                stepLabel: 'Caso Completado',
+                message: '¡Excelente! Has cumplido las reglas de este caso.'
               }, '*');
             } else if (!evalResult.isInformative) {
               frameWindow.postMessage({
@@ -441,8 +552,17 @@
     });
   }
 
-  async function handleEvaluationCompleted() {
-    const finalResult = Evaluator.finishEvaluation();
+  async function finishFullExam() {
+    const states = Evaluator.getAllCaseStates();
+    const incomplete = states.filter(cs => !cs.completed).length;
+
+    if (incomplete > 0) {
+      if (!confirm(`Aún tienes ${incomplete} caso(s) sin completar. ¿Estás seguro de enviar la evaluación ahora? Los casos no completados se calificarán con puntuación parcial.`)) {
+        return;
+      }
+    }
+
+    const finalResult = Evaluator.finishMultiEvaluation();
     if (!finalResult) return;
 
     // Guardar persistentemente en SQLite / API
@@ -458,19 +578,24 @@
     const currentUser = Auth.getCurrentUser();
     if (currentUser && currentUser.role === 'admin') {
       await renderAdminDashboard();
-      switchTab('ranking-view');
-    } else {
-      switchTab('ranking-view');
     }
+    switchTab('ranking-view');
+
+    // Desglose de notas por caso
+    const breakdown = (saved.casesDetails || [])
+      .map((cs, idx) => `• Caso ${idx + 1} (${cs.caseCode}): ${cs.score} (${cs.errors} errores)`)
+      .join('\n');
 
     alert(
-      `🎉 ¡Evaluación Completada!\n\n` +
+      `🎉 ¡Evaluación de 5 Casos Finalizada!\n\n` +
       `• Asesor: ${saved.advisorName}\n` +
-      `• Estado: ${saved.status}\n` +
-      `• Calificación: ${saved.score}\n` +
-      `• Tiempo empleado: ${saved.formattedDuration}\n` +
-      `• Errores cometidos: ${saved.errors}\n\n` +
-      `Tu resultado ha sido guardado permanentemente en la base de datos y actualizado en el Ranking.`
+      `• Estado Global: ${saved.status}\n` +
+      `• Calificación Final: ${saved.score}\n` +
+      `• Casos Completados: ${saved.completedCasesCount} de 5\n` +
+      `• Tiempo Total: ${saved.formattedDuration}\n` +
+      `• Total de Errores: ${saved.errors}\n\n` +
+      `Desglose por Caso:\n${breakdown}\n\n` +
+      `Tu calificación y tiempo han sido registrados permanentemente en el Ranking Oficial.`
     );
   }
 
@@ -479,7 +604,10 @@
     startExam: startExam,
     cancelExam: cancelExam,
     switchTab: switchTab,
-    updateCasePreview: updateCasePreview,
+    switchCaseTab: loadCaseInTab,
+    nextTab: nextTab,
+    prevTab: prevTab,
+    finishFullExam: finishFullExam,
     resetData: async () => {
       if (confirm('¿Restablecer base de datos y reiniciar el ranking?')) {
         await Storage.resetAll();
@@ -488,3 +616,4 @@
     }
   };
 })();
+

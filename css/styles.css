@@ -670,3 +670,129 @@ th {
   color: var(--text-muted);
 }
 
+/* ================= 7. SISTEMA DE TABS DE EVALUACIÓN MULTI-CASO ================= */
+.eval-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.eval-tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.eval-tab-item:hover {
+  border-color: var(--yellow);
+  color: var(--text-dark);
+}
+
+.eval-tab-item.active {
+  background: #fff9e6;
+  border-color: var(--yellow);
+  color: var(--yellow-dark);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(244, 168, 29, 0.2);
+}
+
+.eval-tab-item.completed {
+  background: #e8f8f0;
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.eval-tab-item.completed.active {
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
+}
+
+.tab-pill-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #eee;
+  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.eval-tab-item.active .tab-pill-num {
+  background: var(--yellow);
+  color: #fff;
+}
+
+.eval-tab-item.completed .tab-pill-num {
+  background: var(--success);
+  color: #fff;
+}
+
+/* Grilla informativa de la vista de evaluación */
+.eval-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  max-width: 640px;
+  margin: 20px auto 26px auto;
+  text-align: left;
+}
+
+.eval-feature-box {
+  background: #fdfdfd;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.eval-feature-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.eval-feature-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+}
+
+.eval-feature-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.tab-nav-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+

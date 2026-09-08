@@ -1,6 +1,6 @@
 /**
  * Controlador del Simulador Móvil UYAPAY
- * Implementa la réplica interactiva del Manual de Usuario UYAPAY jul-2025.
+ * Soporta dinámicamente cualquiera de los 15 casos del catálogo y evaluación en pestañas.
  * Totalmente desacoplado: emite eventos hacia el Evaluador sin calcular notas internamente.
  */
 
@@ -8,6 +8,7 @@
   const state = {
     advisorUsername: 'alvaro',
     currentCaseId: 'case-2',
+    currentTabIndex: 0,
     selectedClient: '',
     photos: { 1: false, 2: false },
     orderConfig: {
@@ -28,6 +29,14 @@
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('user')) state.advisorUsername = urlParams.get('user');
   if (urlParams.get('case')) state.currentCaseId = urlParams.get('case');
+  if (urlParams.get('tab')) state.currentTabIndex = parseInt(urlParams.get('tab'), 10) || 0;
+
+  function getCaseData() {
+    if (window.UyapayData && window.UyapayData.CASES) {
+      return window.UyapayData.CASES.find(c => c.id === state.currentCaseId) || window.UyapayData.CASES[0];
+    }
+    return null;
+  }
 
   // Emisor central de eventos hacia el Portal Padre (Evaluador)
   function emitSimulatorEvent(eventName, payload = {}) {
@@ -38,6 +47,7 @@
         payload: {
           advisor: state.advisorUsername,
           caseId: state.currentCaseId,
+          tabIndex: state.currentTabIndex,
           ...payload
         }
       }, '*');
@@ -60,7 +70,82 @@
     if (target) target.classList.add('active');
   }
 
-  // 1. Login dentro del smartphone
+  // 1. Inicialización y carga dinámica de clientes y productos según el caso
+  function initializeCaseEnvironment() {
+    const currentCase = getCaseData();
+    if (!currentCase) return;
+
+    // Actualizar configuración del carrito según el caso
+    state.cart.product = currentCase.product || 'Michelin Energy XM2+ 195/60 R15';
+    state.cart.unitPrice = currentCase.unitPrice || 55.0;
+    state.cart.qty = currentCase.expectedQty || 3;
+    state.cart.promoDiscount = currentCase.promoDiscount !== false;
+
+    // Renderizar clientes en la pantalla de visitas (s-visitas)
+    const listContainer = document.getElementById('client-list-cards');
+    if (listContainer) {
+      const targetClient = currentCase.client;
+      const targetAddr = currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100';
+
+      // Clientes distractores fijos para evaluar precisión
+      const distractors = [
+        { name: 'Ferretería Los Andes S.A.C.', address: 'AV. TOMAS TUYRUTUPAC 412' },
+        { name: 'Distribuidora Kanchis EIRL', address: 'AV. INDUSTRIAL 104' },
+        { name: 'Chahua Puma Franclin', address: 'AV. PAISAJISTA NRO. 503' },
+        { name: 'Ramirez Alarcon Hernan', address: 'CALLE HUACHO 109' }
+      ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 8)));
+
+      let html = `
+        <div class="client-card" style="border-left: 4px solid #2980b9;" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
+          <div class="pin">◎</div>
+          <div>
+            <div class="client-name">${targetClient.toUpperCase()}</div>
+            <div class="client-address">${targetAddr}</div>
+          </div>
+        </div>
+      `;
+
+      distractors.slice(0, 3).forEach(d => {
+        html += `
+          <div class="client-card" onclick="window.UyapaySimulator.openOptions('${d.name}')">
+            <div class="pin">◎</div>
+            <div>
+              <div class="client-name">${d.name.toUpperCase()}</div>
+              <div class="client-address">${d.address}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      listContainer.innerHTML = html;
+    }
+
+    // Actualizar producto en el catálogo (s-catalogo-producto)
+    const catProdCard = document.querySelector('#s-catalogo-producto .card');
+    if (catProdCard) {
+      const brandTag = catProdCard.querySelector('span');
+      const titleEl = catProdCard.querySelector('h3');
+      const priceEl = catProdCard.querySelector('div[style*="font-size:18px"]');
+      const promoLabel = document.querySelector('.promo-toggle-card div div:first-child');
+
+      if (brandTag) brandTag.textContent = (currentCase.brand || 'PRODUCTO').toUpperCase();
+      if (titleEl) titleEl.textContent = state.cart.product;
+      if (priceEl) priceEl.innerHTML = `USD ${state.cart.unitPrice.toFixed(2)} <span style="font-size:12px; font-weight:400; color:var(--muted);">/ unidad</span>`;
+      if (promoLabel && currentCase.promoLabel) promoLabel.textContent = currentCase.promoLabel;
+
+      const qtyEl = document.getElementById('product-qty');
+      if (qtyEl) qtyEl.textContent = state.cart.qty;
+      const subtotalEl = document.getElementById('product-subtotal-text');
+      if (subtotalEl) subtotalEl.textContent = `= USD ${(state.cart.qty * state.cart.unitPrice).toFixed(2)}`;
+
+      const togglePromoEl = document.getElementById('toggle-promo-discount');
+      if (togglePromoEl) togglePromoEl.checked = state.cart.promoDiscount;
+    }
+
+    updateReceiptCalculations();
+  }
+
+  // 2. Login dentro del smartphone
   function handleAppLogin() {
     const userInput = (document.getElementById('userIn').value || '').trim();
     if (!userInput) {
@@ -72,7 +157,7 @@
     navigateTo('s-visitas');
   }
 
-  // 2. Visitas y Opciones
+  // 3. Visitas y Opciones
   function openClientOptions(clientName) {
     state.selectedClient = clientName;
     const modal = document.getElementById('optionsModal');
@@ -103,7 +188,7 @@
     }
   }
 
-  // 3. Fotos de Visita (Manual Paso 3)
+  // 4. Fotos de Visita
   function takePhoto(photoId) {
     state.photos[photoId] = true;
     const btn = document.getElementById(`btn-foto-${photoId}`);
@@ -137,7 +222,7 @@
     navigateTo('s-pedidos-menu');
   }
 
-  // 4. Configuración del Pedido (Manual Pasos 6 y 7)
+  // 5. Configuración del Pedido
   function submitOrderConfig() {
     const condicion = document.getElementById('sel-condicion').value;
     const lista = document.getElementById('sel-lista').value;
@@ -160,13 +245,15 @@
     navigateTo('s-catalogo-producto');
   }
 
-  // 5. Catálogo y Detalle del Producto (Manual Paso 8)
+  // 6. Catálogo y Detalle del Producto
   function changeQty(delta) {
     state.cart.qty = Math.max(1, state.cart.qty + delta);
-    document.getElementById('product-qty').textContent = state.cart.qty;
+    const qtyEl = document.getElementById('product-qty');
+    if (qtyEl) qtyEl.textContent = state.cart.qty;
     
     const baseSubtotal = state.cart.qty * state.cart.unitPrice;
-    document.getElementById('product-subtotal-text').textContent = `= USD ${baseSubtotal.toFixed(2)}`;
+    const subtotalTextEl = document.getElementById('product-subtotal-text');
+    if (subtotalTextEl) subtotalTextEl.textContent = `= USD ${baseSubtotal.toFixed(2)}`;
     updateReceiptCalculations();
   }
 
@@ -206,7 +293,7 @@
     navigateTo('s-resumen-pedido');
   }
 
-  // 6. Resumen y Envío Final (Manual Pasos 9 a 12)
+  // 7. Resumen y Envío Final
   function submitFinalOrder() {
     const baseAmount = state.cart.qty * state.cart.unitPrice;
     const promoDesc = state.cart.promoDiscount ? 10.00 : 0.00;
@@ -244,7 +331,7 @@
     }
   });
 
-  // Exponer métodos globales para los onclicks del HTML
+  // Exponer métodos globales
   window.UyapaySimulator = {
     login: handleAppLogin,
     go: navigateTo,
@@ -267,5 +354,6 @@
     if (input && state.advisorUsername) {
       input.value = state.advisorUsername;
     }
+    initializeCaseEnvironment();
   });
 })();
