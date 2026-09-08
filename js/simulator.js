@@ -1,13 +1,13 @@
 /**
  * Controlador del Simulador Móvil UYAPAY
- * Soporta dinámicamente cualquiera de los 15 casos del catálogo y evaluación en pestañas.
+ * Soporta Catálogo Dinámico Multi-Marca (Shell, Michelin, BFGoodrich, Hyundai)
  * Totalmente desacoplado: emite eventos hacia el Evaluador sin calcular notas internamente.
  */
 
 (function() {
   const state = {
     advisorUsername: 'alvaro',
-    currentCaseId: 'case-2',
+    currentCaseId: 'case-1',
     currentTabIndex: 0,
     selectedClient: '',
     photos: { 1: false, 2: false },
@@ -17,11 +17,20 @@
       line: '',
       brand: ''
     },
+    catalogQuantities: {},
+    catalogPromos: {},
     cart: {
-      product: 'Michelin Energy XM2+ 195/60 R15',
-      unitPrice: 55.0,
-      qty: 3,
-      promoDiscount: true
+      productId: '',
+      product: 'Shell Helix HX7 10W/40',
+      sku: 'B-734807',
+      line: 'lubricantes',
+      brand: 'shell',
+      unitPrice: 22.0,
+      qty: 8,
+      promoDiscount: true,
+      promoType: 'gift',
+      promoDiscountAmount: 0.0,
+      promoLabel: '🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)'
     }
   };
 
@@ -36,6 +45,13 @@
       return window.UyapayData.CASES.find(c => c.id === state.currentCaseId) || window.UyapayData.CASES[0];
     }
     return null;
+  }
+
+  function getMasterProducts() {
+    if (window.UyapayData && window.UyapayData.PRODUCTS) {
+      return window.UyapayData.PRODUCTS;
+    }
+    return [];
   }
 
   // Emisor central de eventos hacia el Portal Padre (Evaluador)
@@ -70,30 +86,53 @@
     if (target) target.classList.add('active');
   }
 
-  // 1. Inicialización y carga dinámica de clientes y productos según el caso
+  // 1. Inicialización de Visitas y Clientes según el Caso Activo
   function initializeCaseEnvironment() {
     const currentCase = getCaseData();
     if (!currentCase) return;
 
-    // Actualizar configuración del carrito según el caso
-    state.cart.product = currentCase.product || 'Michelin Energy XM2+ 195/60 R15';
-    state.cart.unitPrice = currentCase.unitPrice || 55.0;
-    state.cart.qty = currentCase.expectedQty || 3;
-    state.cart.promoDiscount = currentCase.promoDiscount !== false;
+    // Inicializar estado del carrito por defecto con los valores del caso
+    state.selectedClient = currentCase.client;
+    state.cart = {
+      productId: '',
+      product: currentCase.product || 'Shell Helix HX7 10W/40',
+      sku: '',
+      line: currentCase.line || 'lubricantes',
+      brand: currentCase.brand || 'shell',
+      unitPrice: currentCase.unitPrice || 22.0,
+      qty: currentCase.expectedQty || 1,
+      promoDiscount: currentCase.promoDiscount !== false,
+      promoType: currentCase.promoType || (currentCase.promoDiscount ? 'gift' : 'none'),
+      promoDiscountAmount: currentCase.promoDiscountAmount || 0.0,
+      promoLabel: currentCase.promoLabel || 'Promoción oficial'
+    };
 
-    // Renderizar clientes en la pantalla de visitas (s-visitas)
+    // Pre-poblar los selectores en s-nuevo-pedido con los datos que coinciden con el caso
+    const selCond = document.getElementById('sel-condicion');
+    const selList = document.getElementById('sel-lista');
+    const selLine = document.getElementById('sel-linea');
+    const selBrand = document.getElementById('sel-marca');
+
+    if (selCond && currentCase.paymentCondition) selCond.value = currentCase.paymentCondition;
+    if (selList && currentCase.priceList) selList.value = currentCase.priceList;
+    if (selLine && currentCase.line) selLine.value = currentCase.line;
+    if (selBrand && currentCase.brand) selBrand.value = currentCase.brand;
+
+    // Renderizar lista de clientes en la ruta (s-visitas)
     const listContainer = document.getElementById('client-list-cards');
     if (listContainer) {
       const targetClient = currentCase.client;
       const targetAddr = currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100';
 
-      // Clientes distractores fijos para evaluar precisión
-      const distractors = [
+      const mockDistractors = [
         { name: 'Ferretería Los Andes S.A.C.', address: 'AV. TOMAS TUYRUTUPAC 412' },
         { name: 'Distribuidora Kanchis EIRL', address: 'AV. INDUSTRIAL 104' },
-        { name: 'Chahua Puma Franclin', address: 'AV. PAISAJISTA NRO. 503' },
-        { name: 'Ramirez Alarcon Hernan', address: 'CALLE HUACHO 109' }
-      ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 8)));
+        { name: 'Comercial Vega Hnos.', address: 'CALLE MERCADERES 301' },
+        { name: 'Transportes del Sur SAC', address: 'KM 12 VARIANTE UCHUMAYO' },
+        { name: 'Grupo Ferretero Miraflores', address: 'AV. SAN JERONIMO 210' },
+        { name: 'Autopartes El Rápido', address: 'JR. PIEROLA 540' },
+        { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' }
+      ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
 
       let html = `
         <div class="client-card" style="border-left: 4px solid #2980b9;" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
@@ -105,7 +144,7 @@
         </div>
       `;
 
-      distractors.slice(0, 3).forEach(d => {
+      mockDistractors.slice(0, 3).forEach(d => {
         html += `
           <div class="client-card" onclick="window.UyapaySimulator.openOptions('${d.name}')">
             <div class="pin">◎</div>
@@ -119,30 +158,6 @@
 
       listContainer.innerHTML = html;
     }
-
-    // Actualizar producto en el catálogo (s-catalogo-producto)
-    const catProdCard = document.querySelector('#s-catalogo-producto .card');
-    if (catProdCard) {
-      const brandTag = catProdCard.querySelector('span');
-      const titleEl = catProdCard.querySelector('h3');
-      const priceEl = catProdCard.querySelector('div[style*="font-size:18px"]');
-      const promoLabel = document.querySelector('.promo-toggle-card div div:first-child');
-
-      if (brandTag) brandTag.textContent = (currentCase.brand || 'PRODUCTO').toUpperCase();
-      if (titleEl) titleEl.textContent = state.cart.product;
-      if (priceEl) priceEl.innerHTML = `USD ${state.cart.unitPrice.toFixed(2)} <span style="font-size:12px; font-weight:400; color:var(--muted);">/ unidad</span>`;
-      if (promoLabel && currentCase.promoLabel) promoLabel.textContent = currentCase.promoLabel;
-
-      const qtyEl = document.getElementById('product-qty');
-      if (qtyEl) qtyEl.textContent = state.cart.qty;
-      const subtotalEl = document.getElementById('product-subtotal-text');
-      if (subtotalEl) subtotalEl.textContent = `= USD ${(state.cart.qty * state.cart.unitPrice).toFixed(2)}`;
-
-      const togglePromoEl = document.getElementById('toggle-promo-discount');
-      if (togglePromoEl) togglePromoEl.checked = state.cart.promoDiscount;
-    }
-
-    updateReceiptCalculations();
   }
 
   // 2. Login dentro del smartphone
@@ -180,7 +195,6 @@
     // 2. Notificar la acción solicitada
     emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
 
-    // Si la acción es iniciar visita, avanzar a datos del cliente
     if (actionKey === 'iniciar') {
       const cliHeader = document.getElementById('cli-nombre-header');
       if (cliHeader) cliHeader.textContent = state.selectedClient;
@@ -242,68 +256,283 @@
     };
 
     emitSimulatorEvent('CREATE_ORDER_CONFIG', state.orderConfig);
+    renderCatalogProducts(linea, marca);
     navigateTo('s-catalogo-producto');
   }
 
-  // 6. Catálogo y Detalle del Producto
-  function changeQty(delta) {
-    state.cart.qty = Math.max(1, state.cart.qty + delta);
-    const qtyEl = document.getElementById('product-qty');
-    if (qtyEl) qtyEl.textContent = state.cart.qty;
-    
-    const baseSubtotal = state.cart.qty * state.cart.unitPrice;
-    const subtotalTextEl = document.getElementById('product-subtotal-text');
-    if (subtotalTextEl) subtotalTextEl.textContent = `= USD ${baseSubtotal.toFixed(2)}`;
-    updateReceiptCalculations();
+  // 6. Renderizado del Catálogo de Productos según Línea y Marca
+  function renderCatalogProducts(linea, marca) {
+    const container = document.getElementById('catalog-products-container');
+    const brandBadge = document.getElementById('catalog-brand-badge');
+    const lineBadge = document.getElementById('catalog-line-badge');
+    const countBadge = document.getElementById('catalog-count-badge');
+
+    if (brandBadge) brandBadge.textContent = marca.toUpperCase();
+    if (lineBadge) lineBadge.textContent = `Línea: ${linea.charAt(0).toUpperCase() + linea.slice(1)}`;
+
+    const allProducts = getMasterProducts();
+    const currentCase = getCaseData();
+
+    // Filtrar productos por línea y marca
+    let matchingProducts = allProducts.filter(p => p.line === linea && p.brand === marca);
+
+    // Si por algún motivo la marca no coincide exactamente, mostrar todos los de la marca o los del catálogo
+    if (matchingProducts.length === 0) {
+      matchingProducts = allProducts.filter(p => p.brand === marca);
+    }
+    if (matchingProducts.length === 0) {
+      matchingProducts = allProducts.filter(p => p.line === linea);
+    }
+
+    if (countBadge) countBadge.textContent = `${matchingProducts.length} productos disponibles`;
+
+    if (!container) return;
+
+    if (matchingProducts.length === 0) {
+      container.innerHTML = `
+        <div class="card-task" style="text-align:center; padding:24px;">
+          <p style="color:var(--text-light); font-size:13px;">No se encontraron productos para esta línea y marca.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let cardsHtml = '';
+    matchingProducts.forEach(prod => {
+      const isTarget = currentCase && (
+        (currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) ||
+        (currentCase.brand === prod.brand && currentCase.line === prod.line)
+      );
+
+      // Pre-cargar cantidad esperada si es el producto target
+      const initialQty = isTarget && currentCase.expectedQty ? currentCase.expectedQty : 1;
+      state.catalogQuantities[prod.id] = state.catalogQuantities[prod.id] || initialQty;
+
+      // Pre-cargar estado de promoción
+      const initialPromo = isTarget ? (currentCase.promoDiscount !== false) : prod.hasPromo;
+      if (state.catalogPromos[prod.id] === undefined) {
+        state.catalogPromos[prod.id] = initialPromo;
+      }
+
+      const currentQty = state.catalogQuantities[prod.id];
+      const promoChecked = state.catalogPromos[prod.id];
+
+      // Texto de promoción
+      const promoText = (isTarget && currentCase.promoLabel) ? currentCase.promoLabel : prod.promoLabel;
+
+      cardsHtml += `
+        <div class="catalog-item-card ${isTarget ? 'is-target' : ''}" id="card-prod-${prod.id}">
+          <div class="catalog-item-header">
+            <span class="brand-badge">${prod.brand.toUpperCase()}</span>
+            <span style="font-size:11px; color:var(--text-light); font-weight:600;">${prod.format || ''}</span>
+          </div>
+          <div class="catalog-item-title">${prod.name}</div>
+          <div class="catalog-item-sku">Cód: ${prod.sku}</div>
+
+          <div class="catalog-item-price-row">
+            <div class="catalog-item-price">
+              USD ${prod.unitPrice.toFixed(2)} <small>/ unidad</small>
+            </div>
+            <div style="font-size:12px; font-weight:700; color:#2980b9;" id="subtotal-item-${prod.id}">
+              = USD ${(currentQty * prod.unitPrice).toFixed(2)}
+            </div>
+          </div>
+
+          <!-- Selector de Cantidad -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-medium);">Cantidad:</span>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="window.UyapaySimulator.changeCatalogQty('${prod.id}', -1)">-</button>
+              <div class="qty-display" id="qty-disp-${prod.id}">${currentQty}</div>
+              <button class="qty-btn" onclick="window.UyapaySimulator.changeCatalogQty('${prod.id}', 1)">+</button>
+            </div>
+          </div>
+
+          <!-- Toggle de Promoción si aplica -->
+          ${prod.hasPromo || (isTarget && currentCase.promoLabel) ? `
+            <div class="promo-toggle-card" style="margin-top:10px;">
+              <div style="max-width:200px;">
+                <div style="font-size:11px; font-weight:700; color:#795548;">${promoText}</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="promo-chk-${prod.id}" ${promoChecked ? 'checked' : ''} onchange="window.UyapaySimulator.toggleCatalogPromo('${prod.id}', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          ` : `
+            <div style="font-size:11px; color:var(--text-light); font-style:italic; margin-top:8px;">
+              ${prod.promoLabel || 'Sin promociones para este artículo'}
+            </div>
+          `}
+
+          <div class="catalog-item-actions">
+            <span style="font-size:11px; color:var(--text-light);">Confirmar selección:</span>
+            <button class="btn-select-product" onclick="window.UyapaySimulator.selectProduct('${prod.id}')">
+              🛒 Agregar al Pedido ›
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = cardsHtml;
   }
 
-  function togglePromo(checked) {
-    state.cart.promoDiscount = checked;
-    updateReceiptCalculations();
+  function changeCatalogQty(prodId, delta) {
+    const current = state.catalogQuantities[prodId] || 1;
+    const next = Math.max(1, current + delta);
+    state.catalogQuantities[prodId] = next;
+
+    const disp = document.getElementById(`qty-disp-${prodId}`);
+    if (disp) disp.textContent = next;
+
+    const allProducts = getMasterProducts();
+    const prod = allProducts.find(p => p.id === prodId);
+    if (prod) {
+      const subtotalEl = document.getElementById(`subtotal-item-${prodId}`);
+      if (subtotalEl) subtotalEl.textContent = `= USD ${(next * prod.unitPrice).toFixed(2)}`;
+    }
   }
 
-  function updateReceiptCalculations() {
-    const baseAmount = state.cart.qty * state.cart.unitPrice;
-    const promoDesc = state.cart.promoDiscount ? 10.00 : 0.00;
-    const subtotal = Math.max(0, baseAmount - promoDesc);
-    const creditoDesc = subtotal * 0.03; // 3% por crédito 30 días
-    const total = subtotal - creditoDesc;
-
-    const rowPromo = document.getElementById('row-promo-desc');
-    if (rowPromo) rowPromo.style.display = state.cart.promoDiscount ? 'flex' : 'none';
-
-    const subtotalEl = document.getElementById('receipt-subtotal');
-    if (subtotalEl) subtotalEl.textContent = `USD ${subtotal.toFixed(2)}`;
-
-    const creditoEl = document.getElementById('receipt-credito-desc');
-    if (creditoEl) creditoEl.textContent = `- USD ${creditoDesc.toFixed(2)}`;
-
-    const totalEl = document.getElementById('receipt-total-val');
-    if (totalEl) totalEl.textContent = `USD ${total.toFixed(2)}`;
+  function toggleCatalogPromo(prodId, checked) {
+    state.catalogPromos[prodId] = checked;
   }
 
-  function addProductToCart() {
+  // 7. Seleccionar Producto y pasar al Resumen de Liquidación
+  function selectProduct(prodId) {
+    const allProducts = getMasterProducts();
+    const prod = allProducts.find(p => p.id === prodId);
+    if (!prod) return;
+
+    const currentCase = getCaseData();
+    const qty = state.catalogQuantities[prodId] || 1;
+    const promoChecked = state.catalogPromos[prodId] !== undefined ? state.catalogPromos[prodId] : false;
+
+    // Detectar si la promoción otorga descuento en dinero o regalo
+    let promoDiscountAmount = 0.0;
+    let promoType = prod.promoType || 'none';
+    let promoLabel = prod.promoLabel || '';
+
+    if (currentCase && currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) {
+      promoType = currentCase.promoType || prod.promoType || 'none';
+      promoDiscountAmount = currentCase.promoDiscountAmount || 0.0;
+      promoLabel = currentCase.promoLabel || prod.promoLabel;
+    } else if (prod.promoType === 'discount') {
+      promoDiscountAmount = prod.promoDiscountAmount || 10.0;
+    }
+
+    state.cart = {
+      productId: prod.id,
+      product: prod.name,
+      sku: prod.sku,
+      line: prod.line,
+      brand: prod.brand,
+      unitPrice: prod.unitPrice,
+      qty: qty,
+      promoDiscount: promoChecked,
+      promoType: promoType,
+      promoDiscountAmount: promoDiscountAmount,
+      promoLabel: promoLabel
+    };
+
+    // Emitir evento desacoplado hacia el evaluador
     emitSimulatorEvent('ADD_PRODUCT', {
       product: state.cart.product,
+      sku: state.cart.sku,
+      line: state.cart.line,
+      brand: state.cart.brand,
       quantity: state.cart.qty,
-      promoDiscount: state.cart.promoDiscount
+      unitPrice: state.cart.unitPrice,
+      promoDiscount: state.cart.promoDiscount,
+      promoType: state.cart.promoType,
+      promoDiscountAmount: state.cart.promoDiscountAmount,
+      promoLabel: state.cart.promoLabel
     });
 
     updateReceiptCalculations();
     navigateTo('s-resumen-pedido');
   }
 
-  // 7. Resumen y Envío Final
-  function submitFinalOrder() {
-    const baseAmount = state.cart.qty * state.cart.unitPrice;
-    const promoDesc = state.cart.promoDiscount ? 10.00 : 0.00;
-    const subtotal = Math.max(0, baseAmount - promoDesc);
-    const creditoDesc = subtotal * 0.03;
-    const total = Number((subtotal - creditoDesc).toFixed(2));
+  // 8. Cálculos de Liquidación Dinámicos basados en la Condición Elegida
+  function updateReceiptCalculations() {
+    const currentCase = getCaseData();
+    const cond = state.orderConfig.paymentCondition || 'contado';
 
+    // Tasas financieras oficiales de UYAPAY
+    let rate = 0.05;
+    let condLabel = 'Desc. Contado (5%):';
+    if (cond === 'credito_15') { rate = 0.04; condLabel = 'Desc. Crédito 15 días (4%):'; }
+    else if (cond === 'credito_30') { rate = 0.03; condLabel = 'Desc. Crédito 30 días (3%):'; }
+    else if (cond === 'credito_45') { rate = 0.02; condLabel = 'Desc. Crédito 45 días (2%):'; }
+    else if (cond === 'credito_60') { rate = 0.01; condLabel = 'Desc. Crédito 60 días (1%):'; }
+
+    const rawTotal = state.cart.qty * state.cart.unitPrice;
+
+    // Descuento de promoción (solo si es tipo 'discount' y está activado)
+    let promoDiscountValue = 0.0;
+    const rowPromo = document.getElementById('row-promo-desc');
+    const promoDescLabel = document.getElementById('receipt-promo-desc-label');
+    const promoValEl = document.getElementById('receipt-promo-val');
+
+    if (state.cart.promoDiscount && state.cart.promoType === 'discount') {
+      promoDiscountValue = state.cart.promoDiscountAmount || 10.0;
+      if (rowPromo) rowPromo.style.display = 'flex';
+      if (promoDescLabel) promoDescLabel.textContent = state.cart.promoLabel || 'Descuento Promo Volumen:';
+      if (promoValEl) promoValEl.textContent = `- USD ${promoDiscountValue.toFixed(2)}`;
+    } else if (state.cart.promoDiscount && state.cart.promoType === 'gift') {
+      if (rowPromo) rowPromo.style.display = 'flex';
+      if (promoDescLabel) promoDescLabel.textContent = state.cart.promoLabel || '🎁 Regalo por Volumen:';
+      if (promoValEl) promoValEl.textContent = 'Bonificación USD 0.00';
+    } else {
+      if (rowPromo) rowPromo.style.display = 'none';
+    }
+
+    const subtotalAfterPromo = Math.max(0, rawTotal - promoDiscountValue);
+    const finDiscount = subtotalAfterPromo * rate;
+    const finalTotal = Number((subtotalAfterPromo - finDiscount).toFixed(2));
+
+    // Actualizar elementos del DOM en el recibo
+    const itemSummaryEl = document.getElementById('receipt-items-summary');
+    if (itemSummaryEl) itemSummaryEl.textContent = `${state.cart.qty}x ${state.cart.product} (@ $${state.cart.unitPrice.toFixed(2)})`;
+
+    const rawSubtotalEl = document.getElementById('receipt-raw-subtotal');
+    if (rawSubtotalEl) rawSubtotalEl.textContent = `USD ${rawTotal.toFixed(2)}`;
+
+    const subtotalEl = document.getElementById('receipt-subtotal');
+    if (subtotalEl) subtotalEl.textContent = `USD ${subtotalAfterPromo.toFixed(2)}`;
+
+    const condLabelEl = document.getElementById('receipt-cond-label');
+    if (condLabelEl) condLabelEl.textContent = condLabel;
+
+    const creditoEl = document.getElementById('receipt-credito-desc');
+    if (creditoEl) creditoEl.textContent = `- USD ${finDiscount.toFixed(2)}`;
+
+    const totalEl = document.getElementById('receipt-total-val');
+    if (totalEl) totalEl.textContent = `USD ${finalTotal.toFixed(2)}`;
+
+    const clientEl = document.getElementById('receipt-client-name');
+    if (clientEl) clientEl.textContent = state.selectedClient || (currentCase ? currentCase.client : '-');
+
+    const addressEl = document.getElementById('receipt-address-text');
+    if (addressEl) addressEl.textContent = currentCase ? (currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100') : '-';
+
+    const termsEl = document.getElementById('receipt-terms-text');
+    if (termsEl) {
+      const condName = cond === 'contado' ? 'Contado' : cond.replace('_', ' ').toUpperCase();
+      termsEl.textContent = `${condName} (Lista ${state.orderConfig.priceList || 'OF'})`;
+    }
+
+    state.finalOrderTotal = finalTotal;
+  }
+
+  // 9. Confirmación y Envío Final de la Orden
+  function submitFinalOrder() {
     emitSimulatorEvent('SUBMIT_ORDER', {
       confirmed: true,
-      total: total
+      total: state.finalOrderTotal || 0,
+      product: state.cart.product,
+      quantity: state.cart.qty,
+      paymentCondition: state.orderConfig.paymentCondition
     });
 
     navigateTo('s-dashboard');
@@ -331,7 +560,7 @@
     }
   });
 
-  // Exponer métodos globales
+  // Exponer métodos globales al simulador
   window.UyapaySimulator = {
     login: handleAppLogin,
     go: navigateTo,
@@ -341,9 +570,9 @@
     takePhoto: takePhoto,
     submitPhotos: submitPhotos,
     submitOrderConfig: submitOrderConfig,
-    changeQty: changeQty,
-    togglePromo: togglePromo,
-    addProductToCart: addProductToCart,
+    changeCatalogQty: changeCatalogQty,
+    toggleCatalogPromo: toggleCatalogPromo,
+    selectProduct: selectProduct,
     submitFinalOrder: submitFinalOrder,
     finish: finishSimulation,
     hint: (msg) => showHint(msg, false)

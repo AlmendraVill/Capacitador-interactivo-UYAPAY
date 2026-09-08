@@ -306,42 +306,20 @@
     <div class="topbar-app">
       <span class="menu-icon" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">‹</span> Catálogo de Productos
     </div>
-    <div style="padding:14px;">
-      <div class="card-task" style="margin:0 0 14px 0;">
-        <div class="product-icon-brand">
-          <span class="brand-badge">MICHELIN</span>
+    <div style="padding:14px; overflow-y:auto; height:calc(100% - 100px);">
+      <!-- Barra informativa del filtro de catálogo -->
+      <div class="catalog-filter-bar">
+        <div>
+          <span id="catalog-brand-badge" class="brand-badge">MARCA</span>
+          <span id="catalog-line-badge" style="font-size:11px; color:var(--text-light); margin-left:6px;">Línea</span>
         </div>
-        <h3 style="font-size:15px; margin:4px 0 2px 0;">Energy XM2+ 195/60 R15</h3>
-        <p style="font-size:11px; color:var(--text-light); margin:0 0 10px 0;">Cód: 003718 | Caja máster</p>
-        
-        <div style="font-size:18px; font-weight:800; color:#1a1a1a; margin-bottom:8px;">
-          USD 55.00 <span style="font-size:12px; font-weight:400; color:var(--text-light);">/ caja</span>
-        </div>
-
-        <div style="font-size:12px; font-weight:600; color:#333; margin-top:10px;">Cantidad requerida:</div>
-        <div class="qty-control">
-          <button class="qty-btn" onclick="window.UyapaySimulator.changeQty(-1)">-</button>
-          <div class="qty-display" id="product-qty">3</div>
-          <button class="qty-btn" onclick="window.UyapaySimulator.changeQty(1)">+</button>
-          <span style="font-size:13px; color:var(--text-light); margin-left:8px;" id="product-subtotal-text">= USD 165.00</span>
-        </div>
-
-        <!-- Toggle de Promoción según el manual -->
-        <div class="promo-toggle-card">
-          <div>
-            <div style="font-size:12px; font-weight:700; color:#795548;">🎁 Descuento por Volumen (3+ cajas)</div>
-            <div style="font-size:11px; color:#5d4037;">Aplica descuento directo de USD 10.00</div>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="toggle-promo-discount" checked onchange="window.UyapaySimulator.togglePromo(this.checked)">
-            <span class="slider"></span>
-          </label>
-        </div>
+        <span id="catalog-count-badge" style="font-size:11px; font-weight:700; color:var(--text-dark);">0 productos</span>
       </div>
 
-      <button class="login-btn" onclick="window.UyapaySimulator.addProductToCart()">
-        Agregar Producto y Ver Resumen ›
-      </button>
+      <!-- Contenedor dinámico de lista de productos -->
+      <div id="catalog-products-container">
+        <!-- Renderizado dinámicamente según Línea y Marca elegida -->
+      </div>
     </div>
   </div>
 
@@ -350,38 +328,40 @@
     <div class="topbar-app">
       <span class="menu-icon" onclick="window.UyapaySimulator.go('s-catalogo-producto')">‹</span> Resumen de Orden
     </div>
-    <div style="padding:14px;">
+    <div style="padding:14px; overflow-y:auto; height:calc(100% - 100px);">
       <div class="receipt-card">
         <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-light); margin-bottom:8px;">Detalle de Liquidación B2C</div>
         
         <div class="receipt-row">
-          <span>Productos cotizados:</span>
-          <b id="receipt-raw-subtotal">USD 165.00</b>
+          <span id="receipt-items-summary">Productos cotizados:</span>
+          <b id="receipt-raw-subtotal">USD 0.00</b>
         </div>
-        <div class="receipt-row discount" id="row-promo-desc">
-          <span>Descuento Promo Volumen:</span>
-          <b>- USD 10.00</b>
+        <div class="receipt-row discount" id="row-promo-desc" style="display:none;">
+          <span id="receipt-promo-desc-label">Descuento Promo Volumen:</span>
+          <b id="receipt-promo-val">- USD 0.00</b>
         </div>
         <div class="receipt-row" style="border-top:1px dashed #eee; padding-top:6px;">
           <span>Subtotal neto:</span>
-          <b id="receipt-subtotal">USD 155.00</b>
+          <b id="receipt-subtotal">USD 0.00</b>
         </div>
         <div class="receipt-row discount">
-          <span>Desc. Financiero Condición:</span>
-          <b id="receipt-credito-desc">- USD 4.65</b>
+          <span id="receipt-cond-label">Desc. Financiero Condición:</span>
+          <b id="receipt-credito-desc">- USD 0.00</b>
         </div>
         
         <div class="receipt-total">
           <span>TOTAL A FACTURAR:</span>
-          <span style="color:var(--success-color);" id="receipt-total-val">USD 150.35</span>
+          <span style="color:var(--success-color);" id="receipt-total-val">USD 0.00</span>
         </div>
       </div>
 
       <div class="card-task" style="margin:0 0 14px 0; font-size:12px;">
-        <div style="color:var(--text-light); margin-bottom:4px;">Dirección de Entrega:</div>
-        <b id="receipt-address-text">AV. INDUSTRIAL 104 - SOCABAYA</b>
+        <div style="color:var(--text-light); margin-bottom:4px;">Cliente:</div>
+        <b id="receipt-client-name">-</b>
+        <div style="color:var(--text-light); margin-top:8px; margin-bottom:4px;">Dirección de Entrega:</div>
+        <b id="receipt-address-text">-</b>
         <div style="color:var(--text-light); margin-top:8px; margin-bottom:4px;">Condición / Plazo:</div>
-        <b id="receipt-terms-text">Crédito 30 días (Lista OF)</b>
+        <b id="receipt-terms-text">-</b>
       </div>
 
       <button class="login-btn" onclick="window.UyapaySimulator.submitFinalOrder()">
@@ -389,6 +369,7 @@
       </button>
     </div>
   </div>
+
 
   <!-- ================= 9. PANTALLA: PEDIDO ENVIADO Y CIERRE ================= -->
   <div class="screen" id="s-dashboard">
