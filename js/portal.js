@@ -11,6 +11,17 @@
   const Cases = window.UyapayData.CASES;
 
   let currentCaseIndex = 0;
+  let isPodiumVisible = false;
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   // ================= INICIALIZACIÓN =================
   document.addEventListener('DOMContentLoaded', () => {
@@ -58,11 +69,20 @@
     applyUserSession(result.user);
   }
 
-  function applyUserSession(user) {
+  async function applyUserSession(user) {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('top-navbar').style.display = 'flex';
     document.getElementById('user-greeting').textContent = 'Hola, ' + user.name;
     document.getElementById('user-role-badge').textContent = user.role.toUpperCase();
+
+    // Sincronizar estado actual de publicación del podio
+    isPodiumVisible = await Storage.getPodiumStatus();
+    updatePodiumControlsUI(isPodiumVisible);
+
+    const rankingAdminControls = document.getElementById('ranking-admin-controls');
+    if (rankingAdminControls) {
+      rankingAdminControls.style.display = user.role === 'admin' ? 'inline-flex' : 'none';
+    }
 
     if (user.role === 'admin') {
       setupNavigation([
@@ -70,18 +90,18 @@
         { id: 'ranking-view', label: 'Ranking General & Podio' },
         { id: 'admin-historial', label: 'Historial de Calificaciones' }
       ]);
-      renderAdminDashboard();
-      renderResultsTable('admin-results-table');
+      await renderAdminDashboard();
+      await renderResultsTable('admin-results-table');
     } else {
       setupNavigation([
         { id: 'asesor-eval-intro', label: 'Evaluación Práctica' },
         { id: 'ranking-view', label: 'Ranking General & Podio' },
         { id: 'asesor-notas', label: 'Mis Calificaciones' }
       ]);
-      renderResultsTable('asesor-results-table', user.username);
+      await renderResultsTable('asesor-results-table', user.username);
     }
 
-    renderLeaderboard();
+    await renderLeaderboard();
   }
 
   function setupNavigation(tabs) {
@@ -121,6 +141,69 @@
     }
   }
 
+  function updatePodiumControlsUI(visible) {
+    // 1. Controles en Admin Dashboard
+    const adminBadge = document.getElementById('admin-podium-badge');
+    const adminBtn = document.getElementById('btn-admin-toggle-podium');
+    if (adminBadge) {
+      if (visible) {
+        adminBadge.textContent = '🟢 Podio Publicado (Visible a Asesores)';
+        adminBadge.style.background = '#16a34a';
+        adminBadge.style.color = '#ffffff';
+      } else {
+        adminBadge.textContent = '🔒 Podio Oculto a Asesores';
+        adminBadge.style.background = '#475569';
+        adminBadge.style.color = '#f1f5f9';
+      }
+    }
+    if (adminBtn) {
+      if (visible) {
+        adminBtn.textContent = '🔒 Ocultar Podio a Asesores';
+        adminBtn.style.background = '#dc2626';
+      } else {
+        adminBtn.textContent = '📢 Mostrar Podio a Asesores';
+        adminBtn.style.background = 'var(--yellow)';
+      }
+    }
+
+    // 2. Controles en Ranking View
+    const rankingBadge = document.getElementById('ranking-podium-badge');
+    const rankingBtn = document.getElementById('btn-ranking-toggle-podium');
+    if (rankingBadge) {
+      if (visible) {
+        rankingBadge.textContent = '🟢 Podio Publicado';
+        rankingBadge.style.background = '#16a34a';
+        rankingBadge.style.color = '#ffffff';
+      } else {
+        rankingBadge.textContent = '🔒 Podio Oculto';
+        rankingBadge.style.background = '#475569';
+        rankingBadge.style.color = '#f1f5f9';
+      }
+    }
+    if (rankingBtn) {
+      if (visible) {
+        rankingBtn.textContent = '🔒 Ocultar Podio';
+        rankingBtn.style.background = '#dc2626';
+      } else {
+        rankingBtn.textContent = '📢 Mostrar Podio';
+        rankingBtn.style.background = 'var(--yellow)';
+      }
+    }
+  }
+
+  async function togglePodiumVisibility() {
+    const user = Auth.getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      alert('Solo los administradores pueden cambiar la visibilidad del podio.');
+      return;
+    }
+
+    const nextState = !isPodiumVisible;
+    isPodiumVisible = await Storage.setPodiumStatus(nextState);
+    updatePodiumControlsUI(isPodiumVisible);
+    await renderLeaderboard();
+  }
+
   // ================= PANEL ADMINISTRADOR Y MONITOR =================
   async function renderAdminDashboard() {
     const results = await Storage.getResults();
@@ -132,8 +215,54 @@
     if (totalEl) totalEl.textContent = totalEvals;
     if (passedEl) passedEl.textContent = passedEvals;
 
+    // Actualizar controles de podio
+    isPodiumVisible = await Storage.getPodiumStatus();
+    updatePodiumControlsUI(isPodiumVisible);
+
+    // Renderizar analítica de casos críticos
+    await renderErrorAnalytics();
+
     // Sincronizar monitor en vivo inmediatamente con el estado del backend
     await updateLiveMonitor();
+  }
+
+  async function renderErrorAnalytics() {
+    const tableBody = document.getElementById('top-error-cases-table');
+    if (!tableBody) return;
+
+    const data = await Storage.getErrorAnalytics();
+    const cases = data.topErrorCases || [];
+
+    if (cases.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:16px;">No hay evaluaciones con errores registradas aún.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = cases.map((c, index) => {
+      let badgeStyle = 'background:#e8f8f0; color:#27ae60; font-weight:700;';
+      if (c.severity === 'ALTA') {
+        badgeStyle = 'background:#fee2e2; color:#ef4444; font-weight:800;';
+      } else if (c.severity === 'MEDIA') {
+        badgeStyle = 'background:#fef3c7; color:#d97706; font-weight:800;';
+      }
+
+      const commonErrorsHtml = (c.commonErrors && c.commonErrors.length > 0)
+        ? c.commonErrors.map(e => `<div style="font-size:11px; color:var(--text-dark); margin-bottom:2px;">• <span style="color:#b91c1c;">${escapeHtml(e.message)}</span> <b>(${e.count}×)</b></div>`).join('')
+        : '<span style="color:var(--text-muted); font-size:11px;">Sin errores registrados</span>';
+
+      return `
+        <tr>
+          <td><span class="rank-badge rank-other">#${index + 1}</span></td>
+          <td><b>${c.caseCode}</b></td>
+          <td style="max-width:260px; font-size:12px; font-weight:600;">${escapeHtml(c.caseTitle)}</td>
+          <td style="text-align:center;"><b>${c.attempts}</b></td>
+          <td style="text-align:center;"><span style="color:var(--danger); font-weight:800; font-size:14px;">${c.totalErrors}</span></td>
+          <td style="text-align:center; font-weight:700;">${c.errorRate}</td>
+          <td style="text-align:center;"><span class="badge" style="${badgeStyle}; padding:4px 8px;">${c.severity}</span></td>
+          <td style="max-width:320px;">${commonErrorsHtml}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function applyLiveStatus(data) {
@@ -227,7 +356,11 @@
       liveEventSource.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          if (data && (data.step || data.advisor)) {
+          if (data && data.type === 'PODIUM_STATUS_CHANGED') {
+            isPodiumVisible = Boolean(data.podiumVisible);
+            updatePodiumControlsUI(isPodiumVisible);
+            renderLeaderboard();
+          } else if (data && (data.step || data.advisor)) {
             applyLiveStatus(data);
             if (data.detail) {
               appendLiveFeed(data, true);
@@ -249,6 +382,31 @@
 
   // ================= RANKING GENERAL Y PODIO (RF-MVP-042 A 047) =================
   async function renderLeaderboard() {
+    isPodiumVisible = await Storage.getPodiumStatus();
+    updatePodiumControlsUI(isPodiumVisible);
+
+    const currentUser = Auth.getCurrentUser();
+    const isAdmin = currentUser && currentUser.role === 'admin';
+
+    const lockedCard = document.getElementById('podium-locked-state');
+    const activeContainer = document.getElementById('podium-active-container');
+    const rankingAdminControls = document.getElementById('ranking-admin-controls');
+
+    if (rankingAdminControls) {
+      rankingAdminControls.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
+
+    // Si es un asesor y el podio NO está publicado por el administrador: mostrar estado bloqueado
+    if (!isAdmin && !isPodiumVisible) {
+      if (lockedCard) lockedCard.style.display = 'block';
+      if (activeContainer) activeContainer.style.display = 'none';
+      return;
+    }
+
+    // Si es administrador O si el podio fue publicado oficialmente para los asesores
+    if (lockedCard) lockedCard.style.display = 'none';
+    if (activeContainer) activeContainer.style.display = 'block';
+
     const leaderboard = await Storage.getLeaderboard();
     const podiumEl = document.getElementById('podium-wrapper');
     const tableBody = document.getElementById('leaderboard-results-table');
@@ -268,7 +426,7 @@
           html += `
             <div class="podium-card silver">
               <div class="podium-medal">🥈</div>
-              <div class="podium-advisor">${top2.advisorName || top2.username}</div>
+              <div class="podium-advisor">${escapeHtml(top2.advisorName || top2.username)}</div>
               <div class="podium-score">${top2.score}</div>
               <div class="podium-meta">
                 <span>⏱️ ${top2.formattedDuration || '00:00'}</span>
@@ -282,7 +440,7 @@
           html += `
             <div class="podium-card gold">
               <div class="podium-medal">🥇</div>
-              <div class="podium-advisor">${top1.advisorName || top1.username}</div>
+              <div class="podium-advisor">${escapeHtml(top1.advisorName || top1.username)}</div>
               <div class="podium-score">${top1.score}</div>
               <div class="podium-meta">
                 <span>⏱️ ${top1.formattedDuration || '00:00'}</span>
@@ -296,7 +454,7 @@
           html += `
             <div class="podium-card bronze">
               <div class="podium-medal">🥉</div>
-              <div class="podium-advisor">${top3.advisorName || top3.username}</div>
+              <div class="podium-advisor">${escapeHtml(top3.advisorName || top3.username)}</div>
               <div class="podium-score">${top3.score}</div>
               <div class="podium-meta">
                 <span>⏱️ ${top3.formattedDuration || '00:00'}</span>
@@ -328,8 +486,8 @@
         return `
           <tr>
             <td><span class="rank-badge ${badgeRankClass}">#${item.rank}</span></td>
-            <td><b>${item.advisorName || item.username}</b></td>
-            <td>${item.caseTitle}</td>
+            <td><b>${escapeHtml(item.advisorName || item.username)}</b></td>
+            <td>${escapeHtml(item.caseTitle)}</td>
             <td><span class="badge ${statusBadgeClass}">${item.score}</span></td>
             <td><b>⏱️ ${item.formattedDuration || '00:00'}</b></td>
             <td>${item.errors} errores</td>
@@ -351,24 +509,137 @@
       data = data.filter(d => (d.username || '').toLowerCase() === filterUsername.toLowerCase());
     }
 
+    const isAdminTable = tableId === 'admin-results-table';
+
     if (data.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No hay evaluaciones registradas aún.</td></tr>`;
+      const colSpan = isAdminTable ? 7 : 6;
+      tableBody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; color:var(--text-muted); padding:20px;">No hay evaluaciones registradas aún.</td></tr>`;
       return;
     }
 
     tableBody.innerHTML = data.map(item => {
       const badgeClass = item.status === 'Aprobado' ? 'badge-success' : 'badge-danger';
+      const auditCol = isAdminTable
+        ? `<td style="text-align:center;">
+             <button class="btn-secondary" style="font-size:11px; padding:4px 10px; width:auto; cursor:pointer;" onclick="window.UyapayPortal.showAdminErrorDetails('${item.id}')">
+               🔍 Ver Detalle (${item.errors} err)
+             </button>
+           </td>`
+        : '';
+
       return `
         <tr>
-          <td><b>${item.advisorName || item.username}</b></td>
-          <td>${item.caseTitle}</td>
+          <td><b>${escapeHtml(item.advisorName || item.username)}</b></td>
+          <td>${escapeHtml(item.caseTitle)}</td>
           <td><span class="badge ${badgeClass}">${item.score}</span></td>
           <td>${item.errors} errores</td>
           <td><span class="badge ${badgeClass}">${item.status}</span></td>
           <td style="font-size:12px; color:var(--text-muted);">${item.completedAt} (⏱️ ${item.formattedDuration || '00:00'})</td>
+          ${auditCol}
         </tr>
       `;
     }).join('');
+  }
+
+  // ================= AUDITORÍA DE ERRORES EXCLUSIVA ADMIN =================
+  async function showAdminErrorDetails(resultId) {
+    const currentUser = Auth.getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      alert('Acceso restringido únicamente a administradores.');
+      return;
+    }
+
+    const results = await Storage.getResults();
+    const result = results.find(r => r.id === resultId);
+    if (!result) {
+      alert('Evaluación no encontrada.');
+      return;
+    }
+
+    const modal = document.getElementById('admin-error-detail-modal');
+    if (!modal) return;
+
+    document.getElementById('modal-audit-subtitle').textContent =
+      `Asesor: ${result.advisorName || result.username} • Fecha: ${result.completedAt}`;
+
+    const summaryEl = document.getElementById('modal-audit-summary');
+    const badgeClass = result.status === 'Aprobado' ? 'badge-success' : 'badge-danger';
+    summaryEl.innerHTML = `
+      <div class="personal-meta-card" style="flex:1; min-width:120px;">
+        <div class="personal-meta-label">Puntaje Final</div>
+        <div class="personal-meta-val"><span class="badge ${badgeClass}" style="font-size:13px;">${result.score}</span></div>
+      </div>
+      <div class="personal-meta-card" style="flex:1; min-width:120px;">
+        <div class="personal-meta-label">Tiempo Total</div>
+        <div class="personal-meta-val">⏱️ ${result.formattedDuration || '00:00'}</div>
+      </div>
+      <div class="personal-meta-card" style="flex:1; min-width:120px;">
+        <div class="personal-meta-label">Total Errores</div>
+        <div class="personal-meta-val" style="color:var(--danger);">${result.errors}</div>
+      </div>
+      <div class="personal-meta-card" style="flex:1; min-width:120px;">
+        <div class="personal-meta-label">Estado Global</div>
+        <div class="personal-meta-val">${result.status}</div>
+      </div>
+    `;
+
+    const casesListEl = document.getElementById('modal-audit-cases-list');
+    const casesDetails = result.casesDetails || [];
+
+    if (casesDetails.length > 0) {
+      casesListEl.innerHTML = casesDetails.map((cs, idx) => {
+        const errorLogs = (cs.actionsLog || []).filter(a => a.type === 'ERROR');
+        const caseStatusBadge = cs.completed
+          ? `<span class="badge badge-success" style="font-size:11px;">Completado (${cs.score || '20/20'})</span>`
+          : `<span class="badge badge-danger" style="font-size:11px;">No completado (${cs.score || '0/20'})</span>`;
+
+        let errorDetailsHtml = '';
+        if (errorLogs.length > 0) {
+          errorDetailsHtml = errorLogs.map(err => `
+            <div class="audit-error-item">
+              <div class="audit-error-time">⏱️ ${err.time || ''} • Paso: ${escapeHtml(err.step || 'Validación')}</div>
+              <div class="audit-error-desc">❌ ${escapeHtml(err.detail || 'Acción errónea o fuera de secuencia')}</div>
+            </div>
+          `).join('');
+        } else {
+          errorDetailsHtml = `<div style="color:var(--success); font-size:12px; padding:10px 14px;">✓ Sin errores registrados en este caso.</div>`;
+        }
+
+        return `
+          <div class="audit-case-card">
+            <div class="audit-case-header">
+              <span><b>Caso ${idx + 1} (${cs.caseCode || 'B2C'}):</b> ${escapeHtml(cs.client || cs.caseTitle || '')}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; color:var(--text-muted);">${cs.errors || 0} error(es)</span>
+                ${caseStatusBadge}
+              </div>
+            </div>
+            ${errorDetailsHtml}
+          </div>
+        `;
+      }).join('');
+    } else {
+      // Si fue evaluación previa o monocaso, revisar interactions
+      const interactions = result.interactions || [];
+      const errorLogs = interactions.filter(a => a.type === 'ERROR');
+      if (errorLogs.length > 0) {
+        casesListEl.innerHTML = errorLogs.map(err => `
+          <div class="audit-error-item">
+            <div class="audit-error-time">⏱️ ${err.time || ''} • ${escapeHtml(err.step || 'Error')}</div>
+            <div class="audit-error-desc">❌ ${escapeHtml(err.detail || 'Falla')}</div>
+          </div>
+        `).join('');
+      } else {
+        casesListEl.innerHTML = `<div style="color:var(--success); font-size:13px; padding:16px; text-align:center;">✓ El asesor no cometió ningún error en esta evaluación.</div>`;
+      }
+    }
+
+    modal.classList.add('active');
+  }
+
+  function closeAuditModal() {
+    const modal = document.getElementById('admin-error-detail-modal');
+    if (modal) modal.classList.remove('active');
   }
 
   // ================= EVALUACIÓN MULTI-CASO EN PESTAÑAS (5 CASOS) =================
@@ -700,24 +971,75 @@
     if (currentUser && currentUser.role === 'admin') {
       await renderAdminDashboard();
     }
-    switchTab('ranking-view');
 
-    // Desglose de notas por caso
-    const breakdown = (saved.casesDetails || [])
-      .map((cs, idx) => `• Caso ${idx + 1} (${cs.caseCode}): ${cs.score} (${cs.errors} errores)`)
-      .join('\n');
+    // Mostrar modal exclusivo con los resultados personales y tiempo del asesor
+    showPersonalResultModal(saved);
+  }
 
-    alert(
-      `🎉 ¡Evaluación de 5 Casos Finalizada!\n\n` +
-      `• Asesor: ${saved.advisorName}\n` +
-      `• Estado Global: ${saved.status}\n` +
-      `• Calificación Final: ${saved.score}\n` +
-      `• Casos Completados: ${saved.completedCasesCount} de 5\n` +
-      `• Tiempo Total: ${saved.formattedDuration}\n` +
-      `• Total de Errores: ${saved.errors}\n\n` +
-      `Desglose por Caso:\n${breakdown}\n\n` +
-      `Tu calificación y tiempo han sido registrados permanentemente en el Ranking Oficial.`
-    );
+  function showPersonalResultModal(result) {
+    const modal = document.getElementById('personal-result-modal');
+    if (!modal) return;
+
+    const scoreEl = document.getElementById('modal-user-score');
+    if (scoreEl) scoreEl.textContent = result.score || `${result.numericScore} / 20`;
+
+    const statusBadge = document.getElementById('modal-user-status-badge');
+    const badgeClass = result.status === 'Aprobado' ? 'badge-success' : 'badge-danger';
+    if (statusBadge) {
+      statusBadge.innerHTML = `<span class="badge ${badgeClass}" style="font-size:13px; padding:5px 14px;">${result.status}</span>`;
+    }
+
+    const timeEl = document.getElementById('modal-user-time');
+    if (timeEl) timeEl.textContent = result.formattedDuration || '00:00';
+
+    const casesEl = document.getElementById('modal-user-cases');
+    if (casesEl) casesEl.textContent = `${result.completedCasesCount || 0} de ${result.totalCasesCount || 5}`;
+
+    const errorsEl = document.getElementById('modal-user-errors');
+    if (errorsEl) errorsEl.textContent = result.errors !== undefined ? result.errors : 0;
+
+    const casesListEl = document.getElementById('modal-user-cases-list');
+    const casesDetails = result.casesDetails || [];
+    if (casesListEl) {
+      if (casesDetails.length > 0) {
+        casesListEl.innerHTML = casesDetails.map((cs, idx) => {
+          const isComp = cs.completed;
+          const rowClass = isComp ? 'completed' : 'failed';
+          const errText = cs.errors === 0 ? 'Sin errores' : `${cs.errors} error(es)`;
+          return `
+            <div class="case-result-row ${rowClass}">
+              <div>
+                <b>Caso ${idx + 1} (${cs.caseCode || 'B2C'}):</b> ${escapeHtml(cs.client || cs.caseTitle || '')}
+                <div style="font-size:11px; color:var(--text-muted);">${errText}</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge ${isComp ? 'badge-success' : 'badge-danger'}">${cs.score || '20 / 20'}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        casesListEl.innerHTML = '';
+      }
+    }
+
+    modal.classList.add('active');
+  }
+
+  function closePersonalModal() {
+    const modal = document.getElementById('personal-result-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function goToMyGrades() {
+    closePersonalModal();
+    const currentUser = Auth.getCurrentUser();
+    if (currentUser && currentUser.role === 'asesor') {
+      const asesorNotesTab = document.getElementById('asesor-notas');
+      if (asesorNotesTab) {
+        switchTab('asesor-notas');
+      }
+    }
   }
 
   window.UyapayPortal = {
@@ -729,6 +1051,11 @@
     nextTab: nextTab,
     prevTab: prevTab,
     finishFullExam: finishFullExam,
+    togglePodiumVisibility: togglePodiumVisibility,
+    showAdminErrorDetails: showAdminErrorDetails,
+    closeAuditModal: closeAuditModal,
+    closePersonalModal: closePersonalModal,
+    goToMyGrades: goToMyGrades,
     resetData: async () => {
       if (confirm('¿Restablecer base de datos y reiniciar el ranking?')) {
         await Storage.resetAll();

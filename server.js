@@ -47,7 +47,8 @@ db.exec(`
     duration_seconds INTEGER NOT NULL,
     formatted_duration TEXT NOT NULL,
     completed_at TEXT NOT NULL,
-    interactions TEXT
+    interactions TEXT,
+    cases_details TEXT
   );
 
   CREATE TABLE IF NOT EXISTS live_events (
@@ -59,7 +60,25 @@ db.exec(`
     errors INTEGER NOT NULL,
     created_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
+
+// Migración segura si la columna cases_details no existía en bases creadas previamente
+try {
+  db.exec("ALTER TABLE results ADD COLUMN cases_details TEXT;");
+} catch (e) {
+  // Ya existe la columna
+}
+
+// Inicializar configuración de visibilidad del podio (por defecto: '0' = Oculto a asesores)
+const podiumRow = db.prepare("SELECT value FROM settings WHERE key = 'podium_visible'").get();
+if (!podiumRow) {
+  db.prepare("INSERT INTO settings (key, value) VALUES ('podium_visible', '0')").run();
+}
 
 // Catálogo oficial de administradores y 12 asesores oficiales UYAPAY
 const INITIAL_USERS = [
@@ -115,20 +134,22 @@ if (resultsCount === 0) {
     INSERT INTO results (
       id, case_id, case_code, case_title, username, advisor_name,
       score, numeric_score, errors, max_errors, status,
-      duration_seconds, formatted_duration, completed_at, interactions
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      duration_seconds, formatted_duration, completed_at, interactions, cases_details
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   insertResult.run(
     'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
     'alvaro', 'Álvaro Rodríguez', '20 / 20', 20, 0, 2, 'Aprobado',
-    38, '00:38', new Date(Date.now() - 3600000).toLocaleString('es-PE'), '[]'
+    38, '00:38', new Date(Date.now() - 3600000).toLocaleString('es-PE'), '[]',
+    JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '20 / 20', numericScore: 20, errors: 0, completed: true, actionsLog: [] }])
   );
 
   insertResult.run(
     'eval-seed-2', 'case-2', 'B2C-02', 'Caso 2: Venta a crédito 30 días con descuento en dinero',
     'lruiz', 'Leonardo Ruíz', '16 / 20', 16, 1, 2, 'Aprobado',
-    52, '00:52', new Date(Date.now() - 7200000).toLocaleString('es-PE'), '[]'
+    52, '00:52', new Date(Date.now() - 7200000).toLocaleString('es-PE'), '[]',
+    JSON.stringify([{ caseCode: 'B2C-02', caseTitle: 'Caso 2: Venta a crédito 30 días', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Configurar pedido', detail: 'Seleccionó condición errónea' }] }])
   );
 
   console.log('[DB] Se han sembrado resultados iniciales para el ranking.');
@@ -225,7 +246,8 @@ app.get('/api/results', (req, res) => {
     durationSeconds: r.duration_seconds,
     formattedDuration: r.formatted_duration,
     completedAt: r.completed_at,
-    interactions: JSON.parse(r.interactions || '[]')
+    interactions: JSON.parse(r.interactions || '[]'),
+    casesDetails: JSON.parse(r.cases_details || '[]')
   }));
   res.json(parsed);
 });
@@ -251,8 +273,8 @@ app.post('/api/results', (req, res) => {
     INSERT INTO results (
       id, case_id, case_code, case_title, username, advisor_name,
       score, numeric_score, errors, max_errors, status,
-      duration_seconds, formatted_duration, completed_at, interactions
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      duration_seconds, formatted_duration, completed_at, interactions, cases_details
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     data.caseId || 'case-1',
@@ -268,7 +290,8 @@ app.post('/api/results', (req, res) => {
     durationSeconds,
     formattedDuration,
     completedAt,
-    JSON.stringify(data.interactions || [])
+    JSON.stringify(data.interactions || []),
+    JSON.stringify(data.casesDetails || [])
   );
 
   const savedRecord = {
@@ -285,7 +308,9 @@ app.post('/api/results', (req, res) => {
     status,
     durationSeconds,
     formattedDuration,
-    completedAt
+    completedAt,
+    casesDetails: data.casesDetails || [],
+    interactions: data.interactions || []
   };
 
   res.status(201).json({ success: true, result: savedRecord });
@@ -345,6 +370,161 @@ app.get('/api/leaderboard', (req, res) => {
   }));
 
   res.json(formatted);
+});
+
+// ================= CONFIGURACIONES DEL SISTEMA (ADMINISTRACIÓN) =================
+
+// Consulta del estado de publicación del podio
+app.get('/api/settings/podium', (req, res) => {
+  try {
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'podium_visible'").get();
+    const visible = row ? row.value === '1' : false;
+    res.json({ podiumVisible: visible });
+  } catch (err) {
+    res.json({ podiumVisible: false });
+  }
+});
+
+// Modificar publicación del podio (Mostrar/Ocultar a asesores)
+app.post('/api/settings/podium', (req, res) => {
+  try {
+    const { visible } = req.body;
+    const val = visible ? '1' : '0';
+    db.prepare(`
+      INSERT INTO settings (key, value) VALUES ('podium_visible', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `).run(val);
+
+    const eventPayload = {
+      type: 'PODIUM_STATUS_CHANGED',
+      podiumVisible: Boolean(visible),
+      time: new Date().toLocaleTimeString('es-PE')
+    };
+
+    // Difundir inmediatamente a todos los clientes SSE conectados
+    sseClients = sseClients.filter(client => {
+      try {
+        client.res.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
+        return true;
+      } catch (err) {
+        return false;
+      }
+    });
+
+    res.json({ success: true, podiumVisible: Boolean(visible) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ================= ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (EXCLUSIVO ADMIN) =================
+app.get('/api/admin/error-analytics', (req, res) => {
+  try {
+    const allResults = db.prepare('SELECT * FROM results ORDER BY rowid DESC').all();
+    const casesStats = {};
+    const advisorsErrors = {};
+
+    allResults.forEach(r => {
+      const casesDetails = JSON.parse(r.cases_details || '[]');
+      const advisor = r.advisor_name || r.username;
+      
+      if (!advisorsErrors[advisor]) {
+        advisorsErrors[advisor] = {
+          advisorName: advisor,
+          username: r.username,
+          totalEvaluations: 0,
+          totalErrors: 0,
+          history: []
+        };
+      }
+      advisorsErrors[advisor].totalEvaluations += 1;
+      advisorsErrors[advisor].totalErrors += (r.errors || 0);
+
+      // Si la evaluación guardó el desglose detallado de los 5 casos
+      if (casesDetails.length > 0) {
+        casesDetails.forEach(cd => {
+          const cKey = cd.caseCode || cd.caseTitle || 'B2C';
+          if (!casesStats[cKey]) {
+            casesStats[cKey] = {
+              caseCode: cd.caseCode || 'B2C',
+              caseTitle: cd.caseTitle || cKey,
+              client: cd.client || '',
+              attempts: 0,
+              totalErrors: 0,
+              completedCount: 0,
+              errorMessages: {}
+            };
+          }
+          casesStats[cKey].attempts += 1;
+          casesStats[cKey].totalErrors += (cd.errors || 0);
+          if (cd.completed) casesStats[cKey].completedCount += 1;
+
+          // Registrar las reglas específicas que fallaron
+          (cd.actionsLog || []).filter(a => a.type === 'ERROR').forEach(err => {
+            const msg = err.detail || err.step || 'Acción errónea';
+            casesStats[cKey].errorMessages[msg] = (casesStats[cKey].errorMessages[msg] || 0) + 1;
+          });
+        });
+      } else {
+        // Compatibilidad con registros simples monocaso
+        const cKey = r.case_code || r.case_title || 'B2C-01';
+        if (!casesStats[cKey]) {
+          casesStats[cKey] = {
+            caseCode: r.case_code || 'B2C-01',
+            caseTitle: r.case_title,
+            client: '',
+            attempts: 0,
+            totalErrors: 0,
+            completedCount: 0,
+            errorMessages: {}
+          };
+        }
+        casesStats[cKey].attempts += 1;
+        casesStats[cKey].totalErrors += (r.errors || 0);
+        if (r.status === 'Aprobado') casesStats[cKey].completedCount += 1;
+      }
+
+      // Historial para auditoría de errores por asesor
+      const interactions = JSON.parse(r.interactions || '[]');
+      const errorActions = interactions.filter(a => a.type === 'ERROR');
+      advisorsErrors[advisor].history.push({
+        resultId: r.id,
+        caseCode: r.case_code,
+        caseTitle: r.case_title,
+        completedAt: r.completed_at,
+        score: r.score,
+        numericScore: r.numeric_score,
+        errors: r.errors,
+        status: r.status,
+        duration: r.formatted_duration,
+        casesDetails: casesDetails,
+        errorActions: errorActions
+      });
+    });
+
+    // Ordenar los casos con más errores en orden descendente
+    const rankedCases = Object.values(casesStats).map(c => {
+      const commonErrorsList = Object.entries(c.errorMessages)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([msg, count]) => ({ message: msg, count }));
+
+      const errorRate = c.attempts > 0 ? (c.totalErrors / c.attempts).toFixed(1) : '0.0';
+      return {
+        ...c,
+        errorRate: parseFloat(errorRate),
+        commonErrors: commonErrorsList,
+        severity: c.totalErrors >= 3 ? 'ALTA' : (c.totalErrors >= 1 ? 'MEDIA' : 'BAJA')
+      };
+    }).sort((a, b) => b.totalErrors - a.totalErrors);
+
+    res.json({
+      topErrorCases: rankedCases,
+      advisorsErrors: Object.values(advisorsErrors)
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Estado en memoria del último evento en vivo para sincronización inmediata
@@ -467,20 +647,22 @@ app.post('/api/reset', (req, res) => {
     INSERT INTO results (
       id, case_id, case_code, case_title, username, advisor_name,
       score, numeric_score, errors, max_errors, status,
-      duration_seconds, formatted_duration, completed_at, interactions
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      duration_seconds, formatted_duration, completed_at, interactions, cases_details
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   insertResult.run(
     'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
     'maria', 'María Fernandez', '20 / 20', 20, 0, 2, 'Aprobado',
-    38, '00:38', new Date().toLocaleString('es-PE'), '[]'
+    38, '00:38', new Date().toLocaleString('es-PE'), '[]',
+    JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '20 / 20', numericScore: 20, errors: 0, completed: true, actionsLog: [] }])
   );
 
   insertResult.run(
     'eval-seed-2', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
     'carlos', 'Carlos Mendoza', '16 / 20', 16, 1, 2, 'Aprobado',
-    52, '00:52', new Date().toLocaleString('es-PE'), '[]'
+    52, '00:52', new Date().toLocaleString('es-PE'), '[]',
+    JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Fotos obligatorias', detail: 'Faltó foto de fachada' }] }])
   );
 
   res.json({ success: true, message: 'Datos restablecidos con éxito.' });

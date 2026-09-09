@@ -50,11 +50,18 @@ window.UyapayServices = window.UyapayServices || {};
     }
   }
 
+  function resolveUrl(url) {
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+      return url;
+    }
+    return 'http://localhost:3000' + url;
+  }
+
   window.UyapayServices.Storage = {
     // ---- USUARIOS ----
     async getUsers() {
       try {
-        const res = await fetch('/api/users');
+        const res = await fetch(resolveUrl('/api/users'));
         if (res.ok) {
           const users = await res.json();
           setLocalItem(KEYS.USERS, users);
@@ -77,7 +84,7 @@ window.UyapayServices = window.UyapayServices || {};
 
     async registerUser(userData) {
       try {
-        const res = await fetch('/api/users', {
+        const res = await fetch(resolveUrl('/api/users'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userData)
@@ -102,7 +109,7 @@ window.UyapayServices = window.UyapayServices || {};
     // ---- RESULTADOS E HISTORIAL ----
     async getResults() {
       try {
-        const res = await fetch('/api/results');
+        const res = await fetch(resolveUrl('/api/results'));
         if (res.ok) {
           const data = await res.json();
           setLocalItem(KEYS.RESULTS, data);
@@ -122,7 +129,7 @@ window.UyapayServices = window.UyapayServices || {};
     async saveResult(evalData) {
       // 1. Guardar en Backend SQLite
       try {
-        const res = await fetch('/api/results', {
+        const res = await fetch(resolveUrl('/api/results'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(evalData)
@@ -163,7 +170,8 @@ window.UyapayServices = window.UyapayServices || {};
         durationSeconds: duration,
         formattedDuration: formattedDuration,
         completedAt: evalData.completedAt || new Date().toLocaleString('es-PE'),
-        interactions: evalData.interactions || []
+        interactions: evalData.interactions || [],
+        casesDetails: evalData.casesDetails || []
       };
 
       results.unshift(newResult);
@@ -171,10 +179,51 @@ window.UyapayServices = window.UyapayServices || {};
       return newResult;
     },
 
+    // ---- ESTADO DE VISIBILIDAD DEL PODIO (RF-MVP-042) ----
+    async getPodiumStatus() {
+      try {
+        const res = await fetch(resolveUrl('/api/settings/podium'));
+        if (res.ok) {
+          const data = await res.json();
+          setLocalItem('uyapay_podium_visible', data.podiumVisible);
+          return Boolean(data.podiumVisible);
+        }
+      } catch (e) {}
+      return Boolean(getLocalItem('uyapay_podium_visible', false));
+    },
+
+    async setPodiumStatus(visible) {
+      try {
+        const res = await fetch(resolveUrl('/api/settings/podium'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visible: Boolean(visible) })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLocalItem('uyapay_podium_visible', data.podiumVisible);
+          return Boolean(data.podiumVisible);
+        }
+      } catch (e) {}
+      setLocalItem('uyapay_podium_visible', Boolean(visible));
+      return Boolean(visible);
+    },
+
+    // ---- ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (ADMIN) ----
+    async getErrorAnalytics() {
+      try {
+        const res = await fetch(resolveUrl('/api/admin/error-analytics'));
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return { topErrorCases: [], advisorsErrors: [] };
+    },
+
     // ---- RANKING GENERAL CON DESEMPATE (RF-MVP-042 A 047) ----
     async getLeaderboard() {
       try {
-        const res = await fetch('/api/leaderboard');
+        const res = await fetch(resolveUrl('/api/leaderboard'));
         if (res.ok) {
           return await res.json();
         }
@@ -220,7 +269,7 @@ window.UyapayServices = window.UyapayServices || {};
     // ---- EVENTOS EN VIVO ----
     async sendLiveEvent(eventData) {
       try {
-        await fetch('/api/live-events', {
+        await fetch(resolveUrl('/api/live-events'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(eventData)
@@ -232,7 +281,7 @@ window.UyapayServices = window.UyapayServices || {};
 
     async getLiveStatus() {
       try {
-        const res = await fetch('/api/live-events');
+        const res = await fetch(resolveUrl('/api/live-events'));
         if (res.ok) {
           return await res.json();
         }

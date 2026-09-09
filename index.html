@@ -50,6 +50,27 @@
       <button class="btn-secondary" onclick="window.UyapayPortal.resetData()">Reiniciar Datos Demo</button>
     </div>
 
+    <!-- CONTROL DE PUBLICACIÓN DE PODIO (ADMINISTRADOR) -->
+    <div class="card" style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:#fff; padding:18px 22px; margin-bottom:20px; border-radius:14px; border:1px solid #334155; box-shadow:0 6px 18px rgba(15,23,42,0.18);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="font-size:32px; background:rgba(255,255,255,0.1); width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;">🏆</div>
+          <div>
+            <div style="font-size:16px; font-weight:700; color:#fff;">Control de Publicación de Podio y Ranking</div>
+            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">
+              Los asesores solo verán su puntaje individual y tiempo hasta que actives la opción de mostrar el podio oficial.
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span id="admin-podium-badge" class="badge" style="padding:6px 14px; font-size:12px; border-radius:20px; background:#475569; color:#f1f5f9;">🔒 Podio Oculto a Asesores</span>
+          <button id="btn-admin-toggle-podium" class="btn-primary" style="width:auto; padding:10px 20px; font-size:13px; font-weight:700;" onclick="window.UyapayPortal.togglePodiumVisibility()">
+            Mostrar Podio a Asesores
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- MONITOR DE EVALUACIÓN EN TIEMPO REAL -->
     <div class="card live-monitor-box">
       <div style="flex:1;">
@@ -93,6 +114,40 @@
         <div id="stat-passed-evals" style="font-size:26px; font-weight:bold; color:var(--success); margin-top:4px;">0</div>
       </div>
     </div>
+
+    <!-- ANÁLISIS DE CASOS CRÍTICOS (MAYOR TASA DE ERROR) -->
+    <div class="card" style="margin-top:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h3 style="font-size:16px; margin:0; color:var(--text-dark);">📊 Casos con Mayor Tasa de Errores (Casos Críticos)</h3>
+          <p style="margin:3px 0 0 0; font-size:12px; color:var(--text-muted);">
+            Ranking analítico de dificultad para identificar qué casos presentan mayores fallas operativas por parte de los asesores.
+          </p>
+        </div>
+        <span style="font-size:12px; color:var(--yellow-dark); background:#fff9e6; padding:5px 12px; border-radius:20px; font-weight:700;">
+          Exclusivo Capacitadores / Admin
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:50px;">#</th>
+              <th>Código</th>
+              <th>Caso Evaluado</th>
+              <th style="text-align:center;">Evaluaciones</th>
+              <th style="text-align:center;">Total Errores</th>
+              <th style="text-align:center;">Err / Intento</th>
+              <th style="text-align:center;">Dificultad</th>
+              <th>Errores Más Frecuentes</th>
+            </tr>
+          </thead>
+          <tbody id="top-error-cases-table">
+            <!-- Renderizado dinámicamente por JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- HISTORIAL GENERAL (ADMIN) -->
@@ -112,6 +167,7 @@
               <th>Errores</th>
               <th>Estado</th>
               <th>Fecha y Hora</th>
+              <th style="text-align:center;">Auditoría</th>
             </tr>
           </thead>
           <tbody id="admin-results-table">
@@ -211,34 +267,57 @@
         <h2>Ranking General & Podio</h2>
         <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">Clasificación de asesores por puntuación y tiempo de resolución (RF-MVP-042).</p>
       </div>
+      <!-- Control rápido de podio visible para administradores -->
+      <div id="ranking-admin-controls" style="display:none; align-items:center; gap:10px;">
+        <span id="ranking-podium-badge" class="badge" style="padding:6px 12px; border-radius:20px; background:#475569; color:#f1f5f9;">🔒 Podio Oculto a Asesores</span>
+        <button id="btn-ranking-toggle-podium" class="btn-primary" style="font-size:12px; padding:8px 16px; width:auto;" onclick="window.UyapayPortal.togglePodiumVisibility()">
+          Mostrar Podio a Asesores
+        </button>
+      </div>
     </div>
 
-    <!-- PODIO TOP 3 -->
-    <div class="podium-wrapper" id="podium-wrapper">
-      <!-- Generado dinámicamente por JS -->
+    <!-- ESTADO BLOQUEADO / EN ESPERA (VISIBLE PARA ASESORES CUANDO EL ADMIN AÚN NO LO PUBLICA) -->
+    <div id="podium-locked-state" class="card" style="display:none; text-align:center; padding:48px 24px; margin-top:20px;">
+      <div style="font-size:56px; margin-bottom:12px;">🔒</div>
+      <h3 style="font-size:20px; color:var(--text-dark); margin-bottom:8px;">Podio Oficial en Espera</h3>
+      <p style="color:var(--text-muted); max-width:540px; margin:0 auto 20px auto; font-size:14px; line-height:1.6;">
+        El administrador aún no ha habilitado la visualización del podio oficial para esta jornada de evaluación. Una vez que todos los asesores finalicen sus casos, el capacitador publicará el ranking oficial y podrás consultar tu posición en el podio.
+      </p>
+      <div style="display:inline-flex; align-items:center; gap:8px; background:#fff9e6; color:var(--yellow-dark); padding:8px 18px; border-radius:24px; font-size:13px; font-weight:700;">
+        <span>⏱️</span>
+        <span>Estado: Jornada de evaluación grupal en curso</span>
+      </div>
     </div>
 
-    <!-- TABLA COMPLETA DE POSICIONES -->
-    <div class="card" style="margin-top:20px;">
-      <h3 style="font-size:16px; margin-bottom:14px; color:var(--text-dark);">Tabla Oficial de Posiciones</h3>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:70px;">Posición</th>
-              <th>Asesor</th>
-              <th>Caso Evaluado</th>
-              <th>Puntaje</th>
-              <th>Tiempo</th>
-              <th>Errores</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboard-results-table">
-            <!-- Renderizado dinámicamente por JS -->
-          </tbody>
-        </table>
+    <!-- CONTENEDOR ACTIVO DE PODIO Y RANKING -->
+    <div id="podium-active-container">
+      <!-- PODIO TOP 3 -->
+      <div class="podium-wrapper" id="podium-wrapper">
+        <!-- Generado dinámicamente por JS -->
+      </div>
+
+      <!-- TABLA COMPLETA DE POSICIONES -->
+      <div class="card" style="margin-top:20px;" id="ranking-table-card">
+        <h3 style="font-size:16px; margin-bottom:14px; color:var(--text-dark);">Tabla Oficial de Posiciones</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:70px;">Posición</th>
+                <th>Asesor</th>
+                <th>Caso Evaluado</th>
+                <th>Puntaje</th>
+                <th>Tiempo</th>
+                <th>Errores</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-results-table">
+              <!-- Renderizado dinámicamente por JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -297,7 +376,88 @@
     </div>
   </div>
 
-  <!-- ================= 6. SCRIPTS MODULARES ================= -->
+  <!-- ================= 6. MODALES DEL SISTEMA ================= -->
+
+  <!-- MODAL DE RESULTADOS PERSONALES DEL ASESOR (POST-EVALUACIÓN) -->
+  <div id="personal-result-modal" class="portal-modal-backdrop">
+    <div class="portal-modal">
+      <div class="portal-modal-header">
+        <h3>🎉 ¡Evaluación Finalizada!</h3>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closePersonalModal()">&times;</button>
+      </div>
+      <div class="portal-modal-body">
+        <div class="personal-score-banner">
+          <div style="font-size:12px; font-weight:700; color:#854d0e; text-transform:uppercase; letter-spacing:0.5px;">Calificación Obtenida</div>
+          <div class="personal-score-number" id="modal-user-score">20 / 20</div>
+          <div id="modal-user-status-badge"><span class="badge badge-success" style="font-size:13px; padding:5px 14px;">Aprobado</span></div>
+        </div>
+
+        <div class="personal-meta-grid">
+          <div class="personal-meta-card">
+            <div class="personal-meta-label">Tiempo Total</div>
+            <div class="personal-meta-val" id="modal-user-time">03:42</div>
+          </div>
+          <div class="personal-meta-card">
+            <div class="personal-meta-label">Casos Listos</div>
+            <div class="personal-meta-val" id="modal-user-cases">5 de 5</div>
+          </div>
+          <div class="personal-meta-card">
+            <div class="personal-meta-label">Total Errores</div>
+            <div class="personal-meta-val" id="modal-user-errors">0</div>
+          </div>
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:10px;">
+          Desglose Individual de los 5 Casos:
+        </div>
+        <div id="modal-user-cases-list">
+          <!-- Renderizado dinámicamente -->
+        </div>
+
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 16px; margin-top:16px; display:flex; align-items:flex-start; gap:10px;">
+          <span style="font-size:18px;">ℹ️</span>
+          <div style="font-size:12px; color:#1e40af; line-height:1.5;">
+            <b>Aviso Oficial:</b> Tus calificaciones y tiempo han sido guardados de manera segura en el sistema. El <b>Ranking Oficial y Podio</b> serán publicados por el administrador una vez que todos los asesores culminen la jornada de evaluación.
+          </div>
+        </div>
+      </div>
+      <div class="portal-modal-footer">
+        <button class="btn-primary" style="width:auto; padding:10px 24px;" onclick="window.UyapayPortal.goToMyGrades()">
+          Ver Mis Calificaciones
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE AUDITORÍA DE ERRORES (EXCLUSIVO ADMINISTRADOR) -->
+  <div id="admin-error-detail-modal" class="portal-modal-backdrop">
+    <div class="portal-modal" style="max-width:700px;">
+      <div class="portal-modal-header">
+        <div>
+          <h3 style="margin:0;">📋 Auditoría Detallada de Errores</h3>
+          <div id="modal-audit-subtitle" style="font-size:12px; color:var(--text-muted); margin-top:2px;">Asesor: -</div>
+        </div>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeAuditModal()">&times;</button>
+      </div>
+      <div class="portal-modal-body">
+        <div id="modal-audit-summary" style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+          <!-- Resumen de nota, tiempo y errores -->
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:var(--text-dark); margin-bottom:10px;">
+          Registro de Fallas por Caso Evaluado:
+        </div>
+        <div id="modal-audit-cases-list">
+          <!-- Detalle de casos y sus errores -->
+        </div>
+      </div>
+      <div class="portal-modal-footer">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeAuditModal()">Cerrar Auditoría</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 7. SCRIPTS MODULARES ================= -->
   <script src="js/data/users.js"></script>
   <script src="js/data/cases.js"></script>
   <script src="js/services/storage.js"></script>
