@@ -243,10 +243,11 @@ window.UyapayData.CASES = [
     "objetivo": "Ejecutar una venta directa al contado en línea Lubricantes con bonificación en especie por escala.",
     "pasoAPaso": [
       "1. En el Plan de Visitas ubicar y pulsar sobre \"Ferretería Los Andes S.A.C.\". En la hoja de opciones seleccionar \"Iniciar visita\".",
-      "2. En Datos del Cliente presionar \"Continuar a Fotos de Visita\". Capturar Foto 1 (Fachada) y Foto 2 (Góndola). Guardar.",
-      "3. En Pedidos en Visita pulsar \"➕ Crear pedido o cotización\". Configurar: Condición = Contado (5% desc.), Lista de Precios = 1, Línea = Lubricantes, Marca = Shell.",
-      "4. En el catálogo localizar \"Shell Helix HX7 10W/40\". Ajustar cantidad a 8 baldes y activar el toggle de regalo (2 botellas Shell Helix Plus). Presionar \"Seleccionar Producto\".",
-      "5. En el Resumen verificar: Subtotal bruto USD 176.00, Descuento Contado 5% (-USD 8.80), Total a facturar USD 167.20. Presionar \"Actualizar Orden de Compra y Enviar\"."
+      "2. En la tarea INICIO del carrusel, verificar el Scoring (Venta C, Cobranza 1) y Perfil comercial. Presionar el botón \"CONTINUAR\".",
+      "3. En la tarea FOTOS pulsar \"+\" en Presentación inicial y \"+\" en Presentación final. Presionar el botón \"GUARDAR\" (avanza automáticamente a PEDIDOS).",
+      "4. En la tarea PEDIDOS pulsar \"➕ CREAR PEDIDO O COTIZACIÓN\". Configurar: Condición = Contado (5% desc.), Lista de Precios = 1, Línea = Lubricantes, Marca = Shell.",
+      "5. Pulsar \"＋ Agregar producto\". En Selección de producto tocar \"Shell Helix HX7 10W/40\". En Detalle del producto ajustar cantidad a 8 baldes con el stepper [＋], verificar bonificación en especie y pulsar \"Agregar producto\".",
+      "6. En la pantalla Nuevo pedido verificar el item cargado y presionar \"Completar\". En Confirmación verificar: Subtotal bruto USD 176.00, Descuento Contado 5% (-USD 8.80), Total a facturar USD 167.20. Presionar \"Actualizar Orden de Compra y Enviar\"."
     ],
     "reglaNegocio": "En condición Contado aplica descuento financiero del 5%. Los regalos promocionales (bonificaciones) no reducen el monto facturado pero deben registrarse vinculados al SKU padre.",
     "decisionClave": "Activar el toggle de regalo dentro del detalle del producto antes de agregarlo al carrito.",
@@ -329,9 +330,9 @@ window.UyapayData.CASES = [
     "pasoAPaso": [
       "1. Seleccionar Distribuidora Kanchis EIRL e iniciar visita.",
       "2. Capturar y guardar ambas fotos de control.",
-      "3. Configurar: Crédito 30 días (3% desc.), Lista OF, Línea Neumáticos, Marca Michelin.",
-      "4. Agregar 3 cajas Michelin Energy XM2+ a $55 c/u. Activar toggle de Descuento por Volumen ($10 USD).",
-      "5. Verificar cálculo: 3×$55 = $165.00 bruto - $10.00 promo = $155.00 neto; menos 3% crédito ($4.65) = USD 150.35. Confirmar orden."
+      "3. En la tarea PEDIDOS pulsar \"➕ CREAR PEDIDO O COTIZACIÓN\". Configurar: Condición = Crédito 30 días (3% desc.), Lista = OF, Línea = Neumáticos, Marca = Michelin.",
+      "4. Pulsar \"＋ Agregar producto\". En Selección de producto elegir \"Michelin Energy XM2+\". En Detalle del producto ajustar cantidad a 3 unidades con stepper [＋], activar Descuento por Volumen ($10 USD) y pulsar \"Agregar producto\".",
+      "5. En Nuevo pedido verificar item y pulsar \"Completar\". En Confirmación verificar cálculo: 3×$55 = $165.00 bruto - $10.00 promo = $155.00 neto; menos 3% crédito ($4.65) = USD 150.35. Presionar \"Actualizar Orden de Compra y Enviar\"."
     ],
     "reglaNegocio": "El descuento de crédito (3% para 30 días) se aplica sobre el subtotal neto posterior al descuento en dinero por volumen.",
     "decisionClave": "Activar el toggle de descuento monetario dentro del catálogo del producto.",

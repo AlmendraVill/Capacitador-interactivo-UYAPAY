@@ -22,6 +22,12 @@
     },
     catalogQuantities: {},
     catalogPromos: {},
+    selectedCatalogProduct: null,
+    detailQty: 1,
+    detailDescuentoAprov: 0,
+    detailPromoChecked: false,
+    catalogSearchQuery: '',
+    catalogSelectedTab: 'combo',
     cart: {
       productId: '',
       product: 'Shell Helix HX7 10W/40',
@@ -83,7 +89,144 @@
     }, 2800);
   }
 
+  // ================= TAREAS EN VISITA: TASK CAROUSEL OFICIAL =================
+  let currentVisitTaskIndex = 0;
+  const visitTaskTitles = ['INICIO', 'FOTOS', 'PRECIOS', 'PEDIDOS'];
+
+  function goToVisitTask(index) {
+    if (index < 0) index = 0;
+    if (index > 3) index = 3;
+    currentVisitTaskIndex = index;
+
+    // Actualizar título en barra
+    const titleEl = document.getElementById('task-nav-current-title');
+    if (titleEl) titleEl.textContent = visitTaskTitles[index];
+
+    // Actualizar dots indicadores
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById(`dot-task-${i}`);
+      if (dot) {
+        if (i === index) dot.classList.add('active');
+        else dot.classList.remove('active');
+      }
+    }
+
+    // Actualizar slides visibles
+    const slideIds = ['task-slide-inicio', 'task-slide-fotos', 'task-slide-precios', 'task-slide-pedidos'];
+    slideIds.forEach((sId, idx) => {
+      const el = document.getElementById(sId);
+      if (el) {
+        if (idx === index) el.classList.add('active');
+        else el.classList.remove('active');
+      }
+    });
+
+    // Asegurarse de que s-cliente-inicio sea la pantalla activa
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('s-cliente-inicio');
+    if (target) target.classList.add('active');
+  }
+
+  function prevVisitTask() {
+    goToVisitTask(currentVisitTaskIndex - 1);
+  }
+
+  function nextVisitTask() {
+    goToVisitTask(currentVisitTaskIndex + 1);
+  }
+
+  function toggleTaskDropdown() {
+    const modal = document.getElementById('taskDropdownModal');
+    if (modal) modal.classList.toggle('active');
+  }
+
+  function closeTaskDropdown() {
+    const modal = document.getElementById('taskDropdownModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function openPhotoHistoryModal() {
+    const modal = document.getElementById('photoHistoryModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closePhotoHistoryModal() {
+    const modal = document.getElementById('photoHistoryModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function onInicioContinue() {
+    const currentCase = getCaseData();
+    if (currentCase && (currentCase.isPhoneVisit || state.currentCaseId === 'case-16')) {
+      goToVisitTask(3); // En atención telefónica va directo a pedidos
+    } else {
+      goToVisitTask(1); // FOTOS
+    }
+  }
+
+  function onPreciosContinue() {
+    goToVisitTask(3); // Avanza a PEDIDOS
+  }
+
+  function onPedidosContinue() {
+    if (state.cart && state.cart.qty > 0) {
+      showHint('Visita completada exitosamente.', false);
+      navigateTo('s-dashboard');
+    } else {
+      showHint('Presiona "＋ CREAR PEDIDO O COTIZACIÓN" para emitir la orden.', true);
+    }
+  }
+
+  function switchPriceSubtab(tabKey) {
+    const tabReg = document.getElementById('subtab-reg-precios');
+    const tabRes = document.getElementById('subtab-resumen-precios');
+    if (tabKey === 'registro') {
+      if (tabReg) tabReg.classList.add('active');
+      if (tabRes) tabRes.classList.remove('active');
+      showHint('Modo: Registro de precios por producto.', false);
+    } else {
+      if (tabReg) tabReg.classList.remove('active');
+      if (tabRes) tabRes.classList.add('active');
+      showHint('Modo: Resumen comparativo.', false);
+    }
+  }
+
+  function toggleSkuAccordion(skuIndex) {
+    const body = document.getElementById(`sku-body-${skuIndex}`);
+    const arrow = document.getElementById(`sku-arrow-${skuIndex}`);
+    if (body) {
+      const isHidden = (body.style.display === 'none' || !body.style.display);
+      body.style.display = isHidden ? 'block' : 'none';
+      if (arrow) arrow.textContent = isHidden ? '∧' : '∨';
+    }
+  }
+
+  function onCompetitorPriceInput(skuIndex) {
+    const status = document.getElementById(`sku-status-${skuIndex}`);
+    if (status) status.textContent = '1 de 3 registrados';
+    const fill = document.getElementById('price-progress-fill');
+    const avance = document.getElementById('price-avance-val');
+    if (fill) fill.style.width = '25%';
+    if (avance) avance.textContent = '1 (10.0%)';
+  }
+
+  function uploadPurchaseDoc() {
+    showHint('Documento adjuntado: Factura de compra proveedor.', false);
+  }
+
   function navigateTo(screenId) {
+    if (screenId === 's-fotos') {
+      goToVisitTask(1);
+      return;
+    }
+    if (screenId === 's-pedidos-menu') {
+      goToVisitTask(3);
+      return;
+    }
+    if (screenId === 's-precios') {
+      goToVisitTask(2);
+      return;
+    }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
     if (target) target.classList.add('active');
@@ -109,21 +252,63 @@
       promoLabel: currentCase.promoLabel || 'Promoción oficial'
     };
 
-    // Pre-poblar los selectores en s-nuevo-pedido con los datos que coinciden con el caso
+    // Pre-poblar los selectores y tarjetas en s-nuevo-pedido (Flujo 2)
+    const selCli = document.getElementById('sel-cliente');
+    const lblCli = document.getElementById('lbl-sel-cliente');
     const selCond = document.getElementById('sel-condicion');
+    const lblCond = document.getElementById('lbl-sel-condicion');
     const selList = document.getElementById('sel-lista');
+    const lblList = document.getElementById('lbl-sel-lista');
     const selLine = document.getElementById('sel-linea');
+    const lblLine = document.getElementById('lbl-sel-linea');
     const selBrand = document.getElementById('sel-marca');
+    const lblBrand = document.getElementById('lbl-sel-marca');
 
-    if (selCond && currentCase.paymentCondition) selCond.value = currentCase.paymentCondition;
-    if (selList && currentCase.priceList) selList.value = currentCase.priceList;
-    if (selLine && currentCase.line) selLine.value = currentCase.line;
-    if (selBrand && currentCase.brand) selBrand.value = currentCase.brand;
+    if (selCli) {
+      selCli.innerHTML = `<option value="${state.selectedClient}">${state.selectedClient.toUpperCase()}</option>`;
+      selCli.value = state.selectedClient;
+    }
+    if (lblCli) lblCli.textContent = state.selectedClient.toUpperCase();
+
+    if (selCond && currentCase.paymentCondition) {
+      selCond.value = currentCase.paymentCondition;
+      if (lblCond && selCond.selectedIndex >= 0) {
+        lblCond.textContent = selCond.options[selCond.selectedIndex].text;
+      }
+    }
+    if (selList && currentCase.priceList) {
+      selList.value = currentCase.priceList;
+      if (lblList && selList.selectedIndex >= 0) {
+        lblList.textContent = selList.options[selList.selectedIndex].text;
+      }
+    }
+    if (selLine && currentCase.line) {
+      selLine.value = currentCase.line;
+      if (lblLine && selLine.selectedIndex >= 0) {
+        lblLine.textContent = selLine.options[selLine.selectedIndex].text;
+      }
+      // Asegurar opciones de marcas válidas
+      if (selBrand) {
+        if (currentCase.line === 'lubricantes') {
+          selBrand.innerHTML = `<option value="shell">SHELL</option>`;
+        } else if (currentCase.line === 'neumaticos') {
+          selBrand.innerHTML = `<option value="michelin">MICHELIN</option><option value="bfgoodrich">BFGOODRICH</option>`;
+        } else if (currentCase.line === 'repuestos') {
+          selBrand.innerHTML = `<option value="hyundai">HYUNDAI</option>`;
+        }
+      }
+    }
+    if (selBrand && currentCase.brand) {
+      selBrand.value = currentCase.brand;
+      if (lblBrand && selBrand.selectedIndex >= 0) {
+        lblBrand.textContent = selBrand.options[selBrand.selectedIndex].text;
+      }
+    }
 
     const cliLista = document.getElementById('cli-lista-header');
     if (cliLista && currentCase.priceList) cliLista.textContent = `Lista ${currentCase.priceList}`;
 
-    // Renderizar lista de clientes en la ruta (s-visitas)
+    // Renderizar lista de clientes en la ruta oficial (s-visitas - plan de visitas 1.png)
     const listContainer = document.getElementById('client-list-cards');
     if (listContainer) {
       const isOutRouteCase = (state.currentCaseId === 'case-11' || state.currentCaseId === 'case-22');
@@ -144,11 +329,21 @@
       let html = '';
       if (!isOutRouteCase) {
         html += `
-          <div class="client-card" style="border-left: 4px solid #2980b9;" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
-            <div class="pin">◎</div>
-            <div>
-              <div class="client-name">${targetClient.toUpperCase()}</div>
-              <div class="client-address">${targetAddr}</div>
+          <div class="client-card-official is-in-progress" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
+            <div class="client-card-pin-circle">
+              <span>📍</span>
+            </div>
+            <div class="client-card-content">
+              <div class="client-card-title-row">
+                <span class="client-card-name">${targetClient.toUpperCase()}</span>
+                <span class="client-card-chevron">∨</span>
+              </div>
+              <div class="client-card-address">${targetAddr}</div>
+              <div class="client-card-status-row">
+                <span class="client-drag-handle">⋮⋮</span>
+                <span class="status-badge-in-course">EN CURSO</span>
+                <span class="client-card-time">🕒 11:31</span>
+              </div>
             </div>
           </div>
         `;
@@ -156,11 +351,20 @@
 
       mockDistractors.slice(0, isOutRouteCase ? 4 : 3).forEach(d => {
         html += `
-          <div class="client-card" onclick="window.UyapaySimulator.openOptions('${d.name}')">
-            <div class="pin">◎</div>
-            <div>
-              <div class="client-name">${d.name.toUpperCase()}</div>
-              <div class="client-address">${d.address}</div>
+          <div class="client-card-official" onclick="window.UyapaySimulator.openOptions('${d.name}')">
+            <div class="client-card-pin-circle">
+              <span>📍</span>
+            </div>
+            <div class="client-card-content">
+              <div class="client-card-title-row">
+                <span class="client-card-name">${d.name.toUpperCase()}</span>
+                <span class="client-card-chevron">∨</span>
+              </div>
+              <div class="client-card-address">${d.address}</div>
+              <div class="client-card-status-row">
+                <span class="client-drag-handle">⋮⋮</span>
+                <span class="status-badge-pending">PENDIENTE</span>
+              </div>
             </div>
           </div>
         `;
@@ -197,37 +401,72 @@
   // 2.1 Navegación por Tabs Oficiales (Inicio, Visitas, Pedidos)
   function selectNavTab(tabKey) {
     document.querySelectorAll('.tabs-app .tab-item').forEach(t => t.classList.remove('active'));
-    const activeTab = document.getElementById(`nav-tab-${tabKey}`);
-    if (activeTab) activeTab.classList.add('active');
+    const activeTabs = [
+      document.getElementById(`nav-tab-${tabKey}`),
+      document.getElementById(`nav-tab-${tabKey}-dash`),
+      document.getElementById(`nav-tab-${tabKey}-ped`)
+    ];
+    activeTabs.forEach(t => { if (t) t.classList.add('active'); });
 
     if (tabKey === 'visitas') {
       navigateTo('s-visitas');
     } else if (tabKey === 'pedidos') {
-      if (state.cart && state.cart.qty > 0) {
-        updateReceiptCalculations();
-        navigateTo('s-resumen-pedido');
-      } else {
-        showHint('No tienes productos agregados en el pedido actual.', false);
-      }
+      renderOrdersTrackingList();
+      navigateTo('s-pedidos-seguimiento');
     } else if (tabKey === 'inicio') {
-      showHint('Estás en el módulo de Plan de Visitas del Asesor.', false);
-      navigateTo('s-visitas');
+      updateDashboardAdvisorGreeting();
+      navigateTo('s-inicio');
     }
   }
 
-  // 2.2 Pestañas Circulares: Pendientes vs Realizadas (VerticalScrollableCircleTabs)
+  function updateDashboardAdvisorGreeting() {
+    const greetingEl = document.getElementById('dashboard-advisor-name');
+    if (greetingEl) {
+      const name = state.advisorUsername ? (state.advisorUsername.charAt(0).toUpperCase() + state.advisorUsername.slice(1)) : 'Betsy Ramos';
+      greetingEl.textContent = `¡Hola ${name}!`;
+    }
+  }
+
+  function selectAnalysisTab(tabKey) {
+    const tabCob = document.getElementById('subtab-analisis-cobranza');
+    const tabVen = document.getElementById('subtab-analisis-ventas');
+    const dotCob = document.getElementById('dot-analisis-cobranza');
+    const dotVen = document.getElementById('dot-analisis-ventas');
+
+    if (tabKey === 'cobranza') {
+      if (tabCob) tabCob.classList.add('active');
+      if (tabVen) tabVen.classList.remove('active');
+      if (dotCob) dotCob.style.display = 'block';
+      if (dotVen) dotVen.style.display = 'none';
+      showHint('Métricas de Cobranza activas.', false);
+    } else {
+      if (tabVen) tabVen.classList.add('active');
+      if (tabCob) tabCob.classList.remove('active');
+      if (dotVen) dotVen.style.display = 'block';
+      if (dotCob) dotCob.style.display = 'none';
+      showHint('Métricas de Proyección de Ventas activas.', false);
+    }
+  }
+
+  // 2.2 Pestañas Circulares: Pendientes vs Realizadas (plan de visitas 1.png)
   function selectVisitTab(tabKey) {
     const tabPend = document.getElementById('tab-pendientes');
     const tabReal = document.getElementById('tab-realizadas');
+    const dotPend = document.getElementById('dot-subtab-pend');
+    const dotReal = document.getElementById('dot-subtab-real');
     const listContainer = document.getElementById('client-list-cards');
 
     if (tabKey === 'pendientes') {
       if (tabPend) tabPend.classList.add('active');
       if (tabReal) tabReal.classList.remove('active');
+      if (dotPend) dotPend.style.display = 'block';
+      if (dotReal) dotReal.style.display = 'none';
       initializeCaseEnvironment();
     } else {
       if (tabReal) tabReal.classList.add('active');
       if (tabPend) tabPend.classList.remove('active');
+      if (dotReal) dotReal.style.display = 'block';
+      if (dotPend) dotPend.style.display = 'none';
       if (listContainer) {
         listContainer.innerHTML = `
           <div style="text-align:center; padding:36px 16px; color:var(--text-light); font-size:13px;">
@@ -238,6 +477,152 @@
         `;
       }
     }
+  }
+
+  // 2.3 Menú Lateral Secundario (Drawer - menu secundario.png)
+  function openSecondaryDrawer() {
+    const drawer = document.getElementById('secondary-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    const userName = document.getElementById('drawer-user-name');
+    if (userName && state.advisorUsername) {
+      userName.textContent = state.advisorUsername.toUpperCase();
+    }
+    if (drawer) drawer.classList.add('open');
+    if (backdrop) backdrop.classList.add('show');
+  }
+
+  function closeSecondaryDrawer() {
+    const drawer = document.getElementById('secondary-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    if (drawer) drawer.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('show');
+  }
+
+  // 2.4 Acordeón de Progreso (plan de visitas 2.png)
+  let isProgressExpanded = false;
+  function toggleProgressDetails() {
+    isProgressExpanded = !isProgressExpanded;
+    const details = document.getElementById('progress-details-expanded');
+    const icon = document.getElementById('progress-chevron-icon');
+    if (details) {
+      details.style.display = isProgressExpanded ? 'block' : 'none';
+    }
+    if (icon) {
+      icon.textContent = isProgressExpanded ? '∧' : '∨';
+    }
+  }
+
+  // 2.5 Seguimiento de Pedidos Oficial (seguimiento de pedidos.png)
+  let trackedOrders = [
+    { code: 'P004-022322', time: '08:21 AM', client: 'SERVICIOS GARCIA GLOBAL S.A.C.', total: 'USD 86.00', status: 'APROBADO', statusClass: 'status-aprobado' },
+    { code: 'P004-022321', time: '08:08 AM', client: 'MAQUERA CALIZAYA YOVIER', total: 'USD 161.00', status: 'EMITIDO', statusClass: 'status-emitido' },
+    { code: 'P004-022320', time: '06:47 AM', client: 'REPRESENTACIONES AXEL IMPORT E.I.R.L.', total: 'PEN 276.00', status: 'APROBADO', statusClass: 'status-aprobado' }
+  ];
+
+  let currentOrderSubtab = 'pedidos';
+  let currentOrderFilter = 'recientes';
+  let orderSearchQuery = '';
+
+  function renderOrdersTrackingList() {
+    const container = document.getElementById('orders-today-items');
+    if (!container) return;
+
+    if (currentOrderSubtab === 'cotizaciones') {
+      container.innerHTML = `
+        <div style="text-align:center; padding:28px 16px; color:#6b7280; font-size:12.5px;">
+          <p style="margin:0;">No hay cotizaciones registradas para hoy.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let filtered = [...trackedOrders];
+    if (orderSearchQuery) {
+      const q = orderSearchQuery.toLowerCase();
+      filtered = filtered.filter(o => o.client.toLowerCase().includes(q) || o.code.toLowerCase().includes(q));
+    }
+
+    let html = '';
+    if (state.cart && state.cart.qty > 0 && state.finalOrderTotal) {
+      html += `
+        <div class="order-tracking-card is-recent" onclick="window.UyapaySimulator.hint('Orden emitida durante la sesión actual')">
+          <div class="order-card-header">
+            <span class="order-code-bold">P004-022323</span>
+            <span class="order-time-lbl">🕒 Ahora</span>
+          </div>
+          <div class="order-client-lbl">${state.selectedClient.toUpperCase()}</div>
+          <div class="order-card-footer">
+            <span class="order-total-lbl">USD ${state.finalOrderTotal.toFixed(2)} <small>(con IGV)</small></span>
+            <span class="order-status-badge status-emitido">ENVIADO ›</span>
+          </div>
+        </div>
+      `;
+    }
+
+    filtered.forEach(ord => {
+      html += `
+        <div class="order-tracking-card" onclick="window.UyapaySimulator.hint('Detalle de orden: ${ord.code}')">
+          <div class="order-card-header">
+            <span class="order-code-bold">${ord.code}</span>
+            <span class="order-time-lbl">🕒 ${ord.time}</span>
+          </div>
+          <div class="order-client-lbl">${ord.client}</div>
+          <div class="order-card-footer">
+            <span class="order-total-lbl">${ord.total} <small>(con IGV)</small></span>
+            <span class="order-status-badge ${ord.statusClass}">${ord.status} ›</span>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function selectOrderSubtab(subtab) {
+    currentOrderSubtab = subtab;
+    const tabPed = document.getElementById('subtab-pedidos-list');
+    const tabCot = document.getElementById('subtab-cotizaciones-list');
+    const dotPed = document.getElementById('dot-ped-list');
+    const dotCot = document.getElementById('dot-cot-list');
+
+    if (subtab === 'pedidos') {
+      if (tabPed) tabPed.classList.add('active');
+      if (tabCot) tabCot.classList.remove('active');
+      if (dotPed) dotPed.style.display = 'block';
+      if (dotCot) dotCot.style.display = 'none';
+    } else {
+      if (tabCot) tabCot.classList.add('active');
+      if (tabPed) tabPed.classList.remove('active');
+      if (dotCot) dotCot.style.display = 'block';
+      if (dotPed) dotPed.style.display = 'none';
+    }
+    renderOrdersTrackingList();
+  }
+
+  function selectOrderFilter(filterKey) {
+    currentOrderFilter = filterKey;
+    const fRec = document.getElementById('ped-filter-recientes');
+    const fPend = document.getElementById('ped-filter-pendientes');
+    if (filterKey === 'recientes') {
+      if (fRec) fRec.classList.add('active');
+      if (fPend) fPend.classList.remove('active');
+    } else {
+      if (fPend) fPend.classList.add('active');
+      if (fRec) fRec.classList.remove('active');
+    }
+    renderOrdersTrackingList();
+  }
+
+  function onOrderSearch(query) {
+    orderSearchQuery = (query || '').trim();
+    renderOrdersTrackingList();
+  }
+
+  function clearOrderSearch() {
+    const inp = document.getElementById('order-search-input');
+    if (inp) inp.value = '';
+    orderSearchQuery = '';
+    renderOrdersTrackingList();
   }
 
   // 3. Filtros del Plan de Visitas
@@ -472,42 +857,91 @@
     }
   }
 
-  // 8. Visitas Fuera de Ruta (Casos 11 y 22)
+  // 8. Visitas Fuera de Ruta Oficiales (agregar visita al plan.png)
   function onOutRouteClientChange(clientVal) {
-    const addrInput = document.getElementById('outroute-address');
-    if (!addrInput) return;
-    if (clientVal === 'Repuestos Central Chincha') {
-      addrInput.value = 'CALLE COMERCIO 120 - CHINCHA';
-    } else if (clientVal === 'Autopartes El Rápido') {
-      addrInput.value = 'JR. PIEROLA 540';
+    const lblClient = document.getElementById('lbl-outroute-client');
+    const selClient = document.getElementById('sel-outroute-client');
+    const selAddr = document.getElementById('sel-outroute-address');
+    const lblAddr = document.getElementById('lbl-outroute-address');
+
+    if (lblClient && selClient && selClient.selectedIndex >= 0) {
+      lblClient.textContent = selClient.options[selClient.selectedIndex].text;
+    }
+
+    if (selAddr) {
+      if (clientVal === 'Repuestos Central Chincha') {
+        selAddr.innerHTML = `
+          <option value="CALLE COMERCIO 120 - CHINCHA" selected>CALLE COMERCIO 120 - CHINCHA</option>
+          <option value="AV. BENAVIDES 302 - CHINCHA">AV. BENAVIDES 302 - CHINCHA</option>
+        `;
+      } else if (clientVal === 'Autopartes El Rápido') {
+        selAddr.innerHTML = `
+          <option value="JR. PIEROLA 540" selected>JR. PIEROLA 540</option>
+          <option value="AV. MARISCAL CASTILLA 110">AV. MARISCAL CASTILLA 110</option>
+        `;
+      } else {
+        selAddr.innerHTML = `
+          <option value="AV. PRINCIPAL 100" selected>AV. PRINCIPAL 100</option>
+        `;
+      }
+      if (lblAddr && selAddr.selectedIndex >= 0) {
+        lblAddr.textContent = selAddr.options[selAddr.selectedIndex].text;
+      }
+    }
+  }
+
+  function onOutRouteAddressChange(addrVal) {
+    const lblAddr = document.getElementById('lbl-outroute-address');
+    const selAddr = document.getElementById('sel-outroute-address');
+    if (lblAddr && selAddr && selAddr.selectedIndex >= 0) {
+      lblAddr.textContent = selAddr.options[selAddr.selectedIndex].text;
+    }
+  }
+
+  function selectPlanClientMode(mode) {
+    const tabPres = document.getElementById('subtab-plan-presencial');
+    const tabTel = document.getElementById('subtab-plan-telefonica');
+    const dotPres = document.getElementById('dot-plan-presencial');
+    const dotTel = document.getElementById('dot-plan-telefonica');
+    if (mode === 'presencial') {
+      if (tabPres) tabPres.classList.add('active');
+      if (tabTel) tabTel.classList.remove('active');
+      if (dotPres) dotPres.style.display = 'block';
+      if (dotTel) dotTel.style.display = 'none';
     } else {
-      addrInput.value = 'CALLE COMERCIO 100';
+      if (tabTel) tabTel.classList.add('active');
+      if (tabPres) tabPres.classList.remove('active');
+      if (dotTel) dotTel.style.display = 'block';
+      if (dotPres) dotPres.style.display = 'none';
     }
   }
 
   function openOutRouteModal() {
-    const modal = document.getElementById('outRouteModal');
-    if (modal) modal.classList.add('active');
     const selClient = document.getElementById('sel-outroute-client');
+    const lblClient = document.getElementById('lbl-outroute-client');
     if (selClient) {
       if (state.currentCaseId === 'case-11') {
         selClient.value = 'Repuestos Central Chincha';
       } else if (state.currentCaseId === 'case-22') {
         selClient.value = 'Autopartes El Rápido';
       }
+      if (lblClient && selClient.selectedIndex >= 0) {
+        lblClient.textContent = selClient.options[selClient.selectedIndex].text;
+      }
       onOutRouteClientChange(selClient.value);
     }
+    navigateTo('s-agregar-cliente-plan');
   }
 
   function closeOutRouteModal() {
-    const modal = document.getElementById('outRouteModal');
-    if (modal) modal.classList.remove('active');
+    navigateTo('s-visitas');
   }
 
   function submitOutRouteVisit() {
     const selClient = document.getElementById('sel-outroute-client');
     const clientName = selClient ? selClient.value : (state.currentCaseId === 'case-11' ? 'Repuestos Central Chincha' : 'Autopartes El Rápido');
-    const address = document.getElementById('outroute-address')?.value || (state.currentCaseId === 'case-11' ? 'CALLE COMERCIO 120 - CHINCHA' : 'JR. PIEROLA 540');
+    const selAddr = document.getElementById('sel-outroute-address');
+    const address = selAddr ? selAddr.value : (state.currentCaseId === 'case-11' ? 'CALLE COMERCIO 120 - CHINCHA' : 'JR. PIEROLA 540');
 
     state.selectedClient = clientName;
 
@@ -517,17 +951,27 @@
       outRoute: true
     });
 
-    closeOutRouteModal();
-    showHint(`Visita fuera de ruta agregada: ${clientName}`, false);
+    showHint(`Cliente ${clientName} agregado exitosamente al plan.`, false);
+    navigateTo('s-visitas');
 
     const listContainer = document.getElementById('client-list-cards');
     if (listContainer) {
       const newCard = `
-        <div class="client-card" style="border-left: 4px solid #f39c12;" onclick="window.UyapaySimulator.openOptions('${clientName}')">
-          <div class="pin" style="color:#f39c12;">➕</div>
-          <div>
-            <div class="client-name">${clientName.toUpperCase()} <span style="background:#f39c12; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">FUERA DE RUTA</span></div>
-            <div class="client-address">${address}</div>
+        <div class="client-card-official is-in-progress" onclick="window.UyapaySimulator.openOptions('${clientName}')">
+          <div class="client-card-pin-circle">
+            <span>📍</span>
+          </div>
+          <div class="client-card-content">
+            <div class="client-card-title-row">
+              <span class="client-card-name">${clientName.toUpperCase()}</span>
+              <span class="client-card-chevron">∨</span>
+            </div>
+            <div class="client-card-address">${address}</div>
+            <div class="client-card-status-row">
+              <span class="client-drag-handle">⋮⋮</span>
+              <span class="status-badge-in-course">EN CURSO</span>
+              <span class="client-card-time">🕒 Ahora</span>
+            </div>
           </div>
         </div>
       `;
@@ -564,28 +1008,28 @@
     navigateTo('s-dashboard');
   }
 
-  // 10. Fotos de Visita
+  // 10. Fotos de Visita (Tarea FOTOS del Carrusel)
   function takePhoto(photoId) {
     state.photos[photoId] = true;
-    const btn = document.getElementById(`btn-foto-${photoId}`);
-    const card = document.getElementById(`card-foto-${photoId}`);
+    const thumbBox = document.getElementById(`thumb-box-${photoId}`);
+    const icon = document.getElementById(`icon-photo-${photoId}`);
 
-    if (btn) {
-      btn.textContent = '✅ Capturada';
-      btn.className = 'photo-badge ready';
+    if (thumbBox) thumbBox.style.display = 'inline-block';
+    if (icon) {
+      icon.textContent = '✓';
+      icon.style.color = 'var(--success-color)';
     }
-    if (card) {
-      card.classList.add('taken');
-    }
-    showHint(`Foto ${photoId} registrada correctamente.`, false);
+
+    const label = photoId === 1 ? 'Presentación Inicial' : photoId === 2 ? 'Presentación Final' : 'Material Publicitario';
+    showHint(`${label} capturada correctamente.`, false);
   }
 
   function submitPhotos() {
     if (!state.photos[1] || !state.photos[2]) {
       showHint('El manual exige registrar ambas fotos (inicial y final).', true);
       emitSimulatorEvent('SAVE_PHOTOS', {
-        initialPhoto: state.photos[1],
-        finalPhoto: state.photos[2]
+        initialPhoto: Boolean(state.photos[1]),
+        finalPhoto: Boolean(state.photos[2])
       });
       return;
     }
@@ -595,22 +1039,11 @@
       finalPhoto: true
     });
 
-    const badgeFotos = document.getElementById('task-badge-fotos');
-    if (badgeFotos) {
-      badgeFotos.textContent = 'Completado ✅';
-      badgeFotos.className = 'task-status-badge done';
-    }
-
-    const btnAction = document.getElementById('btn-cliente-main-action');
-    if (btnAction) {
-      btnAction.textContent = 'Continuar a Crear Pedido ›';
-      btnAction.onclick = () => navigateTo('s-pedidos-menu');
-    }
-
-    navigateTo('s-pedidos-menu');
+    showHint('Fotos de exhibición guardadas. Avanzando a Pedidos...', false);
+    goToVisitTask(3); // Avanza a la tarea PEDIDOS del carrusel
   }
 
-  // 10.1 Gestión de Visita en Progreso, Temporizador y Perfil (Fase 3)
+  // 10.1 Gestión de Visita en Progreso, Temporizador y Perfil Oficial
   let visitTimerInterval = null;
   let visitSeconds = 0;
 
@@ -632,83 +1065,94 @@
     startVisitTimer();
     const currentCase = getCaseData();
     const isKanchis = (clientName || '').toLowerCase().includes('kanchis') || state.currentCaseId === 'case-21';
+    const resolvedClient = clientName || (currentCase ? currentCase.client : 'CONDO CCORIMANYA MARINO');
 
-    const headerTitle = document.getElementById('visit-header-title');
-    if (headerTitle) headerTitle.textContent = clientName || (currentCase ? currentCase.client : 'Visita en Curso');
-
+    // Cabecera Topbar Amarilla
     const cliHeader = document.getElementById('cli-nombre-header');
-    if (cliHeader) cliHeader.textContent = clientName || (currentCase ? currentCase.client : 'Cliente');
+    if (cliHeader) cliHeader.textContent = resolvedClient.toUpperCase();
 
-    // Perfil crediticio oficial Flutter
-    const deudaHeader = document.getElementById('cli-deuda-header');
-    const badgeCobranza = document.getElementById('task-badge-cobranza');
-    const creditBar = document.getElementById('credit-bar-fill');
+    // Scoring Oficial (Página 1: INICIO)
+    const scoringVenta = document.getElementById('scoring-venta-val');
+    const scoringCobranza = document.getElementById('scoring-cobranza-val');
+    if (scoringVenta) scoringVenta.textContent = isKanchis ? 'D' : (currentCase && currentCase.scoringGrade ? currentCase.scoringGrade : 'C');
+    if (scoringCobranza) scoringCobranza.textContent = isKanchis ? '3' : '1';
+
+    // Perfil Personal del Cliente
+    const perfilDesc = document.getElementById('cli-perfil-desc');
+    if (perfilDesc) {
+      if (isKanchis) {
+        perfilDesc.textContent = 'Distribuidora Kanchis EIRL presenta facturas morosas con vencimiento superior a 30 días. Requiere regularización de cobranza antes de emitir pedidos.';
+      } else if (resolvedClient.toLowerCase().includes('andes')) {
+        perfilDesc.textContent = 'Ferretería Los Andes S.A.C. es un cliente preferencial A1 con excelente rotación en lubricantes Shell. Prioriza promociones con bonificación en especie.';
+      } else {
+        perfilDesc.textContent = `${resolvedClient} es un cliente que se destaca por su trato amable y receptividad a ofertas comerciales según la línea asignada.`;
+      }
+    }
+
+    // Perfil Comercial Oficial (Página 1: INICIO)
+    const cpRazon = document.getElementById('cp-razon-social');
+    const cpDir = document.getElementById('cp-direccion');
+    const cpCond = document.getElementById('cp-condicion');
+    const cpRuc = document.getElementById('cp-ruc');
+    const cpLista = document.getElementById('cp-lista');
+    const cpPendiente = document.getElementById('cp-pendiente-val');
+    const lineaAuth = document.getElementById('cli-linea-auth');
     const lineaDisp = document.getElementById('cli-linea-disp');
     const lineaUsed = document.getElementById('cli-linea-used');
+    const creditBar = document.getElementById('credit-bar-fill');
+
+    if (cpRazon) cpRazon.textContent = resolvedClient.toUpperCase();
+    if (cpDir) cpDir.textContent = currentCase ? (currentCase.clientAddress || 'CALLE YARABAMBA MZ Y LT 9') : 'CALLE YARABAMBA MZ Y LT 9';
+    if (cpCond) cpCond.textContent = (currentCase && currentCase.paymentCondition ? currentCase.paymentCondition : 'CONTADO').toUpperCase();
+    if (cpRuc) cpRuc.textContent = isKanchis ? '20451829101' : '10459721270';
+    if (cpLista) cpLista.textContent = `LISTA ${currentCase ? (currentCase.priceList || '3') : '3'}`;
 
     if (isKanchis) {
-      if (deudaHeader) {
-        deudaHeader.textContent = 'USD 840.00 (Vencido)';
-        deudaHeader.style.color = 'var(--error-color)';
+      if (cpPendiente) {
+        cpPendiente.textContent = 'USD 840.00 (Vencido)';
+        cpPendiente.style.color = 'var(--error-color)';
       }
-      if (badgeCobranza) {
-        badgeCobranza.textContent = '1 doc vencido';
-        badgeCobranza.className = 'task-status-badge urgent';
-      }
-      if (creditBar) creditBar.style.width = '34%';
+      if (lineaAuth) lineaAuth.textContent = 'USD 2,500.00';
       if (lineaDisp) lineaDisp.textContent = 'USD 1,660.00';
       if (lineaUsed) lineaUsed.textContent = 'USD 840.00';
+      if (creditBar) creditBar.style.width = '34%';
     } else {
-      if (deudaHeader) {
-        deudaHeader.textContent = 'USD 0.00 (Al día)';
-        deudaHeader.style.color = 'var(--success-color)';
+      if (cpPendiente) {
+        cpPendiente.textContent = '$0.00';
+        cpPendiente.style.color = 'var(--success-color)';
       }
-      if (badgeCobranza) {
-        badgeCobranza.textContent = 'Al día';
-        badgeCobranza.className = 'task-status-badge done';
-      }
-      if (creditBar) creditBar.style.width = '0%';
+      if (lineaAuth) lineaAuth.textContent = 'USD 2,500.00';
       if (lineaDisp) lineaDisp.textContent = 'USD 2,500.00';
       if (lineaUsed) lineaUsed.textContent = 'USD 0.00';
+      if (creditBar) creditBar.style.width = '0%';
     }
 
-    // Actualizar badges de fotos y pedidos
-    const badgeFotos = document.getElementById('task-badge-fotos');
-    if (badgeFotos) {
-      if (state.photos[1] && state.photos[2]) {
-        badgeFotos.textContent = 'Completado ✅';
-        badgeFotos.className = 'task-status-badge done';
-      } else {
-        badgeFotos.textContent = 'Pendiente';
-        badgeFotos.className = 'task-status-badge';
+    // Resetear fotos en Página 2: FOTOS
+    state.photos = { 1: false, 2: false, 3: false };
+    [1, 2, 3].forEach(id => {
+      const box = document.getElementById(`thumb-box-${id}`);
+      const icon = document.getElementById(`icon-photo-${id}`);
+      if (box) box.style.display = 'none';
+      if (icon) {
+        icon.textContent = '+';
+        icon.style.color = '#6b7280';
       }
+    });
+
+    // Resetear pedidos emitidos en Página 4: PEDIDOS
+    const ordersList = document.getElementById('visit-orders-list');
+    if (ordersList) {
+      ordersList.innerHTML = `
+        <div id="visit-orders-empty-state" style="text-align:center; padding:30px 10px; color:var(--text-light);">
+          <div style="font-size:36px; margin-bottom:8px;">📦</div>
+          <div style="font-size:13px; font-weight:600; color:var(--text-medium);">No hay pedidos emitidos</div>
+          <div style="font-size:11px; margin-top:2px;">Presiona el botón de arriba para iniciar un pedido o cotización.</div>
+        </div>
+      `;
     }
 
-    const badgePedidos = document.getElementById('task-badge-pedidos');
-    if (badgePedidos) {
-      if (state.cart && state.cart.qty > 0) {
-        badgePedidos.textContent = 'En curso';
-        badgePedidos.className = 'task-status-badge in-progress';
-      } else {
-        badgePedidos.textContent = 'Pendiente';
-        badgePedidos.className = 'task-status-badge';
-      }
-    }
-
-    // Configurar acción del botón principal
-    const btnAction = document.getElementById('btn-cliente-main-action');
-    if (btnAction) {
-      if (state.photos[1] && state.photos[2]) {
-        btnAction.textContent = 'Continuar a Crear Pedido ›';
-        btnAction.onclick = () => navigateTo('s-pedidos-menu');
-      } else if (currentCase && (currentCase.isPhoneVisit || state.currentCaseId === 'case-16')) {
-        btnAction.textContent = 'Continuar a Pedidos (Atención Remota) ›';
-        btnAction.onclick = () => navigateTo('s-pedidos-menu');
-      } else {
-        btnAction.textContent = 'Continuar a Fotos de Visita ›';
-        btnAction.onclick = () => navigateTo('s-fotos');
-      }
-    }
+    // Ubicar el carrusel en la Tarea 1: INICIO
+    goToVisitTask(0);
   }
 
   // Modales Fase 3: Comparar Precios, Docs y Contacto
@@ -762,12 +1206,135 @@
     showHint('Datos de contacto actualizados correctamente en SOLAR.', false);
   }
 
-  // 11. Configuración del Pedido
+  // 11. Métodos Oficiales para Nuevo Pedido (Flujo 2)
+  function onOrderClientChange() {
+    const sel = document.getElementById('sel-cliente');
+    const lbl = document.getElementById('lbl-sel-cliente');
+    if (sel && lbl && sel.selectedIndex >= 0) {
+      lbl.textContent = sel.options[sel.selectedIndex].text;
+    }
+  }
+
+  function onOrderConditionChange() {
+    const sel = document.getElementById('sel-condicion');
+    const lbl = document.getElementById('lbl-sel-condicion');
+    if (sel && lbl && sel.selectedIndex >= 0) {
+      lbl.textContent = sel.options[sel.selectedIndex].text;
+    }
+  }
+
+  function onOrderPriceListChange() {
+    const sel = document.getElementById('sel-lista');
+    const lbl = document.getElementById('lbl-sel-lista');
+    if (sel && lbl && sel.selectedIndex >= 0) {
+      lbl.textContent = sel.options[sel.selectedIndex].text;
+    }
+  }
+
+  function onOrderLineChange() {
+    const selLine = document.getElementById('sel-linea');
+    const lblLine = document.getElementById('lbl-sel-linea');
+    const selBrand = document.getElementById('sel-marca');
+    const lblBrand = document.getElementById('lbl-sel-marca');
+
+    if (selLine && lblLine && selLine.selectedIndex >= 0) {
+      lblLine.textContent = selLine.options[selLine.selectedIndex].text;
+      const lineVal = selLine.value;
+
+      if (selBrand) {
+        if (lineVal === 'lubricantes') {
+          selBrand.innerHTML = `<option value="shell" selected>SHELL</option>`;
+        } else if (lineVal === 'neumaticos') {
+          selBrand.innerHTML = `
+            <option value="michelin" selected>MICHELIN</option>
+            <option value="bfgoodrich">BFGOODRICH</option>
+          `;
+        } else if (lineVal === 'repuestos') {
+          selBrand.innerHTML = `<option value="hyundai" selected>HYUNDAI</option>`;
+        }
+        if (lblBrand && selBrand.selectedIndex >= 0) {
+          lblBrand.textContent = selBrand.options[selBrand.selectedIndex].text;
+        }
+      }
+    }
+  }
+
+  function onOrderBrandChange() {
+    const sel = document.getElementById('sel-marca');
+    const lbl = document.getElementById('lbl-sel-marca');
+    if (sel && lbl && sel.selectedIndex >= 0) {
+      lbl.textContent = sel.options[sel.selectedIndex].text;
+    }
+  }
+
+  function toggleOrderCurrency(isSoles) {
+    state.orderCurrency = isSoles ? 'PEN' : 'USD';
+    const lblSoles = document.getElementById('lbl-curr-soles');
+    const lblDolares = document.getElementById('lbl-curr-dolares');
+    if (lblSoles) {
+      if (isSoles) lblSoles.classList.add('active');
+      else lblSoles.classList.remove('active');
+    }
+    if (lblDolares) {
+      if (!isSoles) lblDolares.classList.add('active');
+      else lblDolares.classList.remove('active');
+    }
+    showHint(`Moneda de pedido seleccionada: ${isSoles ? 'Soles (PEN)' : 'Dólares (USD)'}`, false);
+  }
+
+  function onAddProductClick() {
+    submitOrderConfig();
+  }
+
+  function onCompletarPedido() {
+    if (state.cart && state.cart.qty > 0 && state.cart.product) {
+      renderConfirmationOrderSummary();
+      navigateTo('s-resumen-pedido');
+    } else {
+      showHint('Debes agregar al menos un producto antes de completar.', true);
+    }
+  }
+
+  function renderOrderCartInNuevoPedido() {
+    const list = document.getElementById('nuevo-pedido-cart-list');
+    const btnComp = document.getElementById('btn-completar-pedido');
+    if (!list) return;
+
+    if (state.cart && state.cart.qty > 0 && state.cart.product) {
+      const totalItem = (state.cart.qty * state.cart.unitPrice).toFixed(2);
+      list.innerHTML = `
+        <div class="task-card" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-dark);">${state.cart.product}</div>
+            <div style="font-size:11px; color:var(--text-light); margin-top:2px;">
+              Cant: <b>${state.cart.qty}</b> | P.U.: USD ${state.cart.unitPrice.toFixed(2)}
+              ${state.cart.promoDiscount ? `<span style="color:var(--success-color); margin-left:4px;">🎁 Promo</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);">USD ${totalItem}</div>
+            <span style="font-size:10px; color:var(--text-light);">(con IGV)</span>
+          </div>
+        </div>
+      `;
+      if (btnComp) {
+        btnComp.className = 'btn-completar-disabled btn-completar-active';
+        btnComp.disabled = false;
+      }
+    } else {
+      list.innerHTML = '';
+      if (btnComp) {
+        btnComp.className = 'btn-completar-disabled';
+        btnComp.disabled = true;
+      }
+    }
+  }
+
   function submitOrderConfig() {
-    const condicion = document.getElementById('sel-condicion').value;
-    const lista = document.getElementById('sel-lista').value;
-    const linea = document.getElementById('sel-linea').value;
-    const marca = document.getElementById('sel-marca').value;
+    const condicion = document.getElementById('sel-condicion')?.value || 'contado';
+    const lista = document.getElementById('sel-lista')?.value || '3';
+    const linea = document.getElementById('sel-linea')?.value || 'lubricantes';
+    const marca = document.getElementById('sel-marca')?.value || 'shell';
 
     if (!condicion || !lista || !linea || !marca) {
       showHint('Completa todos los campos obligatorios del pedido.', true);
@@ -786,18 +1353,17 @@
     navigateTo('s-catalogo-producto');
   }
 
-  // 12. Renderizado del Catálogo de Productos según Línea y Marca
+  // 12. Renderizado Oficial de Selección de Producto (Flujo 3)
   function renderCatalogProducts(linea, marca) {
     const container = document.getElementById('catalog-products-container');
-    const brandBadge = document.getElementById('catalog-brand-badge');
-    const lineBadge = document.getElementById('catalog-line-badge');
-    const countBadge = document.getElementById('catalog-count-badge');
+    const subtitleBadge = document.getElementById('catalog-subtitle-badge');
 
-    if (brandBadge) brandBadge.textContent = marca.toUpperCase();
-    if (lineBadge) lineBadge.textContent = `Línea: ${linea.charAt(0).toUpperCase() + linea.slice(1)}`;
+    if (subtitleBadge) {
+      subtitleBadge.textContent = `${(linea || 'lubricantes').toUpperCase()}: ${(marca || 'shell').toUpperCase()}`;
+    }
 
     const allProducts = getMasterProducts();
-    const currentCase = getCaseData();
+    const currSymbol = state.orderCurrency === 'PEN' ? 'S/' : '$';
 
     // Filtrar productos por línea y marca
     let matchingProducts = allProducts.filter(p => p.line === linea && p.brand === marca);
@@ -809,14 +1375,22 @@
       matchingProducts = allProducts.filter(p => p.line === linea);
     }
 
-    if (countBadge) countBadge.textContent = `${matchingProducts.length} productos disponibles`;
+    // Filtro por búsqueda si existe
+    if (state.catalogSearchQuery) {
+      const q = state.catalogSearchQuery;
+      matchingProducts = matchingProducts.filter(p =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.sku && p.sku.toLowerCase().includes(q)) ||
+        (p.format && p.format.toLowerCase().includes(q))
+      );
+    }
 
     if (!container) return;
 
     if (matchingProducts.length === 0) {
       container.innerHTML = `
-        <div class="card-task" style="text-align:center; padding:24px;">
-          <p style="color:var(--text-light); font-size:13px;">No se encontraron productos para esta línea y marca.</p>
+        <div style="text-align:center; padding:32px 16px;">
+          <p style="color:var(--text-light); font-size:13px; font-weight:600;">No se encontraron productos en este almacén.</p>
         </div>
       `;
       return;
@@ -824,74 +1398,25 @@
 
     let cardsHtml = '';
     matchingProducts.forEach(prod => {
-      const isTarget = currentCase && (
-        (currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) ||
-        (currentCase.brand === prod.brand && currentCase.line === prod.line)
-      );
-
-      const initialQty = isTarget && currentCase.expectedQty ? currentCase.expectedQty : 1;
-      state.catalogQuantities[prod.id] = state.catalogQuantities[prod.id] || initialQty;
-
-      const initialPromo = isTarget ? (currentCase.promoDiscount !== false) : prod.hasPromo;
-      if (state.catalogPromos[prod.id] === undefined) {
-        state.catalogPromos[prod.id] = initialPromo;
-      }
-
-      const currentQty = state.catalogQuantities[prod.id];
-      const promoChecked = state.catalogPromos[prod.id];
-      const promoText = (isTarget && currentCase.promoLabel) ? currentCase.promoLabel : prod.promoLabel;
+      let icon = '🛢️';
+      if (prod.line === 'neumaticos') icon = '🛞';
+      else if (prod.line === 'repuestos') icon = '⚙️';
 
       cardsHtml += `
-        <div class="catalog-item-card ${isTarget ? 'is-target' : ''}" id="card-prod-${prod.id}">
-          <div class="catalog-item-header">
-            <span class="brand-badge">${prod.brand.toUpperCase()}</span>
-            <span style="font-size:11px; color:var(--text-light); font-weight:600;">${prod.format || ''}</span>
+        <div class="product-list-card" onclick="window.UyapaySimulator.openProductDetail('${prod.id}')">
+          <div class="product-thumb-square">
+            <span>${icon}</span>
           </div>
-          <div class="catalog-item-title">${prod.name}</div>
-          <div class="catalog-item-sku">Cód: ${prod.sku}</div>
-
-          <div class="catalog-item-price-row">
-            <div class="catalog-item-price">
-              USD ${prod.unitPrice.toFixed(2)} <small>/ unidad</small>
-            </div>
-            <div style="font-size:12px; font-weight:700; color:#2980b9;" id="subtotal-item-${prod.id}">
-              = USD ${(currentQty * prod.unitPrice).toFixed(2)}
+          <div class="product-card-details">
+            <div class="product-sku-lbl">${prod.sku}</div>
+            <div class="product-name-lbl">${prod.name}</div>
+            <div class="product-cat-lbl">${prod.format || 'COMBO'}</div>
+            <div class="product-card-bottom">
+              <span class="product-price-lbl">${currSymbol}${prod.unitPrice.toFixed(2)}</span>
+              <span class="product-stock-lbl">Disponible: ${prod.stock || 15}</span>
             </div>
           </div>
-
-          <!-- Selector de Cantidad -->
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <span style="font-size:12px; font-weight:600; color:var(--text-medium);">Cantidad:</span>
-            <div class="qty-control">
-              <button class="qty-btn" onclick="window.UyapaySimulator.changeCatalogQty('${prod.id}', -1)">-</button>
-              <div class="qty-display" id="qty-disp-${prod.id}">${currentQty}</div>
-              <button class="qty-btn" onclick="window.UyapaySimulator.changeCatalogQty('${prod.id}', 1)">+</button>
-            </div>
-          </div>
-
-          <!-- Toggle de Promoción si aplica -->
-          ${prod.hasPromo || (isTarget && currentCase.promoLabel) ? `
-            <div class="promo-toggle-card" style="margin-top:10px;">
-              <div style="max-width:200px;">
-                <div style="font-size:11px; font-weight:700; color:#795548;">${promoText}</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="promo-chk-${prod.id}" ${promoChecked ? 'checked' : ''} onchange="window.UyapaySimulator.toggleCatalogPromo('${prod.id}', this.checked)">
-                <span class="slider"></span>
-              </label>
-            </div>
-          ` : `
-            <div style="font-size:11px; color:var(--text-light); font-style:italic; margin-top:8px;">
-              ${prod.promoLabel || 'Sin promociones para este artículo'}
-            </div>
-          `}
-
-          <div class="catalog-item-actions">
-            <span style="font-size:11px; color:var(--text-light);">Confirmar selección:</span>
-            <button class="btn-select-product" onclick="window.UyapaySimulator.selectProduct('${prod.id}')">
-              🛒 Agregar al Pedido ›
-            </button>
-          </div>
+          <div style="display:flex; align-items:center; color:#9ca3af; font-size:16px; margin-left:4px;">›</div>
         </div>
       `;
     });
@@ -899,41 +1424,177 @@
     container.innerHTML = cardsHtml;
   }
 
-  function changeCatalogQty(prodId, delta) {
-    const current = state.catalogQuantities[prodId] || 1;
-    const next = Math.max(1, current + delta);
-    state.catalogQuantities[prodId] = next;
+  function onProductSearch(query) {
+    state.catalogSearchQuery = (query || '').toLowerCase().trim();
+    const line = state.orderConfig?.line || 'lubricantes';
+    const brand = state.orderConfig?.brand || 'shell';
+    renderCatalogProducts(line, brand);
+  }
 
-    const disp = document.getElementById(`qty-disp-${prodId}`);
-    if (disp) disp.textContent = next;
+  function clearProductSearch() {
+    const inp = document.getElementById('prod-search-input');
+    if (inp) inp.value = '';
+    state.catalogSearchQuery = '';
+    const line = state.orderConfig?.line || 'lubricantes';
+    const brand = state.orderConfig?.brand || 'shell';
+    renderCatalogProducts(line, brand);
+  }
 
-    const allProducts = getMasterProducts();
-    const prod = allProducts.find(p => p.id === prodId);
-    if (prod) {
-      const subtotalEl = document.getElementById(`subtotal-item-${prodId}`);
-      if (subtotalEl) subtotalEl.textContent = `= USD ${(next * prod.unitPrice).toFixed(2)}`;
+  function selectProductCatTab(tabName, idx) {
+    state.catalogSelectedTab = tabName;
+    for (let i = 0; i < 4; i++) {
+      const tab = document.getElementById(`cattab-${i}`);
+      const dot = document.getElementById(`cat-dot-${i}`);
+      if (tab) {
+        if (i === idx) tab.classList.add('active');
+        else tab.classList.remove('active');
+      }
+      if (dot) {
+        if (i === idx) dot.classList.add('active');
+        else dot.classList.remove('active');
+      }
     }
   }
 
-  function toggleCatalogPromo(prodId, checked) {
-    state.catalogPromos[prodId] = checked;
-  }
-
-  // 13. Seleccionar Producto y pasar al Resumen de Liquidación
-  function selectProduct(prodId) {
+  // 12.1 Métodos Oficiales para Detalle del Producto (Flujo 3)
+  function openProductDetail(prodId) {
     const allProducts = getMasterProducts();
     const prod = allProducts.find(p => p.id === prodId);
     if (!prod) return;
 
+    state.selectedCatalogProduct = prod;
+
     const currentCase = getCaseData();
-    const qty = state.catalogQuantities[prodId] || 1;
-    const promoChecked = state.catalogPromos[prodId] !== undefined ? state.catalogPromos[prodId] : false;
+    const isTarget = currentCase && (
+      (currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) ||
+      (currentCase.brand === prod.brand && currentCase.line === prod.line)
+    );
+
+    const initialQty = (isTarget && currentCase.expectedQty) ? currentCase.expectedQty : (state.catalogQuantities[prod.id] || 1);
+    state.detailQty = initialQty;
+    state.detailDescuentoAprov = 0.0;
+    state.detailPromoChecked = isTarget ? (currentCase.promoDiscount !== false) : (prod.hasPromo || false);
+
+    const currSymbol = state.orderCurrency === 'PEN' ? 'S/' : '$';
+
+    const elCodigo = document.getElementById('det-prod-codigo');
+    const elNombre = document.getElementById('det-prod-nombre');
+    const elPres = document.getElementById('det-prod-presentacion');
+    const elPrecio = document.getElementById('det-prod-precio');
+    const elQty = document.getElementById('det-prod-qty');
+    const elStockDisp = document.getElementById('det-prod-stock-disp');
+    const elStockFisico = document.getElementById('det-prod-stock-fisico');
+    const elUltIngreso = document.getElementById('det-prod-ultimo-ingreso');
+    const elDescAprov = document.getElementById('detail-input-desc');
+
+    if (elCodigo) elCodigo.textContent = prod.sku;
+    if (elNombre) elNombre.textContent = prod.name;
+    if (elPres) elPres.textContent = (prod.format || 'COMBO').toUpperCase();
+    if (elPrecio) elPrecio.textContent = `${currSymbol}${prod.unitPrice.toFixed(2)}`;
+    if (elQty) elQty.textContent = String(state.detailQty);
+    if (elStockDisp) elStockDisp.textContent = String(prod.stock || 15);
+    if (elStockFisico) elStockFisico.textContent = String(prod.stock || 15);
+    if (elUltIngreso) elUltIngreso.textContent = prod.lastEntry || 'Hace 12 días';
+    if (elDescAprov) elDescAprov.value = '0.0';
+
+    // Bonificación / Toggle de promoción si aplica
+    const promoRow = document.getElementById('detail-promo-toggle-row');
+    const promoLbl = document.getElementById('detail-promo-label');
+    const promoChk = document.getElementById('detail-promo-chk');
+
+    const hasAnyPromo = prod.hasPromo || (isTarget && currentCase.promoLabel);
+    if (promoRow) {
+      if (hasAnyPromo) {
+        promoRow.style.display = 'flex';
+        if (promoLbl) {
+          promoLbl.textContent = (isTarget && currentCase.promoLabel) ? currentCase.promoLabel : (prod.promoLabel || '🎁 Bonificación en especie');
+        }
+        if (promoChk) {
+          promoChk.checked = state.detailPromoChecked;
+        }
+      } else {
+        promoRow.style.display = 'none';
+      }
+    }
+
+    updateProductDetailCalculations();
+    navigateTo('s-detalle-producto');
+  }
+
+  function stepDetailQty(delta) {
+    state.detailQty = Math.max(1, state.detailQty + delta);
+    const elQty = document.getElementById('det-prod-qty');
+    if (elQty) elQty.textContent = String(state.detailQty);
+
+    if (state.selectedCatalogProduct) {
+      state.catalogQuantities[state.selectedCatalogProduct.id] = state.detailQty;
+    }
+    updateProductDetailCalculations();
+  }
+
+  function onDescuentoAprovisionadoInput(val) {
+    state.detailDescuentoAprov = parseFloat(val) || 0.0;
+    updateProductDetailCalculations();
+  }
+
+  function onDetailPromoToggle(checked) {
+    state.detailPromoChecked = checked;
+    if (state.selectedCatalogProduct) {
+      state.catalogPromos[state.selectedCatalogProduct.id] = checked;
+    }
+    updateProductDetailCalculations();
+  }
+
+  function updateProductDetailCalculations() {
+    if (!state.selectedCatalogProduct) return;
+    const prod = state.selectedCatalogProduct;
+    const currSymbol = state.orderCurrency === 'PEN' ? 'S/' : '$';
+
+    const subtotal = state.detailQty * prod.unitPrice;
+
+    const currentCase = getCaseData();
+    const isTarget = currentCase && (
+      (currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) ||
+      (currentCase.brand === prod.brand && currentCase.line === prod.line)
+    );
 
     let promoDiscountAmount = 0.0;
+    if (state.detailPromoChecked) {
+      if (isTarget && currentCase.promoDiscountAmount) {
+        promoDiscountAmount = currentCase.promoDiscountAmount;
+      } else if (prod.promoType === 'discount') {
+        promoDiscountAmount = prod.promoDiscountAmount || 10.0;
+      }
+    }
+
+    const descAprovAmount = (state.detailDescuentoAprov / 100) * subtotal;
+    const totalDiscount = promoDiscountAmount + descAprovAmount;
+    const total = Math.max(0, subtotal - totalDiscount);
+
+    const elSubtotal = document.getElementById('det-prod-subtotal');
+    const elDescuento = document.getElementById('det-prod-descuento');
+    const elTotal = document.getElementById('det-prod-total');
+
+    if (elSubtotal) elSubtotal.textContent = `${currSymbol}${subtotal.toFixed(2)}`;
+    if (elDescuento) elDescuento.textContent = `-${currSymbol}${totalDiscount.toFixed(2)}`;
+    if (elTotal) elTotal.textContent = `${currSymbol}${total.toFixed(2)}`;
+  }
+
+  function confirmAddProductFromDetail() {
+    if (!state.selectedCatalogProduct) return;
+    const prod = state.selectedCatalogProduct;
+    const currentCase = getCaseData();
+
+    const isTarget = currentCase && (
+      (currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) ||
+      (currentCase.brand === prod.brand && currentCase.line === prod.line)
+    );
+
     let promoType = prod.promoType || 'none';
     let promoLabel = prod.promoLabel || '';
+    let promoDiscountAmount = 0.0;
 
-    if (currentCase && currentCase.product && prod.name.toLowerCase().includes(currentCase.product.toLowerCase().slice(0, 10))) {
+    if (isTarget) {
       promoType = currentCase.promoType || prod.promoType || 'none';
       promoDiscountAmount = currentCase.promoDiscountAmount || 0.0;
       promoLabel = currentCase.promoLabel || prod.promoLabel;
@@ -948,11 +1609,12 @@
       line: prod.line,
       brand: prod.brand,
       unitPrice: prod.unitPrice,
-      qty: qty,
-      promoDiscount: promoChecked,
+      qty: state.detailQty,
+      promoDiscount: state.detailPromoChecked,
       promoType: promoType,
       promoDiscountAmount: promoDiscountAmount,
-      promoLabel: promoLabel
+      promoLabel: promoLabel,
+      descuentoAprovisionado: state.detailDescuentoAprov
     };
 
     emitSimulatorEvent('ADD_PRODUCT', {
@@ -965,12 +1627,21 @@
       promoDiscount: state.cart.promoDiscount,
       promoType: state.cart.promoType,
       promoDiscountAmount: state.cart.promoDiscountAmount,
-      promoLabel: state.cart.promoLabel
+      promoLabel: state.cart.promoLabel,
+      descuentoAprovisionado: state.cart.descuentoAprovisionado
     });
 
     updateCartBadge();
     updateReceiptCalculations();
-    navigateTo('s-resumen-pedido');
+    renderOrderCartInNuevoPedido();
+    showHint('Producto agregado exitosamente al pedido.', false);
+    navigateTo('s-nuevo-pedido');
+  }
+
+  // 13. Compatibilidad selectProduct directa
+  function selectProduct(prodId) {
+    openProductDetail(prodId);
+    confirmAddProductFromDetail();
   }
 
   function updateCartBadge() {
@@ -1148,6 +1819,7 @@
     login: handleAppLogin,
     go: navigateTo,
     selectNavTab: selectNavTab,
+    selectAnalysisTab: selectAnalysisTab,
     selectVisitTab: selectVisitTab,
     selectFilter: selectFilter,
     openOptions: openClientOptions,
@@ -1168,6 +1840,8 @@
     openOutRouteModal: openOutRouteModal,
     closeOutRouteModal: closeOutRouteModal,
     onOutRouteClientChange: onOutRouteClientChange,
+    onOutRouteAddressChange: onOutRouteAddressChange,
+    selectPlanClientMode: selectPlanClientMode,
     submitOutRouteVisit: submitOutRouteVisit,
     openSettlementModal: openSettlementModal,
     closeSettlementModal: closeSettlementModal,
@@ -1183,9 +1857,49 @@
     closeContactModal: closeContactModal,
     submitContactUpdate: submitContactUpdate,
     setupVisitInProgressView: setupVisitInProgressView,
+    goToVisitTask: goToVisitTask,
+    prevVisitTask: prevVisitTask,
+    nextVisitTask: nextVisitTask,
+    toggleTaskDropdown: toggleTaskDropdown,
+    closeTaskDropdown: closeTaskDropdown,
+    openPhotoHistoryModal: openPhotoHistoryModal,
+    closePhotoHistoryModal: closePhotoHistoryModal,
+    onInicioContinue: onInicioContinue,
+    onPreciosContinue: onPreciosContinue,
+    onPedidosContinue: onPedidosContinue,
+    switchPriceSubtab: switchPriceSubtab,
+    toggleSkuAccordion: toggleSkuAccordion,
+    onCompetitorPriceInput: onCompetitorPriceInput,
+    uploadPurchaseDoc: uploadPurchaseDoc,
     submitOrderConfig: submitOrderConfig,
-    changeCatalogQty: changeCatalogQty,
-    toggleCatalogPromo: toggleCatalogPromo,
+    onOrderClientChange: onOrderClientChange,
+    onOrderConditionChange: onOrderConditionChange,
+    onOrderPriceListChange: onOrderPriceListChange,
+    onOrderLineChange: onOrderLineChange,
+    onOrderBrandChange: onOrderBrandChange,
+    toggleOrderCurrency: toggleOrderCurrency,
+    onAddProductClick: onAddProductClick,
+    onCompletarPedido: onCompletarPedido,
+    renderOrderCartInNuevoPedido: renderOrderCartInNuevoPedido,
+    renderCatalogProducts: renderCatalogProducts,
+    openProductDetail: openProductDetail,
+    stepDetailQty: stepDetailQty,
+    onDescuentoAprovisionadoInput: onDescuentoAprovisionadoInput,
+    onDetailPromoToggle: onDetailPromoToggle,
+    confirmAddProductFromDetail: confirmAddProductFromDetail,
+    onProductSearch: onProductSearch,
+    clearProductSearch: clearProductSearch,
+    selectProductCatTab: selectProductCatTab,
+    changeCatalogQty: (id, delta) => stepDetailQty(delta),
+    toggleCatalogPromo: (id, checked) => onDetailPromoToggle(checked),
+    openSecondaryDrawer: openSecondaryDrawer,
+    closeSecondaryDrawer: closeSecondaryDrawer,
+    toggleProgressDetails: toggleProgressDetails,
+    renderOrdersTrackingList: renderOrdersTrackingList,
+    selectOrderSubtab: selectOrderSubtab,
+    selectOrderFilter: selectOrderFilter,
+    onOrderSearch: onOrderSearch,
+    clearOrderSearch: clearOrderSearch,
     selectProduct: selectProduct,
     submitFinalOrder: submitFinalOrder,
     finish: finishSimulation,

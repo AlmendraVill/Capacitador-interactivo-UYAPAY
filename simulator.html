@@ -53,15 +53,168 @@
     </div>
   </div>
 
-  <!-- ================= 2. PANTALLA: PLAN DE VISITAS ================= -->
-  <div class="screen" id="s-visitas">
+  <!-- ================= 1.5 PANTALLA OFICIAL: INICIO / DASHBOARD (inicio-dashboard.png) ================= -->
+  <div class="screen" id="s-inicio" style="position:relative; overflow:hidden;">
     <!-- Topbar Oficial Flutter con Tipo de Cambio y Notificaciones -->
-    <div class="topbar-app">
-      <span class="menu-icon">☰</span>
-      <span style="font-weight:700;">Visitas</span>
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.openSecondaryDrawer()">☰</span>
+      <span class="visit-header-title">Inicio</span>
       <div class="tc-pill" title="Tipo de Cambio Oficial">
         <span class="tc-label">TC:</span>
-        <span class="tc-value">S/ 3.750</span>
+        <span class="tc-value">S/ 3.<sup>3800</sup></span>
+      </div>
+      <div class="notif-wrapper" onclick="window.UyapaySimulator.hint('Notificaciones: Tienes 1 recordatorio en ruta')">
+        <span class="bell-icon" style="font-size:16px;">🔔</span>
+        <span class="notif-badge">1</span>
+      </div>
+    </div>
+
+    <!-- 3 Tabs de Navegación Oficiales (Inicio, Visitas, Pedidos) -->
+    <div class="tabs-app">
+      <div class="tab-item active" id="nav-tab-inicio-dash" onclick="window.UyapaySimulator.selectNavTab('inicio')">
+        <img src="images/homeOff.svg" alt="Inicio">
+        <span>Inicio</span>
+      </div>
+      <div class="tab-item" id="nav-tab-visitas-dash" onclick="window.UyapaySimulator.selectNavTab('visitas')">
+        <img src="images/visitasOff.svg" alt="Visitas">
+        <span>Visitas</span>
+      </div>
+      <div class="tab-item" id="nav-tab-pedidos-dash" onclick="window.UyapaySimulator.selectNavTab('pedidos')" style="position:relative;">
+        <div style="position:relative; display:inline-block;">
+          <img src="images/carritoOff.svg" alt="Pedidos">
+          <span id="cart-badge-counter-dash" class="cart-nav-badge" style="display:none;">0</span>
+        </div>
+        <span>Pedidos</span>
+      </div>
+    </div>
+
+    <!-- Contenido Scrollable del Dashboard -->
+    <div class="dashboard-container">
+      <!-- Card de Saludo del Asesor -->
+      <div class="dashboard-advisor-card">
+        <div class="advisor-greeting-row">
+          <div class="advisor-avatar-circle">👤</div>
+          <div class="advisor-greeting-text" id="dashboard-advisor-name">¡Hola Betsy Ramos!</div>
+        </div>
+        <button class="btn-indicadores-web" onclick="window.UyapaySimulator.hint('Módulo de Indicadores Web - Portal BI')">
+          Ir a indicadores web
+        </button>
+      </div>
+
+      <!-- Sección Análisis -->
+      <div class="dashboard-analysis-title">Análisis</div>
+
+      <!-- Subpestañas Cobranza vs Ventas con punto amarillo -->
+      <div class="dashboard-analysis-subtabs">
+        <div class="analysis-subtab active" id="subtab-analisis-cobranza" onclick="window.UyapaySimulator.selectAnalysisTab('cobranza')">
+          <span>Cobranza</span>
+          <span class="analysis-subtab-dot" id="dot-analisis-cobranza"></span>
+        </div>
+        <div class="analysis-subtab" id="subtab-analisis-ventas" onclick="window.UyapaySimulator.selectAnalysisTab('ventas')">
+          <span>Ventas</span>
+          <span class="analysis-subtab-dot" id="dot-analisis-ventas" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- Card 1: Antigüedad de la deuda (en $) -->
+      <div class="dashboard-chart-card">
+        <div class="chart-card-header" onclick="window.UyapaySimulator.hint('Desglose de antigüedad de cartera por tramos')">
+          <span class="chart-card-title">Antigüedad de la deuda (en $)</span>
+          <span class="chart-card-chevron">›</span>
+        </div>
+
+        <div class="chart-axis-grid">
+          <div class="chart-y-axis">
+            <span>20000</span>
+            <span>15000</span>
+            <span>10000</span>
+            <span>5000</span>
+            <span>0</span>
+          </div>
+          <div class="chart-bars-area">
+            <!-- Barra 1: 0-20 d. Activo ($16,159.09) -->
+            <div class="chart-bar-column">
+              <span class="chart-bar-val">16,159.09</span>
+              <div class="chart-bar-fill" style="height: 80%;"></div>
+            </div>
+            <!-- Barra 2: 21-40 d. Moroso ($1,615.17) -->
+            <div class="chart-bar-column">
+              <span class="chart-bar-val">1,615.17</span>
+              <div class="chart-bar-fill" style="height: 10%;"></div>
+            </div>
+            <!-- Barra 3: 41-50 d. Dudoso ($888.32) -->
+            <div class="chart-bar-column">
+              <span class="chart-bar-val">888.32</span>
+              <div class="chart-bar-fill" style="height: 6%;"></div>
+            </div>
+            <!-- Barra 4: +50 d. Judicial ($6,311.29) -->
+            <div class="chart-bar-column">
+              <span class="chart-bar-val">6,311.29</span>
+              <div class="chart-bar-fill" style="height: 34%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-x-labels">
+          <div class="chart-x-item">
+            <div class="chart-x-top">0-20 d.</div>
+            <div class="chart-x-bottom">Activo</div>
+          </div>
+          <div class="chart-x-item">
+            <div class="chart-x-top">21-40 d.</div>
+            <div class="chart-x-bottom">Moroso</div>
+          </div>
+          <div class="chart-x-item">
+            <div class="chart-x-top">41-50 d.</div>
+            <div class="chart-x-bottom">Dudoso</div>
+          </div>
+          <div class="chart-x-item">
+            <div class="chart-x-top">+50 d.</div>
+            <div class="chart-x-bottom">Judicial</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Historial de la morosidad -->
+      <div class="dashboard-chart-card">
+        <div class="chart-card-header" onclick="window.UyapaySimulator.hint('Historial mensual del índice de morosidad')">
+          <span class="chart-card-title">Historial de la morosidad</span>
+          <span class="chart-card-chevron">›</span>
+        </div>
+
+        <div class="chart-axis-grid" style="height: 140px;">
+          <div class="chart-y-axis" style="width: 54px;">
+            <span>100,00%</span>
+            <span>50,00%</span>
+            <span>0,00%</span>
+          </div>
+          <div class="chart-bars-area">
+            <div class="chart-bar-column" style="width: 32%;">
+              <span class="chart-bar-val">91,40%</span>
+              <div class="chart-bar-fill" style="height: 91%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-x-labels" style="margin-left: 54px;">
+          <div class="chart-x-item" style="width: 32%;">
+            <div class="chart-x-top">Setiembre</div>
+            <div class="chart-x-bottom">Actual</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2. PANTALLA OFICIAL: PLAN DE VISITAS (plan de visitas 1 y 2) ================= -->
+  <div class="screen" id="s-visitas" style="position:relative; overflow:hidden;">
+    <!-- Topbar Oficial Flutter con Tipo de Cambio y Notificaciones -->
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.openSecondaryDrawer()">☰</span>
+      <span class="visit-header-title">Visitas</span>
+      <div class="tc-pill" title="Tipo de Cambio Oficial">
+        <span class="tc-label">TC:</span>
+        <span class="tc-value">S/ 3.<sup>3800</sup></span>
       </div>
       <div class="notif-wrapper" onclick="window.UyapaySimulator.hint('Notificaciones: Tienes 1 recordatorio en ruta')">
         <span class="bell-icon" style="font-size:16px;">🔔</span>
@@ -87,348 +240,928 @@
         <span>Pedidos</span>
       </div>
     </div>
-    
-    <!-- Proyecciones y Progreso -->
-    <div class="section-box" onclick="window.UyapaySimulator.hint('Avance de proyección de ventas del mes')">
-      <span style="font-weight:600;">Avance de proyección de ventas</span> 
-      <span style="color:var(--text-light); font-size:16px;">›</span>
-    </div>
 
-    <div class="section-box">
-      <div>
-        <div style="font-size:13px; font-weight:700;">Progreso <span style="font-weight:400; color:var(--text-light);">›</span></div>
-        <span style="color:var(--text-light); font-size:11px;">Visitas realizadas</span>
+    <!-- Contenido Scrollable de Visitas -->
+    <div style="flex:1; overflow-y:auto; padding-bottom:70px;">
+      <!-- Proyección de Ventas (Card Oficial) -->
+      <div class="projection-card" onclick="window.UyapaySimulator.hint('Avance de proyección de ventas del mes')">
+        <span style="font-weight:600; font-size:13px; color:#1f2937;">Avance de proyección de ventas</span> 
+        <span style="color:#6b7280; font-size:14px;">›</span>
       </div>
-      <span style="font-weight:700; color:var(--text-dark);" id="visitas-progress-counter">0 de 16</span>
-    </div>
 
-    <!-- Tabs circulares oficiales: Pendientes vs Realizadas -->
-    <div class="circle-tabs-row">
-      <button class="circle-tab active" id="tab-pendientes" onclick="window.UyapaySimulator.selectVisitTab('pendientes')">
-        Pendientes (3)
-      </button>
-      <button class="circle-tab" id="tab-realizadas" onclick="window.UyapaySimulator.selectVisitTab('realizadas')">
-        Realizadas (0)
-      </button>
-    </div>
-
-    <!-- Filtros de Visitas Oficiales -->
-    <div class="filters-scroll">
-      <div class="filter-pill active" id="pill-todos" onclick="window.UyapaySimulator.selectFilter('todos')">Todos</div>
-      <div class="filter-pill" id="pill-sin-visita" onclick="window.UyapaySimulator.selectFilter('sin_visita')">No visitados</div>
-      <div class="filter-pill" id="pill-sin-compra" onclick="window.UyapaySimulator.selectFilter('sin_compra')">No compran</div>
-      <div class="filter-pill" id="pill-deuda" onclick="window.UyapaySimulator.selectFilter('deuda_vencida')">Con deuda vencida</div>
-      <div class="filter-pill" id="pill-documentos" onclick="window.UyapaySimulator.selectFilter('documentos')">Docs. por regularizar</div>
-    </div>
-
-    <!-- Zona y Lista de Clientes -->
-    <div class="zone-header" id="zone-header-title">⌃ Socabaya / Ruta B2C</div>
-    <div id="client-list-cards">
-      <!-- Se puebla dinámicamente según el caso asignado -->
-      <div class="client-card" onclick="window.UyapaySimulator.openOptions('Distribuidora Kanchis EIRL')">
-        <img src="images/inRoute.svg" class="client-pin-svg" alt="Pin">
-        <div class="client-info">
-          <div class="client-name">DISTRIBUIDORA KANCHIS EIRL</div>
-          <div class="client-address">AV. INDUSTRIAL 104 (B2C - Crédito 30d)</div>
+      <!-- Progreso (Acordeón Oficial) -->
+      <div class="progress-card">
+        <div class="progress-header" onclick="window.UyapaySimulator.toggleProgressDetails()">
+          <span style="font-size:14.5px; font-weight:700; color:#111827;">Progreso</span>
+          <span id="progress-chevron-icon" style="font-size:14px; color:#4b5563;">∨</span>
         </div>
-        <span class="client-chevron">›</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:12.5px;">
+          <span style="color:#4b5563; font-weight:500;">Visitas realizadas</span>
+          <span style="font-weight:700; color:#111827;" id="visitas-progress-counter">4 de 15</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div id="visitas-progress-bar" class="progress-bar-fill" style="width:26%;"></div>
+        </div>
+
+        <!-- Detalles expandibles oficiales (plan de visitas 2.png) -->
+        <div id="progress-details-expanded" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid #f3f4f6; font-size:12.5px;">
+          <div class="prog-detail-row">
+            <span class="prog-detail-lbl">Inicio de actividades</span>
+            <span class="prog-detail-val">06:47 AM</span>
+          </div>
+          <div class="prog-detail-row">
+            <span class="prog-detail-lbl">Visitas realizadas</span>
+            <span class="prog-detail-val">4 de 15</span>
+          </div>
+          <div class="prog-detail-row">
+            <span class="prog-detail-lbl">Tiempo efectivo de visitas</span>
+            <span class="prog-detail-val">1 h 29 min</span>
+          </div>
+          <div class="prog-detail-row">
+            <span class="prog-detail-lbl">Tiempo de traslado</span>
+            <span class="prog-detail-val">2 h 38 min</span>
+          </div>
+          <div style="text-align:right; margin-top:6px;">
+            <span style="color:#2563eb; font-weight:600; font-size:12px; cursor:pointer;" onclick="window.UyapaySimulator.hint('Detalle de telemetría y tiempos en ruta')">Ver detalles →</span>
+          </div>
+        </div>
       </div>
 
-      <div class="client-card" onclick="window.UyapaySimulator.openOptions('Ferretería Los Andes S.A.C.')">
-        <img src="images/inRoute.svg" class="client-pin-svg" alt="Pin">
-        <div class="client-info">
-          <div class="client-name">FERRETERÍA LOS ANDES S.A.C. (Juan Perez)</div>
-          <div class="client-address">AV. TOMAS TUYRUTUPAC 412</div>
+      <!-- Subtabs Oficiales: Pendientes vs Realizadas con Punto Amarillo -->
+      <div class="visit-subtabs-row">
+        <div class="visit-subtab-btn active" id="tab-pendientes" onclick="window.UyapaySimulator.selectVisitTab('pendientes')">
+          <span>Pendientes (<span id="count-pendientes">11</span>)</span>
+          <span class="visit-subtab-dot" id="dot-subtab-pend"></span>
         </div>
-        <span class="client-chevron">›</span>
+        <div class="visit-subtab-btn" id="tab-realizadas" onclick="window.UyapaySimulator.selectVisitTab('realizadas')">
+          <span>Realizadas (<span id="count-realizadas">4</span>)</span>
+          <span class="visit-subtab-dot" id="dot-subtab-real" style="display:none;"></span>
+        </div>
       </div>
 
-      <div class="client-card" onclick="window.UyapaySimulator.openOptions('Chahua Puma Franclin')">
-        <img src="images/inRoute.svg" class="client-pin-svg" alt="Pin">
-        <div class="client-info">
-          <div class="client-name">CHAHUA PUMA FRANCLIN</div>
-          <div class="client-address">AV. PAISAJISTA NRO. 503</div>
-        </div>
-        <span class="client-chevron">›</span>
+      <!-- Filtros de Visitas Oficiales -->
+      <div class="filters-scroll">
+        <div class="filter-pill active" id="pill-todos" onclick="window.UyapaySimulator.selectFilter('todos')">Todos</div>
+        <div class="filter-pill" id="pill-sin-visita" onclick="window.UyapaySimulator.selectFilter('sin_visita')">No visitados</div>
+        <div class="filter-pill" id="pill-sin-compra" onclick="window.UyapaySimulator.selectFilter('sin_compra')">No compran</div>
+        <div class="filter-pill" id="pill-deuda" onclick="window.UyapaySimulator.selectFilter('deuda_vencida')">Con deuda vencida</div>
+      </div>
+
+      <!-- Lista de Clientes en Ruta -->
+      <div id="client-list-cards" style="padding-top:4px;">
+        <!-- Renderizado dinámico según el caso asignado -->
       </div>
     </div>
 
-    <div style="padding:10px 14px;">
-      <button class="login-btn" style="background:#ffffff; color:var(--text-dark); border:1.5px solid var(--border-dark); font-size:12px; padding:10px; margin-bottom:8px;" onclick="window.UyapaySimulator.openOutRouteModal()">
-        ➕ Agregar visita fuera de ruta
-      </button>
-      <button class="login-btn" style="background:#2c3e50; color:#ffffff; font-size:12px; padding:10px;" onclick="window.UyapaySimulator.openSettlementModal()">
-        📊 Liquidación de cobranza diaria
+    <!-- Botón Sticky Agregar visita fuera de ruta (plan de visitas 1.png) -->
+    <div class="sticky-footer-btn-container" style="background:linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0)); pointer-events:none;">
+      <button class="brand-btn-yellow" style="pointer-events:auto; border-radius:24px; box-shadow:0 3px 8px rgba(255,191,0,0.4);" onclick="window.UyapaySimulator.openOutRouteModal()">
+        Agregar visita fuera de ruta
       </button>
     </div>
   </div>
 
-  <!-- ================= 3. PANTALLA: DATOS DEL CLIENTE Y TAREAS EN VISITA ================= -->
-  <div class="screen" id="s-cliente-inicio">
-    <div class="topbar-app">
+  <!-- ================= 2.1 PANTALLA OFICIAL: SEGUIMIENTO DE PEDIDOS (seguimiento de pedidos.png) ================= -->
+  <div class="screen" id="s-pedidos-seguimiento" style="position:relative; overflow:hidden;">
+    <!-- Topbar Oficial Flutter con Tipo de Cambio y Notificaciones -->
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.openSecondaryDrawer()">☰</span>
+      <span class="visit-header-title">Pedidos</span>
+      <div class="tc-pill" title="Tipo de Cambio Oficial">
+        <span class="tc-label">TC:</span>
+        <span class="tc-value">S/ 3.<sup>3800</sup></span>
+      </div>
+      <div class="notif-wrapper" onclick="window.UyapaySimulator.hint('Notificaciones: Tienes 1 recordatorio en ruta')">
+        <span class="bell-icon" style="font-size:16px;">🔔</span>
+        <span class="notif-badge">1</span>
+      </div>
+    </div>
+
+    <!-- 3 Tabs de Navegación Oficiales (Inicio, Visitas, Pedidos) -->
+    <div class="tabs-app">
+      <div class="tab-item" id="nav-tab-inicio-ped" onclick="window.UyapaySimulator.selectNavTab('inicio')">
+        <img src="images/homeOff.svg" alt="Inicio">
+        <span>Inicio</span>
+      </div>
+      <div class="tab-item" id="nav-tab-visitas-ped" onclick="window.UyapaySimulator.selectNavTab('visitas')">
+        <img src="images/visitasOff.svg" alt="Visitas">
+        <span>Visitas</span>
+      </div>
+      <div class="tab-item active" id="nav-tab-pedidos-ped" onclick="window.UyapaySimulator.selectNavTab('pedidos')" style="position:relative;">
+        <div style="position:relative; display:inline-block;">
+          <img src="images/carritoOff.svg" alt="Pedidos">
+          <span id="cart-badge-counter-ped" class="cart-nav-badge" style="display:none;">0</span>
+        </div>
+        <span>Pedidos</span>
+      </div>
+    </div>
+
+    <!-- Subpestañas PEDIDOS / COTIZACIONES -->
+    <div class="pedidos-subtabs-row">
+      <div class="ped-subtab active" id="subtab-pedidos-list" onclick="window.UyapaySimulator.selectOrderSubtab('pedidos')">
+        <span>PEDIDOS</span>
+        <span class="ped-subtab-dot" id="dot-ped-list"></span>
+      </div>
+      <div class="ped-subtab" id="subtab-cotizaciones-list" onclick="window.UyapaySimulator.selectOrderSubtab('cotizaciones')">
+        <span>COTIZACIONES</span>
+        <span class="ped-subtab-dot" id="dot-cot-list" style="display:none;"></span>
+      </div>
+    </div>
+
+    <!-- Buscador oficial -->
+    <div class="pedidos-search-bar">
+      <span class="pedidos-search-icon">🔍</span>
+      <input type="text" id="order-search-input" placeholder="Buscar por cliente o número de pedido..." oninput="window.UyapaySimulator.onOrderSearch(this.value)" />
+      <span class="pedidos-search-clear" onclick="window.UyapaySimulator.clearOrderSearch()">✕</span>
+    </div>
+
+    <!-- Filtros en pastilla: Recientes vs Pendientes -->
+    <div class="pedidos-filters-row">
+      <span class="ped-filter-pill active" id="ped-filter-recientes" onclick="window.UyapaySimulator.selectOrderFilter('recientes')">Recientes</span>
+      <span class="ped-filter-pill" id="ped-filter-pendientes" onclick="window.UyapaySimulator.selectOrderFilter('pendientes')">Pendientes</span>
+    </div>
+
+    <!-- Lista de Pedidos Auditados -->
+    <div class="pedidos-list-scroll" id="orders-tracking-container">
+      <div class="pedidos-date-header" id="pedidos-date-today">9 sept 2026</div>
+      
+      <div id="orders-today-items">
+        <!-- Renderizado dinámico de pedidos -->
+      </div>
+
+      <div class="pedidos-date-header">8 sept 2026</div>
+      <div class="order-tracking-card" onclick="window.UyapaySimulator.hint('Detalle de orden previa entregada')">
+        <div class="order-card-header">
+          <span class="order-code-bold">P004-022319</span>
+          <span class="order-time-lbl">🕒 04:47 PM</span>
+        </div>
+        <div class="order-client-lbl">VIEYRA JARA RODRIGO LUIS</div>
+        <div class="order-card-footer">
+          <span class="order-total-lbl">PEN 496.00 <small>(con IGV)</small></span>
+          <span class="order-status-badge status-entregado">ENTREGADO ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.2 PANTALLA OFICIAL: AGREGAR CLIENTE AL PLAN (agregar visita al plan.png) ================= -->
+  <div class="screen" id="s-agregar-cliente-plan" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
       <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span>
-      <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:6px;">
-        <span id="visit-header-title" style="font-size:14px; font-weight:700;">Visita en Curso</span>
+      <span class="visit-header-title">Agregar cliente al plan</span>
+    </div>
+
+    <!-- Subpestañas PRESENCIAL vs LLAMADA TELEFÓNICA -->
+    <div class="pedidos-subtabs-row">
+      <div class="ped-subtab active" id="subtab-plan-presencial" onclick="window.UyapaySimulator.selectPlanClientMode('presencial')">
+        <span>PRESENCIAL</span>
+        <span class="ped-subtab-dot" id="dot-plan-presencial"></span>
       </div>
-      <div class="visit-timer-pill" id="visit-live-timer" title="Tiempo transcurrido en visita">
-        <span>⏱️</span> <span id="visit-timer-text">04:12</span>
+      <div class="ped-subtab" id="subtab-plan-telefonica" onclick="window.UyapaySimulator.selectPlanClientMode('telefonica')">
+        <span>LLAMADA TELEFÓNICA</span>
+        <span class="ped-subtab-dot" id="dot-plan-telefonica" style="display:none;"></span>
       </div>
     </div>
-    <div style="padding:14px;">
-      <div class="card-task" style="margin:0 0 12px 0;">
-        <h3 id="cli-nombre-header" style="font-size:15px; color:#222; margin-bottom:4px;">Distribuidora Kanchis EIRL</h3>
-        <p style="font-size:11px; color:var(--text-light); margin:0;">RUC: 20451829101 | Clasificación: B2C Minorista</p>
+
+    <div style="flex:1; overflow-y:auto; padding:12px 14px 80px;">
+      <!-- Card 1: Cliente -->
+      <div class="detail-table-card" style="margin:0 0 12px; padding:14px 16px;">
+        <div style="font-size:14px; font-weight:800; color:#111827; margin-bottom:12px;">Cliente</div>
+        
+        <!-- Dropdown Cliente -->
+        <div class="form-select-card" style="margin-bottom:10px;">
+          <select id="sel-outroute-client" class="form-select-card-native" onchange="window.UyapaySimulator.onOutRouteClientChange(this.value)">
+            <option value="Repuestos Central Chincha" selected>REPUESTOS CENTRAL CHINCHA (20601928415)</option>
+            <option value="Autopartes El Rápido">AUTOPARTES EL RÁPIDO (20551928410)</option>
+            <option value="Servicentro San Jerónimo">SERVICENTRO SAN JERÓNIMO</option>
+            <option value="Lubricantes del Sur">LUBRICANTES DEL SUR</option>
+          </select>
+          <span class="form-select-card-val" id="lbl-outroute-client">REPUESTOS CENTRAL CHINCHA (20601928415)</span>
+          <span class="form-select-card-chevron">∨</span>
+        </div>
+
+        <!-- Dropdown Dirección -->
+        <div class="form-select-card" style="margin-bottom:4px;">
+          <select id="sel-outroute-address" class="form-select-card-native" onchange="window.UyapaySimulator.onOutRouteAddressChange(this.value)">
+            <option value="CALLE COMERCIO 120 - CHINCHA" selected>CALLE COMERCIO 120 - CHINCHA</option>
+            <option value="JR. PIEROLA 540">JR. PIEROLA 540</option>
+            <option value="AV. INDUSTRIAL 100">AV. INDUSTRIAL 100</option>
+          </select>
+          <span class="form-select-card-val" id="lbl-outroute-address">CALLE COMERCIO 120 - CHINCHA</span>
+          <span class="form-select-card-chevron">∨</span>
+        </div>
       </div>
 
-      <!-- Tarjeta Perfil Crediticio Oficial Flutter -->
-      <div class="card-task" style="margin:0 0 14px 0;">
-        <div class="card-title-sm">Perfil Crediticio</div>
-        <div class="profile-row">
-          <span>Línea autorizada:</span>
-          <b id="cli-linea-auth">USD 2,500.00</b>
+      <!-- Card 2: Motivo de la visita -->
+      <div class="detail-table-card" style="margin:0 0 12px; padding:14px 16px;">
+        <div style="font-size:14px; font-weight:800; color:#111827; margin-bottom:12px;">Motivo de la visita</div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+          <span style="font-size:13px; font-weight:500; color:#374151;">Fotos</span>
+          <label class="switch">
+            <input type="checkbox" id="chk-motivo-fotos" checked />
+            <span class="slider"></span>
+          </label>
         </div>
-        <div class="credit-bar-container">
-          <div class="credit-bar-fill" id="credit-bar-fill" style="width:15%;"></div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+          <span style="font-size:13px; font-weight:500; color:#374151;">Precios</span>
+          <label class="switch">
+            <input type="checkbox" id="chk-motivo-precios" checked />
+            <span class="slider"></span>
+          </label>
         </div>
-        <div class="profile-row" style="font-size:11px; color:var(--text-light); margin-top:2px; margin-bottom:8px;">
-          <span>Disponible: <b style="color:var(--success-color);" id="cli-linea-disp">USD 2,500.00</b></span>
-          <span>Utilizado: <b id="cli-linea-used">USD 0.00</b></span>
-        </div>
-        <div class="profile-row">
-          <span>Deuda vencida:</span>
-          <b style="color:var(--success-color);" id="cli-deuda-header">USD 0.00 (Al día)</b>
-        </div>
-        <div class="profile-row">
-          <span>Lista autorizada:</span>
-          <b id="cli-lista-header">Lista OF</b>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+          <span style="font-size:13px; font-weight:500; color:#374151;">Pedidos</span>
+          <label class="switch">
+            <input type="checkbox" id="chk-motivo-pedidos" checked />
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
 
-      <!-- Menú oficial de tareas de visita (TaskSwitcher Flutter) -->
-      <div class="card-title-sm" style="margin-left:2px; margin-bottom:8px;">Tareas de la Visita</div>
-      
-      <div class="task-item-btn" onclick="window.UyapaySimulator.go('s-fotos')">
-        <div class="task-item-left">
-          <span class="task-num">1</span>
-          <div>
-            <div class="task-name">Presentación visual de productos</div>
-            <div class="task-desc">Fotos de exhibición Inicial y Final</div>
-          </div>
-        </div>
-        <span class="task-status-badge" id="task-badge-fotos">Pendiente</span>
-        <span>›</span>
+      <!-- Card 3: Fecha de visita -->
+      <div class="form-select-card" style="margin-bottom:10px;">
+        <span class="form-select-card-val" style="font-size:13.5px; font-weight:700;">Fecha de visita: Hoy</span>
+        <span class="form-select-card-chevron">∨</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.openComparePricesModal()">
-        <div class="task-item-left">
-          <span class="task-num">2</span>
-          <div>
-            <div class="task-name">Comparar precios</div>
-            <div class="task-desc">Seguimiento fotográfico de marcas rivales</div>
-          </div>
-        </div>
-        <span class="task-status-badge" id="task-badge-precios">Opcional</span>
-        <span>›</span>
+      <!-- Card 4: Agregar notas -->
+      <div class="form-select-card">
+        <span class="form-select-card-val" style="font-size:13.5px; font-weight:700;">Agregar notas</span>
+        <span class="form-select-card-chevron">∨</span>
       </div>
+    </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.go('s-pedidos-menu')">
-        <div class="task-item-left">
-          <span class="task-num">3</span>
-          <div>
-            <div class="task-name">Asesorar pedido</div>
-            <div class="task-desc">Crear nueva orden o cotización comercial</div>
-          </div>
-        </div>
-        <span class="task-status-badge" id="task-badge-pedidos">Pendiente</span>
-        <span>›</span>
-      </div>
-
-      <div class="task-item-btn" onclick="window.UyapaySimulator.openCobranzaModal()">
-        <div class="task-item-left">
-          <span class="task-num">4</span>
-          <div>
-            <div class="task-name">Cobranza de facturas / Letras</div>
-            <div class="task-desc">Recaudación y registro de vouchers</div>
-          </div>
-        </div>
-        <span class="task-status-badge" id="task-badge-cobranza">Al día</span>
-        <span>›</span>
-      </div>
-
-      <div class="task-item-btn" onclick="window.UyapaySimulator.openDocsModal()">
-        <div class="task-item-left">
-          <span class="task-num">5</span>
-          <div>
-            <div class="task-name">Completar documentación</div>
-            <div class="task-desc">Regularización de pagarés y contratos</div>
-          </div>
-        </div>
-        <span class="task-status-badge done" id="task-badge-docs">Al día</span>
-        <span>›</span>
-      </div>
-
-      <div class="task-item-btn" onclick="window.UyapaySimulator.openContactModal()">
-        <div class="task-item-left">
-          <span class="task-num">6</span>
-          <div>
-            <div class="task-name">Actualizar contacto</div>
-            <div class="task-desc">Teléfono, correo y titular del negocio</div>
-          </div>
-        </div>
-        <span class="task-status-badge done" id="task-badge-contacto">Verificado</span>
-        <span>›</span>
-      </div>
-
-      <div class="task-item-btn incomplete-task-btn" onclick="window.UyapaySimulator.openIncompleteTasksModal()">
-        <div class="task-item-left">
-          <span style="font-size:16px;">⚠️</span>
-          <div>
-            <div class="task-name" style="color:var(--error-color);">Justificar tarea / Visita incompleta</div>
-            <div class="task-desc">Registrar motivo tipificado de no concreción</div>
-          </div>
-        </div>
-        <span>›</span>
-      </div>
-
-      <button class="login-btn" id="btn-cliente-main-action" style="margin-top:14px;" onclick="window.UyapaySimulator.go('s-fotos')">
-        Continuar a Fotos de Visita ›
+    <!-- Botón Sticky Inferior AGREGAR CLIENTE -->
+    <div class="sticky-footer-btn-container">
+      <button class="brand-btn-yellow" onclick="window.UyapaySimulator.submitOutRouteVisit()">
+        AGREGAR CLIENTE
       </button>
     </div>
   </div>
 
-  <!-- ================= 4. PANTALLA: FOTOS OBLIGATORIAS (BRAND DISPLAY) ================= -->
-  <div class="screen" id="s-fotos">
-    <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-cliente-inicio')">‹</span> Fotos de Visita
+  <!-- ================= 3. PANTALLA OFICIAL: VISITA EN CURSO CON TASK CAROUSEL (4 TAREAS) ================= -->
+  <div class="screen" id="s-cliente-inicio" style="position:relative; overflow:hidden;">
+    <!-- Topbar Oficial Amarilla -->
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span>
+      <span id="cli-nombre-header" class="visit-header-title">CONDO CCORIMANYA MARINO</span>
+      <div class="visit-timer-pill" id="visit-live-timer" title="Tiempo transcurrido en visita" style="margin-left:auto;">
+        <span>⏱️</span> <span id="visit-timer-text">00:00</span>
+      </div>
     </div>
-    <div style="padding:14px;">
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:14px; line-height:1.4;">
-        Registro obligatorio de exhibición de local según el manual de ventas UYAPAY antes de cotizar o facturar.
-      </p>
 
-      <!-- Foto 1 -->
-      <div class="photo-card" id="card-foto-1">
+    <!-- Barra de Navegación del Carrusel de Tareas (< TAREA ∨ > y 4 dots) -->
+    <div class="task-carousel-header">
+      <div class="task-carousel-nav">
+        <button class="task-nav-arrow" onclick="window.UyapaySimulator.prevVisitTask()" title="Tarea anterior">‹</button>
+        <div class="task-nav-dropdown" onclick="window.UyapaySimulator.toggleTaskDropdown()">
+          <span id="task-nav-current-title">INICIO</span>
+          <span class="task-nav-chevron">∨</span>
+        </div>
+        <button class="task-nav-arrow" onclick="window.UyapaySimulator.nextVisitTask()" title="Siguiente tarea">›</button>
+      </div>
+      <div class="task-carousel-dots">
+        <span class="carousel-dot active" id="dot-task-0" onclick="window.UyapaySimulator.goToVisitTask(0)"></span>
+        <span class="carousel-dot" id="dot-task-1" onclick="window.UyapaySimulator.goToVisitTask(1)"></span>
+        <span class="carousel-dot" id="dot-task-2" onclick="window.UyapaySimulator.goToVisitTask(2)"></span>
+        <span class="carousel-dot" id="dot-task-3" onclick="window.UyapaySimulator.goToVisitTask(3)"></span>
+      </div>
+    </div>
+
+    <!-- Contenedor Paginado de las 4 Tareas -->
+    <div class="task-slides-container">
+
+      <!-- ================= PÁGINA 1: INICIO (Scoring y Perfil Comercial) ================= -->
+      <div class="task-slide active" id="task-slide-inicio">
+        <div class="task-card">
+          <div class="card-title-main">Scoring del cliente</div>
+          <div class="scoring-container">
+            <div class="scoring-col">
+              <div class="scoring-val" id="scoring-venta-val">C</div>
+              <div class="scoring-lbl">Venta</div>
+              <div class="scoring-bar orange-bar"></div>
+            </div>
+            <div class="scoring-col">
+              <div class="scoring-val" id="scoring-cobranza-val">1</div>
+              <div class="scoring-lbl">Cobranza</div>
+              <div class="scoring-bar green-bar"></div>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <div class="profile-section-title">Perfil</div>
+          <p class="profile-desc-text" id="cli-perfil-desc">
+            Condo Ccorimanya Marino es una persona que se destaca por su empatía, trato amable y valentía al enfrentar los desafíos del cambio tecnológico en sus operaciones.
+          </p>
+
+          <div class="section-divider"></div>
+
+          <div class="profile-section-title">Perfil comercial</div>
+          <div class="commercial-profile-table">
+            <div class="cp-row">
+              <span class="cp-label">Razón social:</span>
+              <span class="cp-val" id="cp-razon-social">-</span>
+            </div>
+            <div class="cp-row">
+              <span class="cp-label">Dirección:</span>
+              <span class="cp-val" id="cp-direccion">CALLE YARABAMBA MZ Y LT 9</span>
+            </div>
+            <div class="cp-row">
+              <span class="cp-label">Condición de pago:</span>
+              <span class="cp-val" id="cp-condicion">CONTADO</span>
+            </div>
+            <div class="cp-row">
+              <span class="cp-label">RUC:</span>
+              <span class="cp-val" id="cp-ruc">10459721270</span>
+            </div>
+            <div class="cp-row">
+              <span class="cp-label">Lista de precios:</span>
+              <span class="cp-val" id="cp-lista">LISTA 3</span>
+            </div>
+            <div class="cp-row cp-spaced">
+              <span class="cp-label">Próximo pago: <b id="cp-proximo-pago-lbl" style="color:var(--text-dark); font-weight:600;">Sin fecha especifica</b></span>
+              <span class="cp-val cp-money" id="cp-proximo-pago-val">$0.00</span>
+            </div>
+            <div class="cp-row">
+              <span class="cp-label">Pendiente:</span>
+              <span class="cp-val cp-money" id="cp-pendiente-val" style="color:var(--success-color);">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Perfil Crediticio Adicional -->
+          <div class="section-divider"></div>
+          <div class="profile-section-title" style="margin-bottom:8px;">Línea de Crédito</div>
+          <div class="cp-row">
+            <span class="cp-label">Autorizada:</span>
+            <b id="cli-linea-auth">USD 2,500.00</b>
+          </div>
+          <div class="credit-bar-container" style="margin:6px 0;">
+            <div class="credit-bar-fill" id="credit-bar-fill" style="width:0%;"></div>
+          </div>
+          <div class="cp-row" style="font-size:11px;">
+            <span>Disponible: <b style="color:var(--success-color);" id="cli-linea-disp">USD 2,500.00</b></span>
+            <span>Utilizado: <b id="cli-linea-used">USD 0.00</b></span>
+          </div>
+
+          <!-- Opciones Rápidas de Soporte (Casos Borde) -->
+          <div style="margin-top:14px; padding-top:10px; border-top:1px dashed #e5e7eb; display:flex; justify-content:space-between;">
+            <span style="font-size:11px; color:var(--text-light); text-decoration:underline; cursor:pointer;" onclick="window.UyapaySimulator.openCobranzaModal()">
+              💰 Cobranza / Letras
+            </span>
+            <span style="font-size:11px; color:var(--error-color); text-decoration:underline; cursor:pointer;" onclick="window.UyapaySimulator.openIncompleteTasksModal()">
+              ⚠️ Justificar visita
+            </span>
+          </div>
+        </div>
+
+        <div class="sticky-footer-btn-container">
+          <button class="brand-btn-yellow" id="btn-slide-inicio-continue" onclick="window.UyapaySimulator.onInicioContinue()">
+            CONTINUAR
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= PÁGINA 2: FOTOS (Presentación Visual de Marca) ================= -->
+      <div class="task-slide" id="task-slide-fotos">
+        <div class="task-section-label">Presentación visual de los productos</div>
+        <div class="task-card p-0">
+          <!-- Presentación Inicial -->
+          <div class="photo-item-row" onclick="window.UyapaySimulator.takePhoto(1)">
+            <div class="photo-item-left">
+              <div class="photo-item-title">Presentación inicial</div>
+              <div class="photo-thumb-box" id="thumb-box-1" style="display:none;">
+                <img src="images/banner1.jpeg" class="photo-thumb-img" alt="Foto Inicial" />
+                <span class="photo-thumb-dots">•••</span>
+              </div>
+            </div>
+            <span class="photo-item-icon" id="icon-photo-1">+</span>
+          </div>
+
+          <div class="card-inner-divider"></div>
+
+          <!-- Presentación Final -->
+          <div class="photo-item-row" onclick="window.UyapaySimulator.takePhoto(2)">
+            <div class="photo-item-left">
+              <div class="photo-item-title">Presentación final</div>
+              <div class="photo-thumb-box" id="thumb-box-2" style="display:none;">
+                <img src="images/banner3.jpeg" class="photo-thumb-img" alt="Foto Final" />
+                <span class="photo-thumb-dots">•••</span>
+              </div>
+            </div>
+            <span class="photo-item-icon" id="icon-photo-2">+</span>
+          </div>
+
+          <div class="card-inner-divider"></div>
+
+          <!-- Historial de Imágenes -->
+          <div class="photo-item-row" onclick="window.UyapaySimulator.openPhotoHistoryModal()">
+            <div class="photo-item-title">Historial de imágenes</div>
+            <span class="photo-item-chevron">›</span>
+          </div>
+        </div>
+
+        <div class="task-section-label" style="margin-top:14px;">Presentación visual del material publicitario</div>
+        <div class="task-card p-0">
+          <div class="photo-item-row" onclick="window.UyapaySimulator.takePhoto(3)">
+            <div class="photo-item-left">
+              <div class="photo-item-title">Presentación actual</div>
+              <div class="photo-thumb-box" id="thumb-box-3" style="display:none;">
+                <img src="images/banner2.png" class="photo-thumb-img" alt="Foto Material" />
+                <span class="photo-thumb-dots">•••</span>
+              </div>
+            </div>
+            <span class="photo-item-icon" id="icon-photo-3">+</span>
+          </div>
+
+          <div class="card-inner-divider"></div>
+
+          <div class="photo-item-row" onclick="window.UyapaySimulator.openPhotoHistoryModal()">
+            <div class="photo-item-title">Historial de imágenes</div>
+            <span class="photo-item-chevron">›</span>
+          </div>
+        </div>
+
+        <div class="sticky-footer-btn-container">
+          <button class="brand-btn-yellow" onclick="window.UyapaySimulator.submitPhotos()">
+            GUARDAR
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= PÁGINA 3: PRECIOS (Tracking de Precios por SKU) ================= -->
+      <div class="task-slide" id="task-slide-precios">
+        <div class="task-card">
+          <div class="progress-row-header">
+            <span>Avance: <b id="price-avance-val">0 (0.0%)</b></span>
+            <span>Objetivo: <b id="price-target-val">10 productos</b></span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="price-progress-fill" style="width:0%;"></div>
+          </div>
+        </div>
+
+        <div class="subtabs-precios">
+          <div class="subtab-item active" id="subtab-reg-precios" onclick="window.UyapaySimulator.switchPriceSubtab('registro')">
+            REGISTRO DE PRECIOS
+            <span class="subtab-dot"></span>
+          </div>
+          <div class="subtab-item" id="subtab-resumen-precios" onclick="window.UyapaySimulator.switchPriceSubtab('resumen')">
+            RESUMEN
+            <span class="subtab-dot"></span>
+          </div>
+        </div>
+
+        <div id="price-tracking-list">
+          <!-- SKU 1: Helix HX5G -->
+          <div class="price-sku-card" id="sku-card-1">
+            <div class="price-sku-header" onclick="window.UyapaySimulator.toggleSkuAccordion(1)">
+              <div>
+                <div class="price-sku-title">750307: HELIX HX5G 20W50</div>
+                <div class="price-sku-subtitle">BOT 1 GLNS</div>
+              </div>
+              <div class="price-sku-right">
+                <span class="price-sku-status" id="sku-status-1">0 de 3 registrados</span>
+                <span class="price-sku-arrow" id="sku-arrow-1">∨</span>
+              </div>
+            </div>
+            <div class="price-sku-body" id="sku-body-1" style="display:none;">
+              <!-- Mobil -->
+              <div class="competitor-row">
+                <div class="competitor-brand">MOBIL: MOBIL MINERAL 20W50</div>
+                <div class="competitor-inputs">
+                  <div class="competitor-input-wrap">
+                    <span class="competitor-icon">🔄</span>
+                    <input type="number" placeholder="Compra" class="competitor-input" id="comp-mobil-compra" onchange="window.UyapaySimulator.onCompetitorPriceInput(1)" />
+                  </div>
+                  <div class="competitor-input-wrap">
+                    <span class="competitor-icon">🔄</span>
+                    <input type="number" placeholder="Venta" class="competitor-input" id="comp-mobil-venta" onchange="window.UyapaySimulator.onCompetitorPriceInput(1)" />
+                  </div>
+                </div>
+              </div>
+              <!-- Castrol -->
+              <div class="competitor-row">
+                <div class="competitor-brand">CASTROL: CASTROL MINERAL 20W50</div>
+                <div class="competitor-inputs">
+                  <div class="competitor-input-wrap">
+                    <span class="competitor-icon">🔄</span>
+                    <input type="number" placeholder="Compra" class="competitor-input" id="comp-castrol-compra" onchange="window.UyapaySimulator.onCompetitorPriceInput(1)" />
+                  </div>
+                  <div class="competitor-input-wrap">
+                    <span class="competitor-icon">🔄</span>
+                    <input type="number" placeholder="Venta" class="competitor-input" id="comp-castrol-venta" onchange="window.UyapaySimulator.onCompetitorPriceInput(1)" />
+                  </div>
+                </div>
+              </div>
+              <!-- Shell -->
+              <div class="competitor-row">
+                <div class="competitor-brand">SHELL: HELIX HX5G</div>
+                <div class="competitor-inputs">
+                  <div class="competitor-input-wrap">
+                    <span class="competitor-icon">🔄</span>
+                    <input type="number" placeholder="Compra" class="competitor-input" id="comp-shell-compra" onchange="window.UyapaySimulator.onCompetitorPriceInput(1)" />
+                  </div>
+                  <div class="competitor-input-wrap">
+                    <span class="competitor-icon">🔄</span>
+                    <input type="number" placeholder="Venta" class="competitor-input" id="comp-shell-venta" onchange="window.UyapaySimulator.onCompetitorPriceInput(1)" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SKU 2: Rimula R4L Medio Balde -->
+          <div class="price-sku-card" id="sku-card-2">
+            <div class="price-sku-header" onclick="window.UyapaySimulator.toggleSkuAccordion(2)">
+              <div>
+                <div class="price-sku-title">505929: RIMULA R4L MEDIO BALDE</div>
+                <div class="price-sku-subtitle">BAL 2.50 GLNS</div>
+              </div>
+              <div class="price-sku-right">
+                <span class="price-sku-status" id="sku-status-2">0 de 4 registrados</span>
+                <span class="price-sku-arrow" id="sku-arrow-2">∨</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SKU 3: Rimula R4L 15W40 -->
+          <div class="price-sku-card" id="sku-card-3">
+            <div class="price-sku-header" onclick="window.UyapaySimulator.toggleSkuAccordion(3)">
+              <div>
+                <div class="price-sku-title">505928: RIMULA R4L 15W40</div>
+                <div class="price-sku-subtitle">BAL 5 GLNS</div>
+              </div>
+              <div class="price-sku-right">
+                <span class="price-sku-status" id="sku-status-3">0 de 4 registrados</span>
+                <span class="price-sku-arrow" id="sku-arrow-3">∨</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SKU 4: Helix HX8 Prosyn -->
+          <div class="price-sku-card" id="sku-card-4">
+            <div class="price-sku-header" onclick="window.UyapaySimulator.toggleSkuAccordion(4)">
+              <div>
+                <div class="price-sku-title">741407: HELIX HX8 PROSYN AG 5W30</div>
+                <div class="price-sku-subtitle">BOT 4 LTS</div>
+              </div>
+              <div class="price-sku-right">
+                <span class="price-sku-status" id="sku-status-4">0 de 3 registrados</span>
+                <span class="price-sku-arrow" id="sku-arrow-4">∨</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="task-section-label" style="margin-top:14px;">Documentos de compra</div>
+        <div class="task-card" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="window.UyapaySimulator.uploadPurchaseDoc()">
+          <span style="font-size:12px; color:var(--text-light);">Captura una foto o sube un archivo</span>
+          <div style="display:flex; gap:12px; font-size:16px;">
+            <span>📷</span>
+            <span>📤</span>
+          </div>
+        </div>
+
+        <div class="sticky-footer-btn-container">
+          <button class="brand-btn-yellow" onclick="window.UyapaySimulator.onPreciosContinue()">
+            CONTINUAR
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= PÁGINA 4: PEDIDOS (Crear y Listar Órdenes) ================= -->
+      <div class="task-slide" id="task-slide-pedidos">
+        <div class="task-section-label">Pedidos</div>
+        <div class="create-order-btn-card" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">
+          <span style="color:var(--primary-yellow); font-size:16px; font-weight:bold; margin-right:4px;">＋</span> CREAR PEDIDO O COTIZACIÓN
+        </div>
+
+        <!-- Lista de pedidos creados durante esta visita -->
+        <div id="visit-orders-list" style="margin-top:14px;">
+          <div id="visit-orders-empty-state" style="text-align:center; padding:30px 10px; color:var(--text-light);">
+            <div style="font-size:36px; margin-bottom:8px;">📦</div>
+            <div style="font-size:13px; font-weight:600; color:var(--text-medium);">No hay pedidos emitidos</div>
+            <div style="font-size:11px; margin-top:2px;">Presiona el botón de arriba para iniciar un pedido o cotización.</div>
+          </div>
+        </div>
+
+        <div class="sticky-footer-btn-container">
+          <button class="brand-btn-yellow" onclick="window.UyapaySimulator.onPedidosContinue()">
+            CONTINUAR
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Contenedores ocultos de compatibilidad por si se referencian por ID -->
+  <div class="screen" id="s-fotos" style="display:none;"></div>
+  <div class="screen" id="s-pedidos-menu" style="display:none;"></div>
+
+  <!-- Modal Selector de Tareas (Dropdown del Carrusel) -->
+  <div class="modal-overlay" id="taskDropdownModal">
+    <div class="bottom-sheet">
+      <div class="bs-header">
+        <span>TAREAS EN VISITA</span>
+        <span class="close-btn" onclick="window.UyapaySimulator.closeTaskDropdown()">✕</span>
+      </div>
+      <div class="opcion-row" onclick="window.UyapaySimulator.goToVisitTask(0); window.UyapaySimulator.closeTaskDropdown();">
         <div>
-          <div style="font-size:13px; font-weight:700;">1. Presentación Inicial</div>
-          <div style="font-size:11px; color:var(--text-light);">Fachada y exhibición del local</div>
+          <span>1. INICIO</span>
+          <span class="opcion-desc">Scoring del cliente y perfil comercial</span>
         </div>
-        <button class="photo-badge" id="btn-foto-1" onclick="window.UyapaySimulator.takePhoto(1)">📷 Tomar Foto</button>
+        <span>›</span>
       </div>
-
-      <!-- Foto 2 -->
-      <div class="photo-card" id="card-foto-2">
+      <div class="opcion-row" onclick="window.UyapaySimulator.goToVisitTask(1); window.UyapaySimulator.closeTaskDropdown();">
         <div>
-          <div style="font-size:13px; font-weight:700;">2. Presentación Final</div>
-          <div style="font-size:11px; color:var(--text-light);">Góndola, stock y exhibidor</div>
+          <span>2. FOTOS</span>
+          <span class="opcion-desc">Presentación visual de productos y publicidad</span>
         </div>
-        <button class="photo-badge" id="btn-foto-2" onclick="window.UyapaySimulator.takePhoto(2)">📷 Tomar Foto</button>
+        <span>›</span>
       </div>
-
-      <button class="login-btn" style="margin-top:18px;" onclick="window.UyapaySimulator.submitPhotos()">
-        Guardar y Continuar a Pedidos ›
-      </button>
+      <div class="opcion-row" onclick="window.UyapaySimulator.goToVisitTask(2); window.UyapaySimulator.closeTaskDropdown();">
+        <div>
+          <span>3. PRECIOS</span>
+          <span class="opcion-desc">Relevamiento de precios de competencia</span>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="opcion-row" onclick="window.UyapaySimulator.goToVisitTask(3); window.UyapaySimulator.closeTaskDropdown();">
+        <div>
+          <span>4. PEDIDOS</span>
+          <span class="opcion-desc">Crear nueva orden o cotización comercial</span>
+        </div>
+        <span>›</span>
+      </div>
     </div>
   </div>
 
-  <!-- ================= 5. PANTALLA: MENÚ DE PEDIDOS ================= -->
-  <div class="screen" id="s-pedidos-menu">
-    <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-fotos')">‹</span> Pedidos en Visita
-    </div>
-    <div style="padding:20px; text-align:center;">
-      <div style="font-size:42px; margin:20px 0 10px 0;">📦</div>
-      <h3 style="font-size:15px; color:#222; margin-bottom:6px;">No hay pedidos emitidos</h3>
-      <p style="font-size:12px; color:var(--text-light); margin-bottom:20px;">Presiona el botón para iniciar un nuevo pedido o cotización para este cliente.</p>
-      
-      <button class="login-btn" style="padding:13px;" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">
-        ➕ Crear pedido o cotización
-      </button>
+  <!-- Modal Historial de Fotos -->
+  <div class="modal-overlay" id="photoHistoryModal">
+    <div class="bottom-sheet">
+      <div class="bs-header">
+        <span>HISTORIAL DE IMÁGENES</span>
+        <span class="close-btn" onclick="window.UyapaySimulator.closePhotoHistoryModal()">✕</span>
+      </div>
+      <div style="padding:10px 0; text-align:center;">
+        <p style="font-size:12px; color:var(--text-light); margin-bottom:12px;">Últimas imágenes de exhibición registradas en visitas previas:</p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <img src="images/banner1.jpeg" style="width:100px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #ddd;" />
+          <img src="images/banner3.jpeg" style="width:100px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #ddd;" />
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ================= 6. PANTALLA: CONFIGURACIÓN DEL PEDIDO ================= -->
-  <div class="screen" id="s-nuevo-pedido">
-    <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-pedidos-menu')">‹</span> Nuevo Pedido
+  <!-- ================= 6. PANTALLA OFICIAL: CONFIGURACIÓN DE NUEVO PEDIDO (FLUJO 2) ================= -->
+  <div class="screen" id="s-nuevo-pedido" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-cliente-inicio')">‹</span>
+      <span class="visit-header-title">Nuevo pedido</span>
     </div>
-    <div style="padding:14px;">
-      <div class="form-group">
-        <label class="form-label">Condición de Pago:</label>
-        <select id="sel-condicion" class="form-select">
-          <option value="">-- Selecciona Condición --</option>
-          <option value="contado">Contado (5% desc.)</option>
-          <option value="credito_15">Crédito 15 días (4% desc.)</option>
-          <option value="credito_30">Crédito 30 días (3% desc.)</option>
-          <option value="credito_45">Crédito 45 días (2% desc.)</option>
-          <option value="credito_60">Crédito 60 días (1% desc.)</option>
+
+    <div style="padding:16px 14px 80px 14px; overflow-y:auto; flex:1;">
+      <!-- Sección: Datos del pedido -->
+      <div class="card-title-main" style="margin-bottom:12px;">Datos del pedido</div>
+
+      <!-- Selector: Cliente -->
+      <div class="form-select-card">
+        <select id="sel-cliente" class="form-select-card-native" onchange="window.UyapaySimulator.onOrderClientChange()">
+          <!-- Opciones dinámicas -->
         </select>
+        <span class="form-select-card-val" id="lbl-sel-cliente">CONDO CCORIMANYA MARINO</span>
+        <span class="form-select-card-chevron">∨</span>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Lista de Precios:</label>
-        <select id="sel-lista" class="form-select">
-          <option value="">-- Selecciona Lista --</option>
-          <option value="OF">Lista OF (Oficina)</option>
+      <!-- Selector: Condición de pago -->
+      <div class="form-select-card">
+        <select id="sel-condicion" class="form-select-card-native" onchange="window.UyapaySimulator.onOrderConditionChange()">
+          <option value="contado" selected>CONTADO</option>
+          <option value="credito_15">CRÉDITO 15 DÍAS</option>
+          <option value="credito_30">CRÉDITO 30 DÍAS</option>
+          <option value="credito_45">CRÉDITO 45 DÍAS</option>
+          <option value="credito_60">CRÉDITO 60 DÍAS</option>
+        </select>
+        <span class="form-select-card-val" id="lbl-sel-condicion">CONTADO</span>
+        <span class="form-select-card-chevron">∨</span>
+      </div>
+
+      <!-- Selector: Lista de precios -->
+      <div class="form-select-card">
+        <select id="sel-lista" class="form-select-card-native" onchange="window.UyapaySimulator.onOrderPriceListChange()">
+          <option value="3" selected>Lista 3</option>
+          <option value="OF">Lista OF</option>
           <option value="1">Lista 1</option>
           <option value="2">Lista 2</option>
           <option value="EC">Lista EC</option>
-          <option value="3">Lista 3</option>
         </select>
+        <span class="form-select-card-val" id="lbl-sel-lista">Lista 3</span>
+        <span class="form-select-card-chevron">∨</span>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Línea de Negocio (1 línea por pedido):</label>
-        <select id="sel-linea" class="form-select">
-          <option value="">-- Selecciona Línea --</option>
-          <option value="neumaticos">Neumáticos</option>
-          <option value="lubricantes">Lubricantes</option>
-          <option value="repuestos">Repuestos</option>
-        </select>
+      <!-- Fila de 2 columnas: Línea y Marca -->
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <!-- Línea de Negocio -->
+        <div style="flex:1;" class="form-select-card">
+          <select id="sel-linea" class="form-select-card-native" onchange="window.UyapaySimulator.onOrderLineChange()">
+            <option value="lubricantes" selected>LUBRICANTES</option>
+            <option value="neumaticos">NEUMÁTICOS</option>
+            <option value="repuestos">REPUESTOS</option>
+          </select>
+          <span class="form-select-card-val" id="lbl-sel-linea">LUBRICANTES</span>
+          <span class="form-select-card-chevron">∨</span>
+        </div>
+
+        <!-- Marca -->
+        <div style="flex:1;" class="form-select-card">
+          <select id="sel-marca" class="form-select-card-native" onchange="window.UyapaySimulator.onOrderBrandChange()">
+            <option value="shell" selected>SHELL</option>
+            <option value="michelin">MICHELIN</option>
+            <option value="bfgoodrich">BFGOODRICH</option>
+            <option value="hyundai">HYUNDAI</option>
+          </select>
+          <span class="form-select-card-val" id="lbl-sel-marca">SHELL</span>
+          <span class="form-select-card-chevron">∨</span>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Marca:</label>
-        <select id="sel-marca" class="form-select">
-          <option value="">-- Selecciona Marca --</option>
-          <option value="michelin">Michelin</option>
-          <option value="shell">Shell</option>
-          <option value="bfgoodrich">BFGoodrich</option>
-          <option value="hyundai">Hyundai</option>
-        </select>
+      <!-- Toggle Segmentado de Moneda: Dólares | Soles -->
+      <div class="brand-toggle-wrap">
+        <span class="currency-label" id="lbl-curr-dolares">Dólares</span>
+        <label class="brand-toggle-switch">
+          <input type="checkbox" id="chk-curr-soles" checked onchange="window.UyapaySimulator.toggleOrderCurrency(this.checked)" />
+          <span class="brand-toggle-slider"></span>
+        </label>
+        <span class="currency-label active" id="lbl-curr-soles">Soles</span>
       </div>
 
-      <button class="login-btn" style="margin-top:14px;" onclick="window.UyapaySimulator.submitOrderConfig()">
-        Siguiente: Seleccionar Productos ›
+      <!-- Sección: Productos -->
+      <div class="card-title-main" style="margin:18px 0 10px 0;">Productos</div>
+
+      <!-- Botón + Agregar producto -->
+      <div class="add-product-btn-card" onclick="window.UyapaySimulator.onAddProductClick()">
+        <span style="font-weight:bold; margin-right:4px;">＋</span> Agregar producto
+      </div>
+
+      <!-- Lista de productos añadidos al pedido actual -->
+      <div id="nuevo-pedido-cart-list" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- Botón Sticky Completar -->
+    <div class="sticky-footer-btn-container">
+      <button class="btn-completar-disabled" id="btn-completar-pedido" onclick="window.UyapaySimulator.onCompletarPedido()">
+        Completar
       </button>
     </div>
   </div>
 
-  <!-- ================= 7. PANTALLA: CATÁLOGO Y DETALLE DEL PRODUCTO ================= -->
-  <div class="screen" id="s-catalogo-producto">
-    <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">‹</span> Catálogo de Productos
+  <!-- ================= 7. PANTALLA OFICIAL: SELECCIÓN DE PRODUCTO (FLUJO 3) ================= -->
+  <div class="screen" id="s-catalogo-producto" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">‹</span>
+      <div>
+        <div class="visit-header-title">Selección de producto</div>
+        <div id="catalog-subtitle-badge" style="font-size:10px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:0.5px;">LUBRICANTES: SHELL</div>
+      </div>
     </div>
-    <div style="padding:14px; overflow-y:auto; height:calc(100% - 100px);">
-      <!-- Barra informativa del filtro de catálogo -->
-      <div class="catalog-filter-bar">
-        <div>
-          <span id="catalog-brand-badge" class="brand-badge">MARCA</span>
-          <span id="catalog-line-badge" style="font-size:11px; color:var(--text-light); margin-left:6px;">Línea</span>
-        </div>
-        <span id="catalog-count-badge" style="font-size:11px; font-weight:700; color:var(--text-dark);">0 productos</span>
-      </div>
 
-      <!-- Contenedor dinámico de lista de productos -->
-      <div id="catalog-products-container">
-        <!-- Renderizado dinámicamente según Línea y Marca elegida -->
+    <!-- Buscador en almacén -->
+    <div class="product-search-bar">
+      <span class="product-search-icon">🔍</span>
+      <input type="text" id="prod-search-input" placeholder="Buscar en nuestro almacén" oninput="window.UyapaySimulator.onProductSearch(this.value)" />
+      <span class="product-search-clear" onclick="window.UyapaySimulator.clearProductSearch()">✕</span>
+    </div>
+
+    <!-- Pestañas de categorías oficiales -->
+    <div class="category-tabs-scroll">
+      <span class="cat-tab active" id="cattab-0" onclick="window.UyapaySimulator.selectProductCatTab('combo', 0)">Combo</span>
+      <span class="cat-tab" id="cattab-1" onclick="window.UyapaySimulator.selectProductCatTab('promocion', 1)">Promoción</span>
+      <span class="cat-tab" id="cattab-2" onclick="window.UyapaySimulator.selectProductCatTab('reciente', 2)">Reciente</span>
+      <span class="cat-tab" id="cattab-3" onclick="window.UyapaySimulator.selectProductCatTab('baja_rotacion', 3)">Baja rotación</span>
+    </div>
+    <div class="cat-tabs-dots">
+      <span class="cat-dot active" id="cat-dot-0"></span>
+      <span class="cat-dot" id="cat-dot-1"></span>
+      <span class="cat-dot" id="cat-dot-2"></span>
+      <span class="cat-dot" id="cat-dot-3"></span>
+      <span class="cat-dot" id="cat-dot-4"></span>
+    </div>
+
+    <!-- Lista de productos -->
+    <div class="product-list-container" id="catalog-products-container">
+      <!-- Renderizado dinámicamente -->
+    </div>
+  </div>
+
+  <!-- ================= 7.1 PANTALLA OFICIAL: DETALLE DEL PRODUCTO (FLUJO 3) ================= -->
+  <div class="screen" id="s-detalle-producto" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-catalogo-producto')">‹</span>
+      <span class="visit-header-title">Detalle del producto</span>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding-bottom:80px;">
+      <div class="detail-table-card">
+        <div class="detail-row">
+          <span class="detail-key">Código</span>
+          <span class="detail-val" id="det-prod-codigo">SM5001</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Nombre</span>
+          <span class="detail-val" style="max-width:210px; line-height:1.25;">
+            <span id="det-prod-nombre">Shell Helix HX7 10W/40</span>
+            <span class="info-icon" title="Información oficial">ⓘ</span>
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Presentación</span>
+          <span class="detail-val" id="det-prod-presentacion">COMBO</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Precio unitario</span>
+          <span class="detail-val" id="det-prod-precio">$89.67</span>
+        </div>
+
+        <!-- Stepper de Cantidad con subrayado amarillo -->
+        <div class="detail-row">
+          <span class="detail-key">Cantidad</span>
+          <div class="detail-stepper-wrap">
+            <button class="stepper-btn" onclick="window.UyapaySimulator.stepDetailQty(-1)">－</button>
+            <span class="stepper-val" id="det-prod-qty">1</span>
+            <button class="stepper-btn" onclick="window.UyapaySimulator.stepDetailQty(1)">＋</button>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Stock disponible</span>
+          <span class="detail-val" id="det-prod-stock-disp">15</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Stock físico</span>
+          <span class="detail-val" id="det-prod-stock-fisico">15</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Último ingreso</span>
+          <span class="detail-val" id="det-prod-ultimo-ingreso">Hace 12 días</span>
+        </div>
+
+        <div class="detail-row" style="margin-top:6px; border-top:1px solid #e5e7eb;">
+          <span class="detail-key">Sub total</span>
+          <span class="detail-val" id="det-prod-subtotal">$89.67</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Descuento</span>
+          <span class="detail-val" style="color:var(--error-color);" id="det-prod-descuento">-$0.00</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-key">Total pedido</span>
+          <span class="detail-val" style="font-size:14.5px; font-weight:800;" id="det-prod-total">$89.67</span>
+        </div>
+
+        <!-- Descuento Aprovisionado -->
+        <div class="detail-row" style="padding:10px 0;">
+          <span class="detail-key">Descuento aprovisionado</span>
+          <input type="number" step="0.5" id="detail-input-desc" class="desc-aprov-input" value="0.0" oninput="window.UyapaySimulator.onDescuentoAprovisionadoInput(this.value)" />
+        </div>
+
+        <!-- Fila de Bonificación / Regalo por escala si aplica -->
+        <div class="detail-row" id="detail-promo-toggle-row" style="display:none; padding:10px 0;">
+          <div style="max-width:180px;">
+            <div style="font-size:11.5px; font-weight:700; color:#795548;" id="detail-promo-label">🎁 Bonificación en especie</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="detail-promo-chk" onchange="window.UyapaySimulator.onDetailPromoToggle(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
+    </div>
+
+    <!-- Botón Sticky Agregar producto -->
+    <div class="sticky-footer-btn-container">
+      <button class="brand-btn-yellow" onclick="window.UyapaySimulator.confirmAddProductFromDetail()">
+        Agregar producto
+      </button>
     </div>
   </div>
 
   <!-- ================= 8. PANTALLA: RESUMEN Y CONFIRMACIÓN DE PEDIDO ================= -->
   <div class="screen" id="s-resumen-pedido">
-    <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-catalogo-producto')">‹</span> Confirmación
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-nuevo-pedido')">‹</span>
+      <span class="visit-header-title">Confirmación</span>
     </div>
     <div style="padding:14px; overflow-y:auto; height:calc(100% - 90px);">
       <!-- SECCIÓN 1: RESUMEN -->
@@ -628,25 +1361,57 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: VALIDACIÓN GEOCERCA GPS ================= -->
+  <!-- ================= MODAL OFICIAL: DIRECCIONES / BYPASS GPS (visitas-iniciar visita lejos del punto.png) ================= -->
   <div class="modal-overlay" id="gpsModal">
-    <div class="bottom-sheet" style="padding:16px;">
-      <div class="bs-header">
-        VALIDACIÓN DE GEOCERCA GPS
-        <span class="close-btn" onclick="window.UyapaySimulator.closeGpsModal()">×</span>
+    <div class="bottom-sheet" style="padding:16px 18px 24px; border-radius:20px 20px 0 0;">
+      <div class="bs-header" style="justify-content:center; position:relative; font-size:14px; font-weight:800; color:#111827; letter-spacing:0.5px;">
+        DIRECCIONES
+        <span class="close-btn" style="position:absolute; right:0; top:-4px;" onclick="window.UyapaySimulator.closeGpsModal()">✕</span>
       </div>
-      <div style="text-align:center; padding:15px 0;">
-        <div style="font-size:36px; margin-bottom:10px;">📍⚠️</div>
-        <h4 style="font-size:14px; margin-bottom:8px; color:#c0392b;">Ubicación fuera de rango (>50 metros)</h4>
-        <p style="font-size:12px; color:var(--text-light); line-height:1.4; margin-bottom:16px;">
-          Te encuentras a 250m del local del cliente. Las visitas presenciales exigen proximidad física &le; 50m (visit_validations.dart).
-        </p>
-        <button class="login-btn" style="background:#27ae60; margin-bottom:8px;" onclick="window.UyapaySimulator.confirmVisitType('telefonica')">
-          📞 Iniciar Visita Telefónica (isPhoneVisit)
-        </button>
-        <button class="login-btn" style="background:#e74c3c;" onclick="window.UyapaySimulator.confirmVisitType('presencial')">
-          🏢 Forzar Visita Presencial (Rechazar)
-        </button>
+
+      <!-- Botón Destacado Amarillo: Iniciar llamada telefónica -->
+      <button class="brand-btn-yellow" style="margin:16px 0 20px; border-radius:24px; height:44px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:13.5px; font-weight:700;" onclick="window.UyapaySimulator.confirmVisitType('telefonica')">
+        <span>📞</span> Iniciar llamada telefónica
+      </button>
+
+      <!-- Sección Actualización disponible -->
+      <div style="font-size:15px; font-weight:800; color:#111827; margin-bottom:12px;">
+        Actualización disponible
+      </div>
+
+      <div class="address-options-list">
+        <div class="address-option-item" onclick="window.UyapaySimulator.confirmVisitType('presencial')">
+          <div style="flex:1;">
+            <div class="address-item-title">MZA. W LOTE. 16 PEDREGAL NORTE (A 1/2 CDRA DE GRIFO SANTA FE)</div>
+            <div class="address-item-client">GRUNDY MEZA TANIA LIZ</div>
+          </div>
+          <div class="address-item-tag">
+            <span>PRINCIPAL</span>
+            <span style="font-size:13px; color:#9ca3af; margin-left:4px;">›</span>
+          </div>
+        </div>
+
+        <div class="address-option-item" onclick="window.UyapaySimulator.confirmVisitType('presencial')">
+          <div style="flex:1;">
+            <div class="address-item-title">AV. AREQUIPA W-16</div>
+            <div class="address-item-client">RODRIGUEZ ROJAS GLADYS ROXANA</div>
+          </div>
+          <div class="address-item-tag">
+            <span>PRINCIPAL</span>
+            <span style="font-size:13px; color:#9ca3af; margin-left:4px;">›</span>
+          </div>
+        </div>
+
+        <div class="address-option-item" onclick="window.UyapaySimulator.confirmVisitType('presencial')">
+          <div style="flex:1;">
+            <div class="address-item-title">AV. AREQUIPA W-16</div>
+            <div class="address-item-client">RODRIGUEZ ROJAS GLADYS ROXANA</div>
+          </div>
+          <div class="address-item-tag">
+            <span>VISITA</span>
+            <span style="font-size:13px; color:#9ca3af; margin-left:4px;">›</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -716,41 +1481,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: AGREGAR VISITA FUERA DE RUTA ================= -->
-  <div class="modal-overlay" id="outRouteModal">
-    <div class="bottom-sheet" style="padding:16px;">
-      <div class="bs-header">
-        AGREGAR VISITA FUERA DE RUTA
-        <span class="close-btn" onclick="window.UyapaySimulator.closeOutRouteModal()">×</span>
-      </div>
-      <div style="padding:10px 0;">
-        <div class="form-group">
-          <label class="form-label">Cliente de cartera:</label>
-          <select id="sel-outroute-client" class="form-select" onchange="window.UyapaySimulator.onOutRouteClientChange(this.value)">
-            <option value="Repuestos Central Chincha">Repuestos Central Chincha (Cliente Nuevo - RUC: 20601928415)</option>
-            <option value="Autopartes El Rápido">Autopartes El Rápido (RUC: 20551928410)</option>
-            <option value="Servicentro San Jerónimo">Servicentro San Jerónimo</option>
-            <option value="Lubricantes del Sur">Lubricantes del Sur</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Dirección fiscal asignada:</label>
-          <input type="text" id="outroute-address" class="form-select" value="CALLE COMERCIO 120 - CHINCHA" readonly style="background:#f9f9f9; padding:8px 10px;">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tareas asignadas:</label>
-          <div style="font-size:11px; color:#555; line-height:1.6;">
-            ☑ 1. Fotos obligatorias de exhibición<br>
-            ☑ 2. Pedidos en visita<br>
-            ☑ 3. Cobranza de facturas
-          </div>
-        </div>
-        <button class="login-btn" style="background:#2980b9;" onclick="window.UyapaySimulator.submitOutRouteVisit()">
-          ➕ Registrar Visita Fuera de Ruta
-        </button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- ================= MODAL: LIQUIDACIÓN DE COBRANZA DIARIA ================= -->
   <div class="modal-overlay" id="settlementModal">
@@ -886,6 +1617,108 @@
         <button class="login-btn" style="background:#27ae60; margin-top:8px;" onclick="window.UyapaySimulator.submitContactUpdate()">
           💾 Guardar Actualización de Contacto
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 20. DRAWER MENÚ SECUNDARIO (menu secundario.png) ================= -->
+  <div id="drawer-backdrop" class="drawer-backdrop" onclick="window.UyapaySimulator.closeSecondaryDrawer()"></div>
+  <div id="secondary-drawer" class="secondary-drawer">
+    <div class="drawer-header-row">
+      <span></span>
+      <span class="drawer-ver-perfil" onclick="window.UyapaySimulator.hint('Visualización de perfil del asesor')">Ver perfil</span>
+    </div>
+
+    <!-- Avatar y Nombre del Asesor -->
+    <div class="drawer-avatar-wrap">
+      <div class="drawer-avatar-circle">
+        <span style="font-size:36px; color:#1f2937;">👤</span>
+      </div>
+      <div class="drawer-user-name" id="drawer-user-name">BETSY RAMOS</div>
+    </div>
+
+    <!-- Tarjeta Amarilla de Agencia -->
+    <div class="drawer-agencia-card" onclick="window.UyapaySimulator.hint('Cambiar agencia o almacén')">
+      <div>
+        <div class="drawer-agencia-label">Agencia</div>
+        <div class="drawer-agencia-val" id="drawer-agencia-val">AREQUIPA</div>
+      </div>
+      <span style="font-size:14px; font-weight:700; color:#111827;">∨</span>
+    </div>
+
+    <!-- Lista de Items Oficiales del Menú Secundario -->
+    <div class="drawer-menu-list">
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.hint('Módulo: Mis clientes'); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">📄</span>
+          <span class="drawer-item-label">Mis clientes</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.openHistoryModal(); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">📅</span>
+          <span class="drawer-item-label">Historial de visitas</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.openDocsModal(); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">🧾</span>
+          <span class="drawer-item-label">Documentos electrónicos</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.hint('Módulo: Deudas avaladas'); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">📎</span>
+          <span class="drawer-item-label">Deudas avaladas</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.hint('Configuración del sistema'); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">🎛️</span>
+          <span class="drawer-item-label">Configuración</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.hint('Centro de ayuda y tutoriales UYAPAY'); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">❓</span>
+          <span class="drawer-item-label">Centro de ayuda</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.hint('Reporte de incidencias y sincronización'); window.UyapaySimulator.closeSecondaryDrawer();">
+        <div class="drawer-item-left">
+          <span class="drawer-item-icon">ℹ️</span>
+          <span class="drawer-item-label">Compartir errores</span>
+        </div>
+        <span class="drawer-item-arrow">›</span>
+      </div>
+
+      <!-- Versión oficial de la app -->
+      <div class="drawer-version-box">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:18px;">📱</span>
+          <div>
+            <div style="font-size:12px; font-weight:700; color:#1f2937;">Versión: 8.0.22</div>
+            <div style="font-size:10px; color:#6b7280;">jue, 26-jun-25 - 06:47 p. m.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cerrar sesión -->
+      <div class="drawer-logout-row" onclick="window.UyapaySimulator.go('s-login'); window.UyapaySimulator.closeSecondaryDrawer();">
+        <span style="font-size:16px; margin-right:8px;">⏻</span>
+        <span>Cerrar sesión</span>
       </div>
     </div>
   </div>
