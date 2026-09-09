@@ -222,19 +222,69 @@ html, body {
 .topbar-app .tc-pill {
   margin-left: auto;
   font-size: 11px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 4px 8px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-dark);
+  padding: 3px 8px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.topbar-app .bell-icon {
-  font-size: 16px;
-  margin-left: 8px;
+.topbar-app .tc-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 10px;
+}
+
+.topbar-app .tc-value {
+  font-weight: 800;
+  color: #111;
+  font-size: 11px;
+}
+
+.notif-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
+  margin-left: 10px;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  background: var(--error-color);
+  color: #fff;
+  font-size: 9px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fff;
+}
+
+.cart-nav-badge {
+  position: absolute;
+  top: -5px;
+  right: -10px;
+  background: #2c3e50;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fff;
 }
 
 /* 4 Tabs Superiores con iconos SVG oficiales */
@@ -819,4 +869,172 @@ input:checked + .slider:before {
 
 .btn-select-product:active {
   opacity: 0.85;
+}
+
+/* ================= 14. PESTAÑAS CIRCULARES DE VISITAS ================= */
+.circle-tabs-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px 4px 14px;
+  background: var(--bg-primary);
+}
+
+.circle-tab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-medium);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.circle-tab.active {
+  background: #2c3e50;
+  color: #ffffff;
+  border-color: #2c3e50;
+}
+
+/* ================= 15. TAREAS OFICIALES FLUTTER (TASK SWITCHER) ================= */
+.task-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  color: var(--text-dark);
+  border: 1px solid var(--border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.task-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.task-desc {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--text-light);
+  margin-top: 1px;
+}
+
+.incomplete-task-btn {
+  border: 1px dashed #e74c3c;
+  background: #fffafa;
+}
+
+/* ================= 16. PANTALLA CONFIRMACIÓN Y DATOS DE ENTREGA ================= */
+.confirmation-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.confirmation-card {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.key-value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+
+.key-value-row:last-child {
+  margin-bottom: 0;
+}
+
+.key-label {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.value-label {
+  font-weight: 700;
+  color: var(--text-dark);
+  text-align: right;
+}
+
+.receipt-product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.receipt-prod-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.receipt-prod-sku {
+  font-size: 10.5px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+.receipt-prod-total {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.form-field-group {
+  margin-bottom: 10px;
+}
+
+.form-field-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  font-size: 12.5px;
+  background: #fff;
+  color: var(--text-dark);
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: var(--primary-yellow);
+  outline: none;
+}
+
+.switch-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }

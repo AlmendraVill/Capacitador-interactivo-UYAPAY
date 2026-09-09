@@ -55,35 +55,41 @@
 
   <!-- ================= 2. PANTALLA: PLAN DE VISITAS ================= -->
   <div class="screen" id="s-visitas">
-    <!-- Topbar con Tipo de Cambio y Campana de Notificación -->
+    <!-- Topbar Oficial Flutter con Tipo de Cambio y Notificaciones -->
     <div class="topbar-app">
-      <span class="menu-icon">☰</span> Visitas 
-      <span class="tc-pill">TC: S/ 3.7200</span>
-      <span class="bell-icon" onclick="window.UyapaySimulator.hint('Sin notificaciones pendientes')">🔔</span>
+      <span class="menu-icon">☰</span>
+      <span style="font-weight:700;">Visitas</span>
+      <div class="tc-pill" title="Tipo de Cambio Oficial">
+        <span class="tc-label">TC:</span>
+        <span class="tc-value">S/ 3.750</span>
+      </div>
+      <div class="notif-wrapper" onclick="window.UyapaySimulator.hint('Notificaciones: Tienes 1 recordatorio en ruta')">
+        <span class="bell-icon" style="font-size:16px;">🔔</span>
+        <span class="notif-badge">1</span>
+      </div>
     </div>
 
-    <!-- 4 Tabs de Navegación Oficiales con SVGs -->
+    <!-- 3 Tabs de Navegación Oficiales (Inicio, Visitas, Pedidos) -->
     <div class="tabs-app">
-      <div class="tab-item" onclick="window.UyapaySimulator.hint('Pestaña Inicio')">
+      <div class="tab-item" id="nav-tab-inicio" onclick="window.UyapaySimulator.selectNavTab('inicio')">
         <img src="images/homeOff.svg" alt="Inicio">
         <span>Inicio</span>
       </div>
-      <div class="tab-item active">
+      <div class="tab-item active" id="nav-tab-visitas" onclick="window.UyapaySimulator.selectNavTab('visitas')">
         <img src="images/visitasOff.svg" alt="Visitas">
         <span>Visitas</span>
       </div>
-      <div class="tab-item" onclick="window.UyapaySimulator.hint('Pestaña Pedidos')">
-        <img src="images/carritoOff.svg" alt="Pedidos">
+      <div class="tab-item" id="nav-tab-pedidos" onclick="window.UyapaySimulator.selectNavTab('pedidos')" style="position:relative;">
+        <div style="position:relative; display:inline-block;">
+          <img src="images/carritoOff.svg" alt="Pedidos">
+          <span id="cart-badge-counter" class="cart-nav-badge" style="display:none;">0</span>
+        </div>
         <span>Pedidos</span>
-      </div>
-      <div class="tab-item" onclick="window.UyapaySimulator.hint('Pestaña Tienda')">
-        <img src="images/tiendaOff.svg" alt="Tienda">
-        <span>Tienda</span>
       </div>
     </div>
     
     <!-- Proyecciones y Progreso -->
-    <div class="section-box" onclick="window.UyapaySimulator.hint('Avance de proyección')">
+    <div class="section-box" onclick="window.UyapaySimulator.hint('Avance de proyección de ventas del mes')">
       <span style="font-weight:600;">Avance de proyección de ventas</span> 
       <span style="color:var(--text-light); font-size:16px;">›</span>
     </div>
@@ -93,16 +99,26 @@
         <div style="font-size:13px; font-weight:700;">Progreso <span style="font-weight:400; color:var(--text-light);">›</span></div>
         <span style="color:var(--text-light); font-size:11px;">Visitas realizadas</span>
       </div>
-      <span style="font-weight:700; color:var(--text-dark);">0 de 16</span>
+      <span style="font-weight:700; color:var(--text-dark);" id="visitas-progress-counter">0 de 16</span>
+    </div>
+
+    <!-- Tabs circulares oficiales: Pendientes vs Realizadas -->
+    <div class="circle-tabs-row">
+      <button class="circle-tab active" id="tab-pendientes" onclick="window.UyapaySimulator.selectVisitTab('pendientes')">
+        Pendientes (3)
+      </button>
+      <button class="circle-tab" id="tab-realizadas" onclick="window.UyapaySimulator.selectVisitTab('realizadas')">
+        Realizadas (0)
+      </button>
     </div>
 
     <!-- Filtros de Visitas Oficiales -->
     <div class="filters-scroll">
       <div class="filter-pill active" id="pill-todos" onclick="window.UyapaySimulator.selectFilter('todos')">Todos</div>
-      <div class="filter-pill" id="pill-deuda" onclick="window.UyapaySimulator.selectFilter('deuda_vencida')">Deuda vencida</div>
-      <div class="filter-pill" id="pill-sin-visita" onclick="window.UyapaySimulator.selectFilter('sin_visita')">Sin visita en el mes</div>
-      <div class="filter-pill" id="pill-sin-compra" onclick="window.UyapaySimulator.selectFilter('sin_compra')">Sin compra en el mes</div>
-      <div class="filter-pill" id="pill-documentos" onclick="window.UyapaySimulator.selectFilter('documentos')">Documentos por regularizar</div>
+      <div class="filter-pill" id="pill-sin-visita" onclick="window.UyapaySimulator.selectFilter('sin_visita')">No visitados</div>
+      <div class="filter-pill" id="pill-sin-compra" onclick="window.UyapaySimulator.selectFilter('sin_compra')">No compran</div>
+      <div class="filter-pill" id="pill-deuda" onclick="window.UyapaySimulator.selectFilter('deuda_vencida')">Con deuda vencida</div>
+      <div class="filter-pill" id="pill-documentos" onclick="window.UyapaySimulator.selectFilter('documentos')">Docs. por regularizar</div>
     </div>
 
     <!-- Zona y Lista de Clientes -->
@@ -174,35 +190,87 @@
         </div>
       </div>
 
-      <!-- Menú de tareas en visita según app Flutter -->
-      <div class="card-title-sm" style="margin-left:2px;">Tareas de la Visita</div>
+      <!-- Menú oficial de tareas de visita (TaskSwitcher Flutter) -->
+      <div class="card-title-sm" style="margin-left:2px; margin-bottom:8px;">Tareas de la Visita</div>
       
       <div class="task-item-btn" onclick="window.UyapaySimulator.go('s-fotos')">
-        <span>📷 1. Fotos de exhibición (Inicial / Final)</span>
+        <div class="task-item-left">
+          <span class="task-num">1</span>
+          <div>
+            <div class="task-name">Presentación visual de productos</div>
+            <div class="task-desc">Fotos de exhibición Inicial y Final</div>
+          </div>
+        </div>
+        <span>›</span>
+      </div>
+
+      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Módulo de comparación de precios de competencia')">
+        <div class="task-item-left">
+          <span class="task-num">2</span>
+          <div>
+            <div class="task-name">Comparar precios</div>
+            <div class="task-desc">Seguimiento fotográfico de marcas rivales</div>
+          </div>
+        </div>
         <span>›</span>
       </div>
 
       <div class="task-item-btn" onclick="window.UyapaySimulator.go('s-pedidos-menu')">
-        <span>📦 2. Pedidos en visita</span>
+        <div class="task-item-left">
+          <span class="task-num">3</span>
+          <div>
+            <div class="task-name">Asesorar pedido</div>
+            <div class="task-desc">Crear nueva orden o cotización comercial</div>
+          </div>
+        </div>
         <span>›</span>
       </div>
 
       <div class="task-item-btn" onclick="window.UyapaySimulator.openCobranzaModal()">
-        <span>💰 3. Cobranza de facturas / Letras</span>
+        <div class="task-item-left">
+          <span class="task-num">4</span>
+          <div>
+            <div class="task-name">Cobranza de facturas / Letras</div>
+            <div class="task-desc">Recaudación y registro de vouchers</div>
+          </div>
+        </div>
         <span>›</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.openIncompleteTasksModal()">
-        <span>⚠️ ¿Por qué no completó la tarea?</span>
+      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Completar documentación: Pagarés y contratos al día')">
+        <div class="task-item-left">
+          <span class="task-num">5</span>
+          <div>
+            <div class="task-name">Completar documentación</div>
+            <div class="task-desc">Regularización de pagarés y contratos</div>
+          </div>
+        </div>
         <span>›</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Módulo de comparación')">
-        <span>📊 4. Comparar precios</span>
+      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Actualizar contacto: Teléfono y titular verificados')">
+        <div class="task-item-left">
+          <span class="task-num">6</span>
+          <div>
+            <div class="task-name">Actualizar contacto</div>
+            <div class="task-desc">Teléfono, correo y titular del negocio</div>
+          </div>
+        </div>
         <span>›</span>
       </div>
 
-      <button class="login-btn" style="margin-top:14px;" onclick="window.UyapaySimulator.go('s-fotos')">
+      <div class="task-item-btn incomplete-task-btn" onclick="window.UyapaySimulator.openIncompleteTasksModal()">
+        <div class="task-item-left">
+          <span style="font-size:16px;">⚠️</span>
+          <div>
+            <div class="task-name" style="color:var(--error-color);">Justificar tarea / Visita incompleta</div>
+            <div class="task-desc">Registrar motivo tipificado de no concreción</div>
+          </div>
+        </div>
+        <span>›</span>
+      </div>
+
+      <button class="login-btn" id="btn-cliente-main-action" style="margin-top:14px;" onclick="window.UyapaySimulator.go('s-fotos')">
         Continuar a Fotos de Visita ›
       </button>
     </div>
@@ -337,18 +405,48 @@
     </div>
   </div>
 
-  <!-- ================= 8. PANTALLA: RESUMEN Y LIQUIDACIÓN ================= -->
+  <!-- ================= 8. PANTALLA: RESUMEN Y CONFIRMACIÓN DE PEDIDO ================= -->
   <div class="screen" id="s-resumen-pedido">
     <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-catalogo-producto')">‹</span> Resumen de Orden
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-catalogo-producto')">‹</span> Confirmación
     </div>
-    <div style="padding:14px; overflow-y:auto; height:calc(100% - 100px);">
+    <div style="padding:14px; overflow-y:auto; height:calc(100% - 90px);">
+      <!-- SECCIÓN 1: RESUMEN -->
+      <div class="confirmation-section-title">Resumen</div>
+      
+      <div class="confirmation-card">
+        <div class="key-value-row">
+          <span class="key-label">Cliente:</span>
+          <span class="value-label" id="receipt-client-name">-</span>
+        </div>
+        <div class="key-value-row">
+          <span class="key-label">Destino:</span>
+          <span class="value-label" id="receipt-address-text">-</span>
+        </div>
+        <div class="key-value-row" id="receipt-terms-row">
+          <span class="key-label">Plazo de pago:</span>
+          <span class="value-label" id="receipt-terms-text">-</span>
+        </div>
+      </div>
+
+      <!-- Ítem(s) seleccionado(s) -->
+      <div class="confirmation-card" id="receipt-products-list">
+        <div class="receipt-product-item">
+          <div>
+            <div class="receipt-prod-name" id="receipt-items-summary">1x Producto seleccionado</div>
+            <div class="receipt-prod-sku" id="receipt-prod-sku-detail">SKU: -</div>
+          </div>
+          <div class="receipt-prod-total" id="receipt-raw-subtotal">USD 0.00</div>
+        </div>
+      </div>
+
+      <!-- PriceSummaryDetail Oficial -->
       <div class="receipt-card">
         <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-light); margin-bottom:8px;">Detalle de Liquidación B2C</div>
         
         <div class="receipt-row">
-          <span id="receipt-items-summary">Productos cotizados:</span>
-          <b id="receipt-raw-subtotal">USD 0.00</b>
+          <span>Subtotal productos:</span>
+          <b id="receipt-subtotal-items">USD 0.00</b>
         </div>
         <div class="receipt-row discount" id="row-promo-desc" style="display:none;">
           <span id="receipt-promo-desc-label">Descuento Promo Volumen:</span>
@@ -362,6 +460,10 @@
           <span id="receipt-cond-label">Desc. Financiero Condición:</span>
           <b id="receipt-credito-desc">- USD 0.00</b>
         </div>
+        <div class="receipt-row" style="color:var(--text-light); font-size:11px;">
+          <span>IGV (18% incluido):</span>
+          <b id="receipt-igv-val">USD 0.00</b>
+        </div>
         
         <div class="receipt-total">
           <span>TOTAL A FACTURAR:</span>
@@ -369,21 +471,65 @@
         </div>
       </div>
 
-      <div class="card-task" style="margin:0 0 14px 0; font-size:12px;">
-        <div style="color:var(--text-light); margin-bottom:4px;">Cliente:</div>
-        <b id="receipt-client-name">-</b>
-        <div style="color:var(--text-light); margin-top:8px; margin-bottom:4px;">Dirección de Entrega:</div>
-        <b id="receipt-address-text">-</b>
-        <div style="color:var(--text-light); margin-top:8px; margin-bottom:4px;">Condición / Plazo:</div>
-        <b id="receipt-terms-text">-</b>
+      <!-- SECCIÓN 2: DATOS DE CONFIRMACIÓN (FLUTTER) -->
+      <div class="confirmation-section-title" style="margin-top:16px;">Datos de confirmación</div>
+      
+      <div class="confirmation-card">
+        <div class="form-field-group">
+          <label class="form-field-label">Destino / Dirección de entrega:</label>
+          <select id="confirm-address-select" class="form-select">
+            <option value="principal">AV. TOMAS TUYRUTUPAC 412 (Principal)</option>
+            <option value="almacen">ALMACÉN AUXILIAR NRO. 2</option>
+          </select>
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label">Fecha de entrega estimada:</label>
+          <input type="date" id="confirm-delivery-date" class="form-input">
+        </div>
+
+        <div class="switch-field-row">
+          <div>
+            <span style="font-weight:600; font-size:12.5px; color:var(--text-dark);">Venta segura</span>
+            <span style="font-size:10px; color:var(--text-light); display:block;">Garantía de despacho en ruta certificada</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="confirm-secure-sale" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-field-row" style="border-top:1px solid #f0f0f0; padding-top:10px; margin-top:10px;">
+          <div>
+            <span style="font-weight:600; font-size:12.5px; color:var(--text-dark);">Avalar deuda</span>
+            <span style="font-size:10px; color:var(--text-light); display:block;">Aval del asesor comercial para línea B2C</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="confirm-guarantee">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-field-group" style="margin-top:12px;">
+          <label class="form-field-label">Orden de compra (N° OC Cliente):</label>
+          <input type="text" id="confirm-purchase-request" class="form-input" placeholder="Ej: OC-48209">
+        </div>
+
+        <div class="form-field-group">
+          <label class="form-field-label">Observación:</label>
+          <input type="text" id="confirm-observation" class="form-input" placeholder="Instrucciones especiales para entrega / logística">
+        </div>
       </div>
 
-      <button class="login-btn" onclick="window.UyapaySimulator.submitFinalOrder('orden')">
-        Actualizar Orden de Compra y Enviar
-      </button>
-      <button class="login-btn" style="background:#ffffff; color:#2c3e50; border:1.5px solid #2c3e50; margin-top:8px;" onclick="window.UyapaySimulator.submitFinalOrder('cotizacion')">
-        📄 Guardar como Cotización (Tipo 3)
-      </button>
+      <!-- BOTONES DE ACCIÓN FLUTTER -->
+      <div style="margin-top:14px; padding-bottom:20px;">
+        <button class="login-btn" onclick="window.UyapaySimulator.submitFinalOrder('orden')">
+          Confirmar Orden de compra
+        </button>
+        <button class="login-btn" style="background:#ffffff; color:#2c3e50; border:1.5px solid #2c3e50; margin-top:8px;" onclick="window.UyapaySimulator.submitFinalOrder('cotizacion')">
+          Guardar como Cotización
+        </button>
+      </div>
     </div>
   </div>
 

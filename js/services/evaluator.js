@@ -174,6 +174,27 @@ window.UyapayServices = window.UyapayServices || {};
         };
       }
 
+      // En visitas telefónicas o remotas (Caso 16), el registro de fotos es opcional y no debe penalizar
+      if ((currentCase.isPhoneVisit || currentCase.id === 'case-16') && eventName === 'SAVE_PHOTOS') {
+        const logEntry = {
+          time: timeStamp,
+          type: 'INFO',
+          step: `[Tab ${activeTab + 1}] Fotos Opcionales`,
+          detail: 'Fotos registradas en atención telefónica (no penalizable).'
+        };
+        caseState.actionsLog.push(logEntry);
+        return {
+          success: true,
+          isInformative: true,
+          logEntry: logEntry,
+          progress: 'Atención telefónica',
+          errors: caseState.errors,
+          totalErrors: activeEvaluation.totalErrors,
+          tabIndex: activeTab,
+          caseState: caseState
+        };
+      }
+
       // Validación contra las reglas del caso en este tab
       const expectedRule = (currentCase.rules && currentCase.rules[caseState.currentRuleIndex]) || null;
 

@@ -230,6 +230,16 @@ window.UyapayServices = window.UyapayServices || {};
       }
     },
 
+    async getLiveStatus() {
+      try {
+        const res = await fetch('/api/live-events');
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return { current: null, history: [] };
+    },
+
     // ---- SESIÓN ACTIVA ----
     setCurrentSession(user) {
       setLocalItem(KEYS.SESSION, user);

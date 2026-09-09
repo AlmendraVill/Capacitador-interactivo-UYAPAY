@@ -131,9 +131,23 @@
     const passedEl = document.getElementById('stat-passed-evals');
     if (totalEl) totalEl.textContent = totalEvals;
     if (passedEl) passedEl.textContent = passedEvals;
+
+    // Sincronizar monitor en vivo inmediatamente con el estado del backend
+    await updateLiveMonitor();
   }
 
-  function appendLiveFeed(actionEntry) {
+  function applyLiveStatus(data) {
+    if (!data) return;
+    const stepEl = document.getElementById('live-step');
+    const errorsEl = document.getElementById('live-errors');
+    const advisorEl = document.getElementById('live-advisor');
+
+    if (stepEl && data.step) stepEl.textContent = data.step;
+    if (errorsEl && data.errors !== undefined) errorsEl.textContent = data.errors;
+    if (advisorEl && data.advisor) advisorEl.textContent = data.advisor;
+  }
+
+  function appendLiveFeed(actionEntry, prepend = true) {
     const feed = document.getElementById('live-feed-list');
     if (!feed) return;
 
@@ -149,30 +163,88 @@
       <span class="live-feed-time">${actionEntry.time || actionEntry.created_at || ''}</span>
     `;
 
-    feed.prepend(item);
+    if (prepend) {
+      feed.prepend(item);
+    } else {
+      feed.appendChild(item);
+    }
   }
 
-  // Monitor en tiempo real multi-dispositivo vía Server-Sent Events (SSE)
+  async function updateLiveMonitor() {
+    try {
+      const liveData = await Storage.getLiveStatus();
+      if (!liveData) return;
+
+      if (liveData.current) {
+        applyLiveStatus(liveData.current);
+      }
+
+      if (Array.isArray(liveData.history) && liveData.history.length > 0) {
+        const feed = document.getElementById('live-feed-list');
+        if (feed && (feed.children.length === 0 || feed.firstElementChild.textContent.includes('Esperando'))) {
+          feed.innerHTML = '';
+          liveData.history.slice(0, 15).forEach(item => {
+            appendLiveFeed(item, false);
+          });
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Monitor en tiempo real multi-dispositivo vía Server-Sent Events (SSE) + Polling de respaldo
+  let liveEventSource = null;
+  let livePollInterval = null;
+
   function initLiveStream() {
     if (typeof EventSource !== 'undefined' && location.protocol.startsWith('http')) {
-      try {
-        const stream = new EventSource('/api/live-events/stream');
-        stream.onmessage = (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            appendLiveFeed(data);
-
-            const stepEl = document.getElementById('live-step');
-            const errorsEl = document.getElementById('live-errors');
-            const advisorEl = document.getElementById('live-advisor');
-
-            if (stepEl) stepEl.textContent = data.step || '-';
-            if (errorsEl) errorsEl.textContent = data.errors !== undefined ? data.errors : 0;
-            if (advisorEl && data.advisor) advisorEl.textContent = data.advisor;
-          } catch (err) {}
-        };
-      } catch (e) {}
+      connectEventSource();
     }
+
+    // Polling de respaldo continuo cada 3s para garantizar sincronización entre dispositivos
+    if (!livePollInterval) {
+      livePollInterval = setInterval(() => {
+        const adminDashboard = document.getElementById('admin-dashboard');
+        if (adminDashboard && adminDashboard.classList.contains('active')) {
+          updateLiveMonitor();
+        }
+      }, 3000);
+    }
+  }
+
+  function connectEventSource() {
+    try {
+      if (liveEventSource) {
+        liveEventSource.close();
+      }
+
+      liveEventSource = new EventSource('/api/live-events/stream');
+
+      liveEventSource.onopen = () => {
+        const liveIndicator = document.querySelector('.live-indicator');
+        if (liveIndicator) liveIndicator.style.background = '#27ae60';
+      };
+
+      liveEventSource.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data && (data.step || data.advisor)) {
+            applyLiveStatus(data);
+            if (data.detail) {
+              appendLiveFeed(data, true);
+            }
+          }
+        } catch (err) {}
+      };
+
+      liveEventSource.onerror = () => {
+        // En caso de caída de SSE, reintentar la conexión
+        if (liveEventSource) {
+          liveEventSource.close();
+          liveEventSource = null;
+        }
+        setTimeout(connectEventSource, 4000);
+      };
+    } catch (e) {}
   }
 
   // ================= RANKING GENERAL Y PODIO (RF-MVP-042 A 047) =================
@@ -317,7 +389,7 @@
     const user = Auth.getCurrentUser();
     if (!user) return;
 
-    // 1. Cargar 5 de los 15 casos disponibles
+    // 1. Cargar 5 de los 21 casos disponibles
     evaluationCases = selectFiveEvaluationCases();
     currentActiveTab = 0;
 
@@ -336,6 +408,15 @@
 
     const liveAdvisorEl = document.getElementById('live-advisor');
     if (liveAdvisorEl) liveAdvisorEl.textContent = user.name;
+
+    // Notificar de inmediato al monitor en vivo del administrador
+    Storage.sendLiveEvent({
+      advisor: user.name || user.username,
+      step: 'Inicio de Evaluación',
+      detail: `Inició batería de 5 casos prácticos (Caso 1: ${evaluationCases[0].code})`,
+      type: 'INFO',
+      errors: 0
+    });
 
     // 4. Renderizar pestañas y cargar el primer caso
     renderEvaluationTabs();
@@ -377,6 +458,17 @@
     const activeCase = evaluationCases[tabIndex];
     const caseState = Evaluator.getActiveCaseState() || {};
     const user = Auth.getCurrentUser();
+
+    // Notificar cambio de caso en el monitor en vivo
+    if (user) {
+      Storage.sendLiveEvent({
+        advisor: user.name || user.username,
+        step: `Tab ${tabIndex + 1}: ${activeCase.code}`,
+        detail: `Cargó instrucciones para ${activeCase.client}`,
+        type: 'INFO',
+        errors: Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().totalErrors : 0
+      });
+    }
 
     // Actualizar encabezados y panel izquierdo
     const caseCodeEl = document.getElementById('case-code');
@@ -424,7 +516,7 @@
     // Cargar simulador móvil para este caso específico
     const frame = document.getElementById('simulador-frame');
     if (frame && user) {
-      frame.src = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}`;
+      frame.src = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1`;
     }
   }
 
@@ -442,6 +534,16 @@
 
   function cancelExam() {
     if (confirm("¿Estás seguro de cancelar la evaluación? Se perderá el avance de los 5 casos.")) {
+      const user = Auth.getCurrentUser();
+      if (user) {
+        Storage.sendLiveEvent({
+          advisor: user.name || user.username,
+          step: 'Evaluación Cancelada',
+          detail: 'El asesor canceló la evaluación.',
+          type: 'ERROR',
+          errors: Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().totalErrors : 0
+        });
+      }
       Evaluator.cancelEvaluation();
       const frame = document.getElementById('simulador-frame');
       frame.src = '';
@@ -466,10 +568,20 @@
         if (eventName === 'SUBMIT_EVALUATION') {
           // Caso completado en el simulador
           const currentTab = currentActiveTab;
+          const completedCase = evaluationCases[currentTab] || {};
           const evalResult = Evaluator.processAction('SUBMIT_ORDER', { confirmed: true });
 
           renderEvaluationTabs();
           loadCaseInTab(currentTab);
+
+          const currentUser = Auth.getCurrentUser();
+          Storage.sendLiveEvent({
+            advisor: (currentUser && currentUser.name) || payload.advisor || 'Asesor',
+            step: `Caso ${currentTab + 1} (${completedCase.code || 'B2C'}) Completado`,
+            detail: `Completó satisfactoriamente el caso de ${completedCase.client || 'cliente'}`,
+            type: 'SUCCESS',
+            errors: Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().totalErrors : 0
+          });
 
           const allCompleted = Evaluator.getAllCaseStates().every(cs => cs.completed);
           if (allCompleted) {
@@ -502,7 +614,7 @@
         if (errorsEl) errorsEl.textContent = evalResult.totalErrors !== undefined ? evalResult.totalErrors : 0;
 
         if (evalResult.logEntry) {
-          appendLiveFeed(evalResult.logEntry);
+          appendLiveFeed(evalResult.logEntry, true);
           
           // Replicar en Backend para monitores remotos
           const currentUser = Auth.getCurrentUser();
@@ -567,6 +679,15 @@
 
     // Guardar persistentemente en SQLite / API
     const saved = await Storage.saveResult(finalResult);
+
+    // Notificar al monitor en vivo del administrador
+    Storage.sendLiveEvent({
+      advisor: saved.advisorName || saved.username,
+      step: 'Evaluación Finalizada',
+      detail: `Resultado: ${saved.score} (${saved.status}) • Errores: ${saved.errors} • Tiempo: ${saved.formattedDuration}`,
+      type: saved.status === 'Aprobado' ? 'SUCCESS' : 'ERROR',
+      errors: saved.errors
+    });
 
     const frame = document.getElementById('simulador-frame');
     if (frame) frame.src = '';

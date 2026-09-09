@@ -168,6 +168,18 @@
 
       listContainer.innerHTML = html;
     }
+
+    // Configurar acción del botón principal en datos del cliente según tipo de visita
+    const btnAction = document.getElementById('btn-cliente-main-action');
+    if (btnAction) {
+      if (currentCase.isPhoneVisit || state.currentCaseId === 'case-16') {
+        btnAction.textContent = 'Continuar a Pedidos (Atención Remota) ›';
+        btnAction.onclick = () => navigateTo('s-pedidos-menu');
+      } else {
+        btnAction.textContent = 'Continuar a Fotos de Visita ›';
+        btnAction.onclick = () => navigateTo('s-fotos');
+      }
+    }
   }
 
   // 2. Login dentro del smartphone
@@ -180,6 +192,52 @@
 
     emitSimulatorEvent('MOBILE_LOGIN', { username: userInput });
     navigateTo('s-visitas');
+  }
+
+  // 2.1 Navegación por Tabs Oficiales (Inicio, Visitas, Pedidos)
+  function selectNavTab(tabKey) {
+    document.querySelectorAll('.tabs-app .tab-item').forEach(t => t.classList.remove('active'));
+    const activeTab = document.getElementById(`nav-tab-${tabKey}`);
+    if (activeTab) activeTab.classList.add('active');
+
+    if (tabKey === 'visitas') {
+      navigateTo('s-visitas');
+    } else if (tabKey === 'pedidos') {
+      if (state.cart && state.cart.qty > 0) {
+        updateReceiptCalculations();
+        navigateTo('s-resumen-pedido');
+      } else {
+        showHint('No tienes productos agregados en el pedido actual.', false);
+      }
+    } else if (tabKey === 'inicio') {
+      showHint('Estás en el módulo de Plan de Visitas del Asesor.', false);
+      navigateTo('s-visitas');
+    }
+  }
+
+  // 2.2 Pestañas Circulares: Pendientes vs Realizadas (VerticalScrollableCircleTabs)
+  function selectVisitTab(tabKey) {
+    const tabPend = document.getElementById('tab-pendientes');
+    const tabReal = document.getElementById('tab-realizadas');
+    const listContainer = document.getElementById('client-list-cards');
+
+    if (tabKey === 'pendientes') {
+      if (tabPend) tabPend.classList.add('active');
+      if (tabReal) tabReal.classList.remove('active');
+      initializeCaseEnvironment();
+    } else {
+      if (tabReal) tabReal.classList.add('active');
+      if (tabPend) tabPend.classList.remove('active');
+      if (listContainer) {
+        listContainer.innerHTML = `
+          <div style="text-align:center; padding:36px 16px; color:var(--text-light); font-size:13px;">
+            <div style="font-size:32px; margin-bottom:8px;">📋</div>
+            <b style="color:var(--text-dark); display:block; margin-bottom:4px;">Sin visitas realizadas aún</b>
+            <p style="margin:0; font-size:11px; line-height:1.4;">Las visitas concretadas y auditadas en esta jornada se listarán en esta sección.</p>
+          </div>
+        `;
+      }
+    }
   }
 
   // 3. Filtros del Plan de Visitas
@@ -325,6 +383,13 @@
       showHint('Visita Telefónica activada (bypass geocerca 50m autorizado).', false);
       const cliHeader = document.getElementById('cli-nombre-header');
       if (cliHeader) cliHeader.textContent = state.selectedClient + ' (Telefónica)';
+
+      const btnAction = document.getElementById('btn-cliente-main-action');
+      if (btnAction) {
+        btnAction.textContent = 'Continuar a Pedidos (Atención Remota) ›';
+        btnAction.onclick = () => navigateTo('s-pedidos-menu');
+      }
+
       navigateTo('s-cliente-inicio');
     } else {
       showHint('Bloqueo GPS: No se puede iniciar visita presencial a más de 50 metros.', true);
@@ -740,8 +805,20 @@
       promoLabel: state.cart.promoLabel
     });
 
+    updateCartBadge();
     updateReceiptCalculations();
     navigateTo('s-resumen-pedido');
+  }
+
+  function updateCartBadge() {
+    const badge = document.getElementById('cart-badge-counter');
+    if (!badge) return;
+    if (state.cart && state.cart.qty > 0) {
+      badge.textContent = String(state.cart.qty);
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 
   // 14. Cálculos de Liquidación Dinámicos basados en la Condición Elegida
@@ -756,7 +833,7 @@
     else if (cond === 'credito_45') { rate = 0.02; condLabel = 'Desc. Crédito 45 días (2%):'; }
     else if (cond === 'credito_60') { rate = 0.01; condLabel = 'Desc. Crédito 60 días (1%):'; }
 
-    const rawTotal = state.cart.qty * state.cart.unitPrice;
+    const rawTotal = (state.cart.qty || 1) * (state.cart.unitPrice || 0);
 
     let promoDiscountValue = 0.0;
     const rowPromo = document.getElementById('row-promo-desc');
@@ -779,9 +856,16 @@
     const subtotalAfterPromo = Math.max(0, rawTotal - promoDiscountValue);
     const finDiscount = subtotalAfterPromo * rate;
     const finalTotal = Number((subtotalAfterPromo - finDiscount).toFixed(2));
+    const igvTotal = Number((finalTotal * 0.18 / 1.18).toFixed(2));
 
     const itemSummaryEl = document.getElementById('receipt-items-summary');
     if (itemSummaryEl) itemSummaryEl.textContent = `${state.cart.qty}x ${state.cart.product} (@ $${state.cart.unitPrice.toFixed(2)})`;
+
+    const skuDetailEl = document.getElementById('receipt-prod-sku-detail');
+    if (skuDetailEl) skuDetailEl.textContent = `SKU: ${state.cart.sku || 'B-734807'} | ${state.cart.line ? state.cart.line.toUpperCase() : 'B2C'}`;
+
+    const subtotalItemsEl = document.getElementById('receipt-subtotal-items');
+    if (subtotalItemsEl) subtotalItemsEl.textContent = `USD ${rawTotal.toFixed(2)}`;
 
     const rawSubtotalEl = document.getElementById('receipt-raw-subtotal');
     if (rawSubtotalEl) rawSubtotalEl.textContent = `USD ${rawTotal.toFixed(2)}`;
@@ -794,6 +878,9 @@
 
     const creditoEl = document.getElementById('receipt-credito-desc');
     if (creditoEl) creditoEl.textContent = `- USD ${finDiscount.toFixed(2)}`;
+
+    const igvEl = document.getElementById('receipt-igv-val');
+    if (igvEl) igvEl.textContent = `USD ${igvTotal.toFixed(2)}`;
 
     const totalEl = document.getElementById('receipt-total-val');
     if (totalEl) totalEl.textContent = `USD ${finalTotal.toFixed(2)}`;
@@ -810,12 +897,36 @@
       termsEl.textContent = `${condName} (Lista ${state.orderConfig.priceList || 'OF'})`;
     }
 
+    // Pre-llenar fecha de entrega estimada con mañana si no se ha seleccionado
+    const dateInput = document.getElementById('confirm-delivery-date');
+    if (dateInput && !dateInput.value) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dateInput.value = tomorrow.toISOString().split('T')[0];
+    }
+
+    // Pre-llenar selector de dirección
+    const addrSelect = document.getElementById('confirm-address-select');
+    if (addrSelect && currentCase) {
+      const addr = currentCase.clientAddress || 'AV. TOMAS TUYRUTUPAC 412';
+      addrSelect.innerHTML = `
+        <option value="principal" selected>${addr} (Principal)</option>
+        <option value="almacen">ALMACÉN AUXILIAR NRO. 2</option>
+      `;
+    }
+
     state.finalOrderTotal = finalTotal;
   }
 
   // 15. Confirmación y Envío Final (Orden vs Cotización Tipo 3)
   function submitFinalOrder(docType = 'orden') {
     const isCotizacion = docType === 'cotizacion';
+    const deliveryDate = document.getElementById('confirm-delivery-date')?.value || '';
+    const isSecureSale = Boolean(document.getElementById('confirm-secure-sale')?.checked);
+    const isGuarantee = Boolean(document.getElementById('confirm-guarantee')?.checked);
+    const purchaseRequest = document.getElementById('confirm-purchase-request')?.value || '';
+    const observation = document.getElementById('confirm-observation')?.value || '';
+
     emitSimulatorEvent('SUBMIT_ORDER', {
       confirmed: true,
       total: state.finalOrderTotal || 0,
@@ -823,7 +934,12 @@
       quantity: state.cart.qty,
       paymentCondition: state.orderConfig.paymentCondition,
       documentType: isCotizacion ? 'cotizacion' : 'orden',
-      documentTypeId: isCotizacion ? 3 : 2
+      documentTypeId: isCotizacion ? 3 : 2,
+      estimatedDeliveryDate: deliveryDate,
+      isSecureSale: isSecureSale,
+      isGuarantee: isGuarantee,
+      purchaseRequest: purchaseRequest,
+      observation: observation
     });
 
     const finishTitle = document.getElementById('finish-title');
@@ -868,6 +984,8 @@
   window.UyapaySimulator = {
     login: handleAppLogin,
     go: navigateTo,
+    selectNavTab: selectNavTab,
+    selectVisitTab: selectVisitTab,
     selectFilter: selectFilter,
     openOptions: openClientOptions,
     closeOptions: closeClientOptions,
@@ -908,5 +1026,11 @@
       input.value = state.advisorUsername;
     }
     initializeCaseEnvironment();
+
+    // Auto-login automático si se carga desde la arena de evaluación con usuario asignado
+    const shouldAutoLogin = urlParams.get('autologin') === '1' || urlParams.get('case');
+    if (shouldAutoLogin && state.advisorUsername) {
+      handleAppLogin();
+    }
   });
 })();

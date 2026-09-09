@@ -6,6 +6,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const os = require('os');
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
@@ -346,44 +347,120 @@ app.get('/api/leaderboard', (req, res) => {
   res.json(formatted);
 });
 
-// 8. Eventos en vivo del simulador móvil
+// Estado en memoria del último evento en vivo para sincronización inmediata
+let currentLiveState = {
+  advisor: 'En espera',
+  step: 'Sin actividad',
+  detail: 'Esperando que un asesor inicie su evaluación...',
+  type: 'INFO',
+  errors: 0,
+  time: ''
+};
+
+// 8. Consulta de estado y eventos en vivo (Polling / Carga inicial)
+app.get('/api/live-events', (req, res) => {
+  try {
+    const history = db.prepare('SELECT * FROM live_events ORDER BY id DESC LIMIT 25').all();
+    res.json({
+      current: currentLiveState,
+      history: history.map(h => ({
+        id: h.id,
+        advisor: h.advisor,
+        step: h.step,
+        detail: h.detail,
+        type: h.type,
+        errors: h.errors,
+        time: h.created_at
+      }))
+    });
+  } catch (err) {
+    res.json({ current: currentLiveState, history: [] });
+  }
+});
+
+// 9. Registro de eventos en vivo desde el evaluador/simulador
 app.post('/api/live-events', (req, res) => {
   const { advisor, step, detail, type = 'INFO', errors = 0 } = req.body;
   const time = new Date().toLocaleTimeString('es-PE');
 
-  db.prepare(`
-    INSERT INTO live_events (advisor, step, detail, type, errors, created_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(advisor || 'Desconocido', step || '', detail || '', type, errors, time);
+  currentLiveState = {
+    advisor: advisor || currentLiveState.advisor || 'Asesor',
+    step: step || 'Sin actividad',
+    detail: detail || '',
+    type: type,
+    errors: errors !== undefined ? errors : 0,
+    time: time
+  };
 
-  const eventPayload = { advisor, step, detail, type, errors, time };
+  try {
+    db.prepare(`
+      INSERT INTO live_events (advisor, step, detail, type, errors, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(currentLiveState.advisor, currentLiveState.step, currentLiveState.detail, currentLiveState.type, currentLiveState.errors, time);
+  } catch (e) {
+    console.error('[DB Error] Guardando live_event:', e.message);
+  }
 
-  // Difundir a todos los monitores admin conectados mediante SSE
-  sseClients.forEach(client => {
-    client.res.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
+  const eventPayload = { ...currentLiveState };
+
+  // Difundir a todos los clientes SSE activos con control de errores
+  sseClients = sseClients.filter(client => {
+    try {
+      client.res.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
+      return true;
+    } catch (err) {
+      return false;
+    }
   });
 
-  res.json({ success: true });
+  res.json({ success: true, current: currentLiveState });
 });
 
-// 9. Conexión SSE para transmisión de eventos en vivo al monitor de administración
+// 10. Conexión SSE para transmisión de eventos en vivo al monitor de administración
 app.get('/api/live-events/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  if (typeof res.flushHeaders === 'function') {
+    res.flushHeaders();
+  }
 
   const clientId = Date.now();
   const newClient = { id: clientId, res };
   sseClients.push(newClient);
 
+  // Enviar estado actual inmediatamente al conectar
+  try {
+    res.write(`data: ${JSON.stringify(currentLiveState)}\n\n`);
+  } catch (err) {}
+
+  // Heartbeat ping cada 15 segundos para mantener viva la conexión en redes móviles/Wi-Fi
+  const pingInterval = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch (e) {
+      clearInterval(pingInterval);
+    }
+  }, 15000);
+
   req.on('close', () => {
+    clearInterval(pingInterval);
     sseClients = sseClients.filter(c => c.id !== clientId);
   });
 });
 
-// 10. Reiniciar datos demo (solo administración)
+// 11. Reiniciar datos demo (solo administración)
 app.post('/api/reset', (req, res) => {
   db.exec('DELETE FROM results; DELETE FROM live_events;');
+  currentLiveState = {
+    advisor: 'En espera',
+    step: 'Sin actividad',
+    detail: 'Esperando que un asesor inicie su evaluación...',
+    type: 'INFO',
+    errors: 0,
+    time: ''
+  };
   
   // Re-sembrar resultados demo
   const insertResult = db.prepare(`
@@ -409,10 +486,28 @@ app.post('/api/reset', (req, res) => {
   res.json({ success: true, message: 'Datos restablecidos con éxito.' });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// Función para obtener dinámicamente la IP de la red local (Wi-Fi / Ethernet)
+function getLocalNetworkIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      // Ignorar localhost, direcciones IPv6 y direcciones APIPA (169.254.x.x)
+      if (iface.family === 'IPv4' && !iface.internal && !iface.address.startsWith('169.254')) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+// Iniciar servidor escuchando en todas las interfaces de red (0.0.0.0) para soporte multi-dispositivo
+app.listen(PORT, '0.0.0.0', () => {
+  const localIp = getLocalNetworkIp();
   console.log(`=======================================================`);
   console.log(`🚀 Servidor UYAPAY activo en: http://localhost:${PORT}`);
+  if (localIp !== 'localhost') {
+    console.log(`🌐 Acceso en Red Local (Celular u otro equipo): http://${localIp}:${PORT}`);
+  }
   console.log(`📁 Base de Datos SQLite: ${dbPath}`);
   console.log(`=======================================================`);
 });
