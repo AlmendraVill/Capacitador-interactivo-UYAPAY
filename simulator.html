@@ -166,7 +166,13 @@
   <!-- ================= 3. PANTALLA: DATOS DEL CLIENTE Y TAREAS EN VISITA ================= -->
   <div class="screen" id="s-cliente-inicio">
     <div class="topbar-app">
-      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span> Datos del Cliente
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span>
+      <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:6px;">
+        <span id="visit-header-title" style="font-size:14px; font-weight:700;">Visita en Curso</span>
+      </div>
+      <div class="visit-timer-pill" id="visit-live-timer" title="Tiempo transcurrido en visita">
+        <span>⏱️</span> <span id="visit-timer-text">04:12</span>
+      </div>
     </div>
     <div style="padding:14px;">
       <div class="card-task" style="margin:0 0 12px 0;">
@@ -174,15 +180,23 @@
         <p style="font-size:11px; color:var(--text-light); margin:0;">RUC: 20451829101 | Clasificación: B2C Minorista</p>
       </div>
 
+      <!-- Tarjeta Perfil Crediticio Oficial Flutter -->
       <div class="card-task" style="margin:0 0 14px 0;">
         <div class="card-title-sm">Perfil Crediticio</div>
         <div class="profile-row">
           <span>Línea autorizada:</span>
-          <b>USD 2,500.00</b>
+          <b id="cli-linea-auth">USD 2,500.00</b>
+        </div>
+        <div class="credit-bar-container">
+          <div class="credit-bar-fill" id="credit-bar-fill" style="width:15%;"></div>
+        </div>
+        <div class="profile-row" style="font-size:11px; color:var(--text-light); margin-top:2px; margin-bottom:8px;">
+          <span>Disponible: <b style="color:var(--success-color);" id="cli-linea-disp">USD 2,500.00</b></span>
+          <span>Utilizado: <b id="cli-linea-used">USD 0.00</b></span>
         </div>
         <div class="profile-row">
           <span>Deuda vencida:</span>
-          <b style="color:var(--success-color);">USD 0.00 (Al día)</b>
+          <b style="color:var(--success-color);" id="cli-deuda-header">USD 0.00 (Al día)</b>
         </div>
         <div class="profile-row">
           <span>Lista autorizada:</span>
@@ -201,10 +215,11 @@
             <div class="task-desc">Fotos de exhibición Inicial y Final</div>
           </div>
         </div>
+        <span class="task-status-badge" id="task-badge-fotos">Pendiente</span>
         <span>›</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Módulo de comparación de precios de competencia')">
+      <div class="task-item-btn" onclick="window.UyapaySimulator.openComparePricesModal()">
         <div class="task-item-left">
           <span class="task-num">2</span>
           <div>
@@ -212,6 +227,7 @@
             <div class="task-desc">Seguimiento fotográfico de marcas rivales</div>
           </div>
         </div>
+        <span class="task-status-badge" id="task-badge-precios">Opcional</span>
         <span>›</span>
       </div>
 
@@ -223,6 +239,7 @@
             <div class="task-desc">Crear nueva orden o cotización comercial</div>
           </div>
         </div>
+        <span class="task-status-badge" id="task-badge-pedidos">Pendiente</span>
         <span>›</span>
       </div>
 
@@ -234,10 +251,11 @@
             <div class="task-desc">Recaudación y registro de vouchers</div>
           </div>
         </div>
+        <span class="task-status-badge" id="task-badge-cobranza">Al día</span>
         <span>›</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Completar documentación: Pagarés y contratos al día')">
+      <div class="task-item-btn" onclick="window.UyapaySimulator.openDocsModal()">
         <div class="task-item-left">
           <span class="task-num">5</span>
           <div>
@@ -245,10 +263,11 @@
             <div class="task-desc">Regularización de pagarés y contratos</div>
           </div>
         </div>
+        <span class="task-status-badge done" id="task-badge-docs">Al día</span>
         <span>›</span>
       </div>
 
-      <div class="task-item-btn" onclick="window.UyapaySimulator.hint('Actualizar contacto: Teléfono y titular verificados')">
+      <div class="task-item-btn" onclick="window.UyapaySimulator.openContactModal()">
         <div class="task-item-left">
           <span class="task-num">6</span>
           <div>
@@ -256,6 +275,7 @@
             <div class="task-desc">Teléfono, correo y titular del negocio</div>
           </div>
         </div>
+        <span class="task-status-badge done" id="task-badge-contacto">Verificado</span>
         <span>›</span>
       </div>
 
@@ -751,6 +771,120 @@
         </div>
         <button class="login-btn" style="background:#2c3e50;" onclick="window.UyapaySimulator.submitSettlement()">
           Generar Consolidado de Cobranzas y Finalizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: COMPARACIÓN DE PRECIOS (TAREA 2) ================= -->
+  <div class="modal-overlay" id="comparePricesModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        COMPARAR PRECIOS - COMPETENCIA
+        <span class="close-btn" onclick="window.UyapaySimulator.closeComparePricesModal()">×</span>
+      </div>
+      <div style="padding:10px 0; max-height:60vh; overflow-y:auto;">
+        <div style="font-size:11px; color:var(--text-light); margin-bottom:12px; line-height:1.4;">
+          Releva los precios de marcas rivales observadas en el punto de venta para inteligencia de mercado UYAPAY.
+        </div>
+
+        <div class="price-track-card">
+          <div style="font-size:12px; font-weight:700; color:var(--text-dark);">1. Shell Helix HX7 10W/40</div>
+          <div style="font-size:11px; color:var(--text-light); margin-bottom:6px;">Competidor directo: Mobil Super 2000 (Balde 5 Gal)</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="number" id="input-price-competitor-1" class="form-input" placeholder="Precio detectado S/" value="115.00" style="padding:6px 10px;">
+            <button class="photo-badge ready" style="padding:6px 10px; font-size:11px;">📷 Foto Góndola</button>
+          </div>
+        </div>
+
+        <div class="price-track-card">
+          <div style="font-size:12px; font-weight:700; color:var(--text-dark);">2. BFGoodrich All-Terrain KO2</div>
+          <div style="font-size:11px; color:var(--text-light); margin-bottom:6px;">Competidor directo: Bridgestone Dueler A/T (Unidad)</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="number" id="input-price-competitor-2" class="form-input" placeholder="Precio detectado S/" value="820.00" style="padding:6px 10px;">
+            <button class="photo-badge ready" style="padding:6px 10px; font-size:11px;">📷 Foto Góndola</button>
+          </div>
+        </div>
+
+        <button class="login-btn" style="background:#2980b9; margin-top:8px;" onclick="window.UyapaySimulator.submitPriceTracking()">
+          💾 Guardar Relevamiento de Precios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: COMPLETAR DOCUMENTACIÓN (TAREA 5) ================= -->
+  <div class="modal-overlay" id="docsModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        DOCUMENTACIÓN Y LÍNEA DE CRÉDITO
+        <span class="close-btn" onclick="window.UyapaySimulator.closeDocsModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div style="font-size:11px; color:var(--text-light); margin-bottom:12px; line-height:1.4;">
+          Estado de regularización contractual y garantías comerciales registradas en SOLAR.
+        </div>
+
+        <div class="doc-row">
+          <div>
+            <div style="font-size:12.5px; font-weight:700; color:var(--text-dark);">📄 Pagaré a la Orden</div>
+            <div style="font-size:10.5px; color:var(--text-light);">Vigente hasta 31/12/2026 - Notarial</div>
+          </div>
+          <span class="doc-badge ok">AL DÍA</span>
+        </div>
+
+        <div class="doc-row">
+          <div>
+            <div style="font-size:12.5px; font-weight:700; color:var(--text-dark);">📋 Ficha RUC (SUNAT)</div>
+            <div style="font-size:10.5px; color:var(--text-light);">Estado: ACTIVO / HABIDO</div>
+          </div>
+          <span class="doc-badge ok">AL DÍA</span>
+        </div>
+
+        <div class="doc-row">
+          <div>
+            <div style="font-size:12.5px; font-weight:700; color:var(--text-dark);">📑 Contrato de Crédito B2C</div>
+            <div style="font-size:10.5px; color:var(--text-light);">Línea aprobada USD 2,500.00</div>
+          </div>
+          <span class="doc-badge ok">APROBADO</span>
+        </div>
+
+        <button class="login-btn" style="background:#2c3e50; margin-top:14px;" onclick="window.UyapaySimulator.closeDocsModal()">
+          Entendido / Cerrar Consulta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ACTUALIZAR CONTACTO (TAREA 6) ================= -->
+  <div class="modal-overlay" id="contactModal">
+    <div class="bottom-sheet" style="padding:16px;">
+      <div class="bs-header">
+        ACTUALIZACIÓN DE CONTACTO
+        <span class="close-btn" onclick="window.UyapaySimulator.closeContactModal()">×</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div style="font-size:11px; color:var(--text-light); margin-bottom:12px; line-height:1.4;">
+          Verifique o actualice los canales de contacto del cliente para envíos de facturación electrónica y despachos.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Titular / Contacto de compras:</label>
+          <input type="text" id="contact-name" class="form-input" value="Juan Perez (Administrador)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Celular directo / WhatsApp:</label>
+          <input type="text" id="contact-phone" class="form-input" value="959 182 304">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correo electrónico para comprobantes:</label>
+          <input type="email" id="contact-email" class="form-input" value="ventas@ferreteria.pe">
+        </div>
+
+        <button class="login-btn" style="background:#27ae60; margin-top:8px;" onclick="window.UyapaySimulator.submitContactUpdate()">
+          💾 Guardar Actualización de Contacto
         </button>
       </div>
     </div>

@@ -323,8 +323,7 @@
         openGpsModal();
         return;
       }
-      const cliHeader = document.getElementById('cli-nombre-header');
-      if (cliHeader) cliHeader.textContent = state.selectedClient;
+      setupVisitInProgressView(state.selectedClient);
       navigateTo('s-cliente-inicio');
       return;
     }
@@ -596,7 +595,171 @@
       finalPhoto: true
     });
 
+    const badgeFotos = document.getElementById('task-badge-fotos');
+    if (badgeFotos) {
+      badgeFotos.textContent = 'Completado ✅';
+      badgeFotos.className = 'task-status-badge done';
+    }
+
+    const btnAction = document.getElementById('btn-cliente-main-action');
+    if (btnAction) {
+      btnAction.textContent = 'Continuar a Crear Pedido ›';
+      btnAction.onclick = () => navigateTo('s-pedidos-menu');
+    }
+
     navigateTo('s-pedidos-menu');
+  }
+
+  // 10.1 Gestión de Visita en Progreso, Temporizador y Perfil (Fase 3)
+  let visitTimerInterval = null;
+  let visitSeconds = 0;
+
+  function startVisitTimer() {
+    if (visitTimerInterval) clearInterval(visitTimerInterval);
+    visitSeconds = 0;
+    const timerText = document.getElementById('visit-timer-text');
+    if (timerText) timerText.textContent = '00:00';
+    visitTimerInterval = setInterval(() => {
+      visitSeconds++;
+      const mins = Math.floor(visitSeconds / 60);
+      const secs = visitSeconds % 60;
+      const fmt = `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
+      if (timerText) timerText.textContent = fmt;
+    }, 1000);
+  }
+
+  function setupVisitInProgressView(clientName) {
+    startVisitTimer();
+    const currentCase = getCaseData();
+    const isKanchis = (clientName || '').toLowerCase().includes('kanchis') || state.currentCaseId === 'case-21';
+
+    const headerTitle = document.getElementById('visit-header-title');
+    if (headerTitle) headerTitle.textContent = clientName || (currentCase ? currentCase.client : 'Visita en Curso');
+
+    const cliHeader = document.getElementById('cli-nombre-header');
+    if (cliHeader) cliHeader.textContent = clientName || (currentCase ? currentCase.client : 'Cliente');
+
+    // Perfil crediticio oficial Flutter
+    const deudaHeader = document.getElementById('cli-deuda-header');
+    const badgeCobranza = document.getElementById('task-badge-cobranza');
+    const creditBar = document.getElementById('credit-bar-fill');
+    const lineaDisp = document.getElementById('cli-linea-disp');
+    const lineaUsed = document.getElementById('cli-linea-used');
+
+    if (isKanchis) {
+      if (deudaHeader) {
+        deudaHeader.textContent = 'USD 840.00 (Vencido)';
+        deudaHeader.style.color = 'var(--error-color)';
+      }
+      if (badgeCobranza) {
+        badgeCobranza.textContent = '1 doc vencido';
+        badgeCobranza.className = 'task-status-badge urgent';
+      }
+      if (creditBar) creditBar.style.width = '34%';
+      if (lineaDisp) lineaDisp.textContent = 'USD 1,660.00';
+      if (lineaUsed) lineaUsed.textContent = 'USD 840.00';
+    } else {
+      if (deudaHeader) {
+        deudaHeader.textContent = 'USD 0.00 (Al día)';
+        deudaHeader.style.color = 'var(--success-color)';
+      }
+      if (badgeCobranza) {
+        badgeCobranza.textContent = 'Al día';
+        badgeCobranza.className = 'task-status-badge done';
+      }
+      if (creditBar) creditBar.style.width = '0%';
+      if (lineaDisp) lineaDisp.textContent = 'USD 2,500.00';
+      if (lineaUsed) lineaUsed.textContent = 'USD 0.00';
+    }
+
+    // Actualizar badges de fotos y pedidos
+    const badgeFotos = document.getElementById('task-badge-fotos');
+    if (badgeFotos) {
+      if (state.photos[1] && state.photos[2]) {
+        badgeFotos.textContent = 'Completado ✅';
+        badgeFotos.className = 'task-status-badge done';
+      } else {
+        badgeFotos.textContent = 'Pendiente';
+        badgeFotos.className = 'task-status-badge';
+      }
+    }
+
+    const badgePedidos = document.getElementById('task-badge-pedidos');
+    if (badgePedidos) {
+      if (state.cart && state.cart.qty > 0) {
+        badgePedidos.textContent = 'En curso';
+        badgePedidos.className = 'task-status-badge in-progress';
+      } else {
+        badgePedidos.textContent = 'Pendiente';
+        badgePedidos.className = 'task-status-badge';
+      }
+    }
+
+    // Configurar acción del botón principal
+    const btnAction = document.getElementById('btn-cliente-main-action');
+    if (btnAction) {
+      if (state.photos[1] && state.photos[2]) {
+        btnAction.textContent = 'Continuar a Crear Pedido ›';
+        btnAction.onclick = () => navigateTo('s-pedidos-menu');
+      } else if (currentCase && (currentCase.isPhoneVisit || state.currentCaseId === 'case-16')) {
+        btnAction.textContent = 'Continuar a Pedidos (Atención Remota) ›';
+        btnAction.onclick = () => navigateTo('s-pedidos-menu');
+      } else {
+        btnAction.textContent = 'Continuar a Fotos de Visita ›';
+        btnAction.onclick = () => navigateTo('s-fotos');
+      }
+    }
+  }
+
+  // Modales Fase 3: Comparar Precios, Docs y Contacto
+  function openComparePricesModal() {
+    const modal = document.getElementById('comparePricesModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeComparePricesModal() {
+    const modal = document.getElementById('comparePricesModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitPriceTracking() {
+    closeComparePricesModal();
+    const badgePrecios = document.getElementById('task-badge-precios');
+    if (badgePrecios) {
+      badgePrecios.textContent = 'Registrado ✅';
+      badgePrecios.className = 'task-status-badge done';
+    }
+    showHint('Relevamiento de precios de competencia registrado correctamente.', false);
+  }
+
+  function openDocsModal() {
+    const modal = document.getElementById('docsModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeDocsModal() {
+    const modal = document.getElementById('docsModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function openContactModal() {
+    const modal = document.getElementById('contactModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeContactModal() {
+    const modal = document.getElementById('contactModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitContactUpdate() {
+    closeContactModal();
+    const badgeContacto = document.getElementById('task-badge-contacto');
+    if (badgeContacto) {
+      badgeContacto.textContent = 'Actualizado ✅';
+      badgeContacto.className = 'task-status-badge done';
+    }
+    showHint('Datos de contacto actualizados correctamente en SOLAR.', false);
   }
 
   // 11. Configuración del Pedido
@@ -1011,6 +1174,15 @@
     submitSettlement: submitSettlement,
     takePhoto: takePhoto,
     submitPhotos: submitPhotos,
+    openComparePricesModal: openComparePricesModal,
+    closeComparePricesModal: closeComparePricesModal,
+    submitPriceTracking: submitPriceTracking,
+    openDocsModal: openDocsModal,
+    closeDocsModal: closeDocsModal,
+    openContactModal: openContactModal,
+    closeContactModal: closeContactModal,
+    submitContactUpdate: submitContactUpdate,
+    setupVisitInProgressView: setupVisitInProgressView,
     submitOrderConfig: submitOrderConfig,
     changeCatalogQty: changeCatalogQty,
     toggleCatalogPromo: toggleCatalogPromo,
