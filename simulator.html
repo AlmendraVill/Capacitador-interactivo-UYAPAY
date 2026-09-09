@@ -390,7 +390,7 @@
       </div>
 
       <div class="pedidos-date-header">8 sept 2026</div>
-      <div class="order-tracking-card" onclick="window.UyapaySimulator.hint('Detalle de orden previa entregada')">
+      <div class="order-tracking-card" onclick="window.UyapaySimulator.openOrderDetail('P004-022319')">
         <div class="order-card-header">
           <span class="order-code-bold">P004-022319</span>
           <span class="order-time-lbl">🕒 04:47 PM</span>
@@ -401,6 +401,547 @@
           <span class="order-status-badge status-entregado">ENTREGADO ›</span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.5 PANTALLA OFICIAL: DETALLE Y SEGUIMIENTO DE PEDIDOS (seguimiento de pedidos - productos.png y seguimiento.png) ================= -->
+  <div class="screen" id="s-detalle-pedido-seguimiento" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-pedidos-seguimiento')">‹</span>
+      <span class="visit-header-title" id="order-detail-header-client" style="font-size:14px; text-transform:uppercase;">SERVICIOS GARCIA GLOBAL S.A.C.</span>
+    </div>
+
+    <div class="order-detail-container">
+      <!-- Tarjeta Resumen Superior del Pedido -->
+      <div class="order-summary-card">
+        <div class="order-summary-row">
+          <span class="order-summary-label">Pedido</span>
+          <span class="order-summary-val" id="od-code-status">P004-022322 - APROBADO</span>
+        </div>
+        <div class="order-summary-row">
+          <span class="order-summary-label">Fecha de emisión</span>
+          <span class="order-summary-val" id="od-date-emit">09-sept-2026 - 08:21 a.m.</span>
+        </div>
+        <div class="order-summary-row">
+          <span class="order-summary-label">Pago</span>
+          <span class="order-summary-val" id="od-payment">CONTADO / LISTA 3</span>
+        </div>
+        <div class="order-summary-row">
+          <span class="order-summary-label">Fecha de entrega</span>
+          <span class="order-summary-val" id="od-date-delivery">15 sept 2026</span>
+        </div>
+        <div class="order-summary-row">
+          <span class="order-summary-label">Total galones</span>
+          <span class="order-summary-val" id="od-gallons">0.0</span>
+        </div>
+        <div class="order-summary-row">
+          <span class="order-summary-label">Total factura</span>
+          <span class="order-summary-val" id="od-total">USD 86.00</span>
+        </div>
+      </div>
+
+      <!-- Subpestañas: SEGUIMIENTO vs PRODUCTOS con punto amarillo -->
+      <div class="order-detail-subtabs-row">
+        <div class="order-detail-subtab-btn" id="od-tab-seguimiento" onclick="window.UyapaySimulator.selectOrderDetailTab('seguimiento')">
+          <span>SEGUIMIENTO</span>
+          <span class="order-detail-subtab-dot" id="od-dot-seguimiento" style="display:none;"></span>
+        </div>
+        <div class="order-detail-subtab-btn active" id="od-tab-productos" onclick="window.UyapaySimulator.selectOrderDetailTab('productos')">
+          <span>PRODUCTOS</span>
+          <span class="order-detail-subtab-dot" id="od-dot-productos"></span>
+        </div>
+      </div>
+
+      <!-- Vista: PRODUCTOS (seguimiento de pedidos - productos.png) -->
+      <div id="od-view-productos">
+        <div class="order-prod-section-title">Productos no entregados</div>
+        <div id="od-undelivered-products-list">
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">1 HELIX HX5G 20W50</div>
+              <div class="order-prod-subtitle">CAJ 6 X 1 LTS</div>
+            </div>
+            <div class="order-prod-price">USD 40.36</div>
+          </div>
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">1 HELIX HX5G 20W50</div>
+              <div class="order-prod-subtitle">BOT 1 LTS</div>
+            </div>
+            <div class="order-prod-price">USD 0.00</div>
+          </div>
+        </div>
+
+        <div class="order-prod-section-title">Productos entregados</div>
+        <div id="od-delivered-products-list">
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">1 HELIX HX5G 20W50</div>
+              <div class="order-prod-subtitle">CAJ 6 X 1 LTS</div>
+            </div>
+            <div class="order-prod-price">USD 40.36</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vista: SEGUIMIENTO (seguimiento de pedidos - seguimiento.png) -->
+      <div id="od-view-seguimiento" style="display:none;">
+        <div class="order-timeline-card" id="od-timeline-container">
+          <!-- Nodo 1: Aprobado -->
+          <div class="timeline-item">
+            <div class="timeline-line"></div>
+            <div class="timeline-badge">✓</div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-status">APROBADO</span>
+                <span class="timeline-user">Daniela Pinto</span>
+              </div>
+              <div class="timeline-time">09-sept-2026 - 10:48 a.m.</div>
+            </div>
+          </div>
+
+          <!-- Nodo 2: Emitido -->
+          <div class="timeline-item">
+            <div class="timeline-badge">✎</div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-status">EMITIDO</span>
+                <span class="timeline-user" id="od-timeline-emitter">Betsy Ramos</span>
+              </div>
+              <div class="timeline-time" id="od-timeline-emitter-time">09-sept-2026 - 08:21 a.m.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.6 PANTALLA OFICIAL: MIS CLIENTES (menu secundario-clientes.png) ================= -->
+  <div class="screen" id="s-mis-clientes" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span>
+      <span class="visit-header-title">Mis clientes</span>
+    </div>
+
+    <div class="drawer-sub-container">
+      <!-- Buscador con botón Filtro -->
+      <div class="search-with-filter-row">
+        <div class="search-bar-rounded">
+          <span style="font-size:14px; color:#9ca3af; margin-right:4px;">🔍</span>
+          <input type="text" id="search-mis-clientes-input" placeholder="Razón social o RUC" oninput="window.UyapaySimulator.onDrawerClientSearch(this.value)">
+          <span style="font-size:13px; color:#9ca3af; cursor:pointer;" onclick="window.UyapaySimulator.clearDrawerClientSearch()">✕</span>
+        </div>
+        <button class="search-btn-filter" onclick="window.UyapaySimulator.hint('Filtro por zona o condición de cartera')">
+          <div class="filter-funnel-icon">🍸</div>
+          <span class="filter-funnel-lbl">Filtro</span>
+        </button>
+      </div>
+
+      <!-- Lista de Clientes -->
+      <div id="drawer-clients-list">
+        <!-- Card 1 (Expandido) -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c1')">
+            <div>
+              <div class="client-drawer-title">INVERSIONES ISLAY S.A.C</div>
+              <div class="client-drawer-ruc">RUC: 20558660407 (Padre)</div>
+              <div class="client-drawer-zone">Zona: CONSUMER ISLAY</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c1">∧</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c1">
+            <div class="client-detail-row">
+              <span>Última venta</span>
+              <b style="color:#111827;">lun, 16-mar-2026</b>
+            </div>
+            <div class="client-detail-row">
+              <span>Última visita</span>
+              <b style="color:#111827;">lun, 10-ago-2026</b>
+            </div>
+            <div class="client-detail-row">
+              <span>Deuda vencida</span>
+              <b style="color:#ef4444;">$0.00</b>
+            </div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada telefónica al cliente...')">
+                <span>📞</span>
+                <span>Llamar</span>
+              </div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Mostrando ubicación en mapa satelital...')">
+                <span>📍</span>
+                <span>Ubicación</span>
+              </div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('INVERSIONES ISLAY S.A.C')">
+                <span>📄</span>
+                <span>Perfil</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c2')">
+            <div>
+              <div class="client-drawer-title">EMPRESA DE TRANS. ISLAY LORENZO SCRL</div>
+              <div class="client-drawer-ruc">RUC: 20225616931 (Hijo)</div>
+              <div class="client-drawer-zone">Zona: CONSUMER ISLAY</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c2">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c2" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">mar, 02-feb-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">jue, 20-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$0.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('EMPRESA DE TRANS. ISLAY LORENZO SCRL')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c3')">
+            <div>
+              <div class="client-drawer-title">OPORTO CHAVEZ MARENA</div>
+              <div class="client-drawer-ruc">RUC: 30846714 (Padre)</div>
+              <div class="client-drawer-zone">Zona: CONSUMER ISLAY</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c3">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c3" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">vie, 10-ene-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">lun, 03-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$0.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('OPORTO CHAVEZ MARENA')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c4')">
+            <div>
+              <div class="client-drawer-title">SANCHEZ DE SOSA CLARA</div>
+              <div class="client-drawer-ruc">RUC: 10308230509 (Hijo)</div>
+              <div class="client-drawer-zone">Zona: CONSUMER ISLAY</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c4">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c4" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">jue, 25-mar-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">mar, 18-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$0.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('SANCHEZ DE SOSA CLARA')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c5')">
+            <div>
+              <div class="client-drawer-title">INOFUENTE ZEA JOSE LUIS</div>
+              <div class="client-drawer-ruc">RUC: 10308284480 (Padre)</div>
+              <div class="client-drawer-zone">Zona: CONSUMER ISLAY</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c5">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c5" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">lun, 02-mar-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">vie, 21-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$0.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('INOFUENTE ZEA JOSE LUIS')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c6')">
+            <div>
+              <div class="client-drawer-title">SALCEDO HUAMANI ROSA</div>
+              <div class="client-drawer-ruc">RUC: 29718442 (Padre)</div>
+              <div class="client-drawer-zone">Zona: CONSUMER ISLAY</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c6">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c6" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">jue, 15-ene-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">mié, 12-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$0.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('SALCEDO HUAMANI ROSA')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.7 PANTALLA OFICIAL: MIS DOCUMENTOS ELECTRÓNICOS (menu secundario-documentos electronicos.png) ================= -->
+  <div class="screen" id="s-documentos-electronicos" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span>
+      <span class="visit-header-title">Mis documentos electrónicos</span>
+    </div>
+
+    <!-- Píldoras de tipo de documento -->
+    <div class="doc-type-pills-row">
+      <span class="doc-type-pill active" id="doc-type-facturas" onclick="window.UyapaySimulator.selectDocTypeFilter('facturas')">Facturas</span>
+      <span class="doc-type-pill" id="doc-type-letras" onclick="window.UyapaySimulator.selectDocTypeFilter('letras')">Letras de cambio</span>
+      <span class="doc-type-pill" id="doc-type-nc" onclick="window.UyapaySimulator.selectDocTypeFilter('nc')">Notas de crédito</span>
+      <span class="doc-type-pill" id="doc-type-nd" onclick="window.UyapaySimulator.selectDocTypeFilter('nd')">Notas de débito</span>
+    </div>
+
+    <!-- Buscador de comprobantes -->
+    <div style="padding: 10px 14px 4px;">
+      <div class="search-bar-rounded">
+        <span style="font-size:14px; color:#9ca3af; margin-right:4px;">🔍</span>
+        <input type="text" id="search-docs-input" placeholder="Nro. documento o cliente" oninput="window.UyapaySimulator.onDocsSearch(this.value)">
+        <span style="font-size:13px; color:#9ca3af; cursor:pointer;" onclick="window.UyapaySimulator.clearDocsSearch()">✕</span>
+      </div>
+    </div>
+
+    <!-- Píldoras de estado -->
+    <div class="doc-status-pills-row">
+      <span class="doc-status-pill active" id="doc-st-todos" onclick="window.UyapaySimulator.selectDocStatusFilter('todos')">Todos</span>
+      <span class="doc-status-pill" id="doc-st-emitido" onclick="window.UyapaySimulator.selectDocStatusFilter('emitido')">Emitido</span>
+      <span class="doc-status-pill" id="doc-st-aprobado" onclick="window.UyapaySimulator.selectDocStatusFilter('aprobado')">Aprobado</span>
+      <span class="doc-status-pill" id="doc-st-anulado" onclick="window.UyapaySimulator.selectDocStatusFilter('anulado')">Anulado</span>
+    </div>
+
+    <!-- Lista de Documentos -->
+    <div style="flex:1; overflow-y:auto; padding-bottom:70px;" id="drawer-docs-list">
+      <!-- Doc 1 -->
+      <div class="doc-item-card" onclick="window.UyapaySimulator.hint('Detalle de comprobante F001-00055172')">
+        <div class="doc-icon-circle">F</div>
+        <div class="doc-item-body">
+          <div class="doc-item-top-row">
+            <span class="doc-item-client">HUARCAYA LEANDREZ ROSA ELVIRA</span>
+            <span class="doc-item-amount">S/1,769.99</span>
+          </div>
+          <div class="doc-item-mid-row">
+            <span>F001-00055172</span>
+            <span style="color:#22c55e;">●</span>
+          </div>
+          <div class="doc-item-bot-row">
+            <span class="doc-emit-date">Emitido el 09-09-2026</span>
+            <span class="doc-due-date">Venció el 09-09-2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doc 2 -->
+      <div class="doc-item-card" onclick="window.UyapaySimulator.hint('Detalle de comprobante F001-00055164')">
+        <div class="doc-icon-circle">F</div>
+        <div class="doc-item-body">
+          <div class="doc-item-top-row">
+            <span class="doc-item-client">MAMANI CONDORI LEONCIO MELITON</span>
+            <span class="doc-item-amount">$124.56</span>
+          </div>
+          <div class="doc-item-mid-row">
+            <span>F001-00055164</span>
+            <span style="color:#22c55e;">●</span>
+          </div>
+          <div class="doc-item-bot-row">
+            <span class="doc-emit-date">Emitido el 08-09-2026</span>
+            <span class="doc-due-date">Venció el 08-09-2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doc 3 -->
+      <div class="doc-item-card" onclick="window.UyapaySimulator.hint('Detalle de comprobante F001-00055165')">
+        <div class="doc-icon-circle">F</div>
+        <div class="doc-item-body">
+          <div class="doc-item-top-row">
+            <span class="doc-item-client">EMPRESA DE TRANSPORTE MULTIPLE SANDRO EIRL</span>
+            <span class="doc-item-amount">$62.28</span>
+          </div>
+          <div class="doc-item-mid-row">
+            <span>F001-00055165</span>
+            <span style="color:#22c55e;">●</span>
+          </div>
+          <div class="doc-item-bot-row">
+            <span class="doc-emit-date">Emitido el 08-09-2026</span>
+            <span class="doc-due-date">Venció el 08-09-2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doc 4 -->
+      <div class="doc-item-card" onclick="window.UyapaySimulator.hint('Detalle de comprobante F001-00055154')">
+        <div class="doc-icon-circle">F</div>
+        <div class="doc-item-body">
+          <div class="doc-item-top-row">
+            <span class="doc-item-client">GARCIA CCAHUA SILVIA</span>
+            <span class="doc-item-amount">S/552.00</span>
+          </div>
+          <div class="doc-item-mid-row">
+            <span>F001-00055154</span>
+            <span style="color:#22c55e;">●</span>
+          </div>
+          <div class="doc-item-bot-row">
+            <span class="doc-emit-date">Emitido el 07-09-2026</span>
+            <span class="doc-due-date">Venció el 07-09-2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doc 5 -->
+      <div class="doc-item-card" onclick="window.UyapaySimulator.hint('Detalle de comprobante B001-00005355')">
+        <div class="doc-icon-circle">F</div>
+        <div class="doc-item-body">
+          <div class="doc-item-top-row">
+            <span class="doc-item-client">CHURA MAMANI ABRAAM</span>
+            <span class="doc-item-amount">$318.49</span>
+          </div>
+          <div class="doc-item-mid-row">
+            <span>B001-00005355</span>
+            <span style="color:#22c55e;">●</span>
+          </div>
+          <div class="doc-item-bot-row">
+            <span class="doc-emit-date">Emitido el 07-09-2026</span>
+            <span class="doc-due-date">Venció el 07-09-2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.8 PANTALLA OFICIAL: HISTORIAL DE VISITAS (menu secundario-historial de visitas.png) ================= -->
+  <div class="screen" id="s-historial-visitas-drawer" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-visitas')">‹</span>
+      <span class="visit-header-title">Historial de visitas</span>
+    </div>
+
+    <div class="drawer-sub-container" style="padding-bottom:85px;">
+      <!-- Tarjeta 1 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita LEVIC CAR E.I.R.L.')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">LEVIC CAR E.I.R.L.</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">MZA. Y LOTE. 13 EL PEDREGAL (FRENTE A LA POLLERIA SAN FERNANDO) AREQUIPA - CAYLLOMA - MAJES</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 2 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita IMPORTADORA DE MAQUINARIAS')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">IMPORTADORA DE MAQUINARIAS INTERNACI...</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">MZA. Ñ LOTE. 1A EL PEDREGAL</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 3 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita GARCIA QUISPE MARISA LEONOR')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">GARCIA QUISPE MARISA LEONOR</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">MZ X LT 8 AMEIN</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 4 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita CUELLAR INFANTES WILBER')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">CUELLAR INFANTES WILBER ELISBRANDO</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">FUTURO MAJES LOTE 16 MZA U REF: FRENDE ESTADIO MIGUEL GRAU</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 5 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita TURPO PARILLO DE SUAÑA GENARA')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">TURPO PARILLO DE SUAÑA GENARA PAULA</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">JR. PUNO NRO. 409 BARRIO CERRO COLORADO</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 6 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita AUTOMOTRIZ FAK S.A.C.')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">AUTOMOTRIZ FAK S.A.C.</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">CAL.SOCABAYA MZA. O LOTE. 15</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 7 -->
+      <div class="visit-history-card" onclick="window.UyapaySimulator.hint('Detalle de visita INVERSIONES Y NEGOCIOS E & P')">
+        <div>
+          <div class="visit-pin-circle">📍</div>
+          <div class="visit-drag-handle-dots">⋮⋮</div>
+        </div>
+        <div class="visit-history-content">
+          <div class="visit-history-header">
+            <span class="visit-history-title">INVERSIONES Y NEGOCIOS E & P S.A.C.</span>
+            <span style="font-size:14px; color:#6b7280;">∨</span>
+          </div>
+          <div class="visit-history-address">MZA. LL LOTE. 3 C.P. SERVICIOS BASICOS EL PEDREGAL (CERCA AL COLEGIO MENDEL)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón Sticky Inferior: Liquidación de cobranza (Caso 23) -->
+    <div class="sticky-footer-btn-container">
+      <button class="brand-btn-yellow" onclick="window.UyapaySimulator.openSettlementModal()">
+        Liquidación de cobranza
+      </button>
     </div>
   </div>
 
@@ -1648,7 +2189,7 @@
 
     <!-- Lista de Items Oficiales del Menú Secundario -->
     <div class="drawer-menu-list">
-      <div class="drawer-menu-item" onclick="window.UyapaySimulator.hint('Módulo: Mis clientes'); window.UyapaySimulator.closeSecondaryDrawer();">
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.closeSecondaryDrawer(); window.UyapaySimulator.go('s-mis-clientes');">
         <div class="drawer-item-left">
           <span class="drawer-item-icon">📄</span>
           <span class="drawer-item-label">Mis clientes</span>
@@ -1656,7 +2197,7 @@
         <span class="drawer-item-arrow">›</span>
       </div>
 
-      <div class="drawer-menu-item" onclick="window.UyapaySimulator.openHistoryModal(); window.UyapaySimulator.closeSecondaryDrawer();">
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.closeSecondaryDrawer(); window.UyapaySimulator.go('s-historial-visitas-drawer');">
         <div class="drawer-item-left">
           <span class="drawer-item-icon">📅</span>
           <span class="drawer-item-label">Historial de visitas</span>
@@ -1664,7 +2205,7 @@
         <span class="drawer-item-arrow">›</span>
       </div>
 
-      <div class="drawer-menu-item" onclick="window.UyapaySimulator.openDocsModal(); window.UyapaySimulator.closeSecondaryDrawer();">
+      <div class="drawer-menu-item" onclick="window.UyapaySimulator.closeSecondaryDrawer(); window.UyapaySimulator.go('s-documentos-electronicos');">
         <div class="drawer-item-left">
           <span class="drawer-item-icon">🧾</span>
           <span class="drawer-item-label">Documentos electrónicos</span>

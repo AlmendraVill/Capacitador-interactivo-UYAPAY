@@ -498,6 +498,61 @@
     if (backdrop) backdrop.classList.remove('show');
   }
 
+  // 2.3.1 Funciones de Vistas del Menú Secundario (menu secundario-clientes.png, documentos.png, historial.png)
+  function toggleDrawerClientAccordion(clientId) {
+    const body = document.getElementById(`acc-body-${clientId}`);
+    const arrow = document.getElementById(`acc-arrow-${clientId}`);
+    if (body) {
+      const isHidden = (body.style.display === 'none');
+      body.style.display = isHidden ? 'flex' : 'none';
+      if (arrow) arrow.textContent = isHidden ? '∧' : '∨';
+    }
+  }
+
+  function onDrawerClientSearch(query) {
+    const q = (query || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.client-drawer-card');
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(q) ? 'block' : 'none';
+    });
+  }
+
+  function clearDrawerClientSearch() {
+    const input = document.getElementById('search-mis-clientes-input');
+    if (input) input.value = '';
+    onDrawerClientSearch('');
+  }
+
+  function selectDocTypeFilter(docType) {
+    document.querySelectorAll('.doc-type-pill').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(`doc-type-${docType}`);
+    if (target) target.classList.add('active');
+    showHint(`Filtro por tipo: ${docType.toUpperCase()}`, false);
+  }
+
+  function selectDocStatusFilter(status) {
+    document.querySelectorAll('.doc-status-pill').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(`doc-st-${status}`);
+    if (target) target.classList.add('active');
+    showHint(`Estado de comprobantes: ${status.toUpperCase()}`, false);
+  }
+
+  function onDocsSearch(query) {
+    const q = (query || '').toLowerCase().trim();
+    const docs = document.querySelectorAll('.doc-item-card');
+    docs.forEach(doc => {
+      const text = doc.textContent.toLowerCase();
+      doc.style.display = text.includes(q) ? 'flex' : 'none';
+    });
+  }
+
+  function clearDocsSearch() {
+    const input = document.getElementById('search-docs-input');
+    if (input) input.value = '';
+    onDocsSearch('');
+  }
+
   // 2.4 Acordeón de Progreso (plan de visitas 2.png)
   let isProgressExpanded = false;
   function toggleProgressDetails() {
@@ -545,7 +600,7 @@
     let html = '';
     if (state.cart && state.cart.qty > 0 && state.finalOrderTotal) {
       html += `
-        <div class="order-tracking-card is-recent" onclick="window.UyapaySimulator.hint('Orden emitida durante la sesión actual')">
+        <div class="order-tracking-card is-recent" onclick="window.UyapaySimulator.openOrderDetail('P004-022323')">
           <div class="order-card-header">
             <span class="order-code-bold">P004-022323</span>
             <span class="order-time-lbl">🕒 Ahora</span>
@@ -561,7 +616,7 @@
 
     filtered.forEach(ord => {
       html += `
-        <div class="order-tracking-card" onclick="window.UyapaySimulator.hint('Detalle de orden: ${ord.code}')">
+        <div class="order-tracking-card" onclick="window.UyapaySimulator.openOrderDetail('${ord.code}')">
           <div class="order-card-header">
             <span class="order-code-bold">${ord.code}</span>
             <span class="order-time-lbl">🕒 ${ord.time}</span>
@@ -576,6 +631,175 @@
     });
 
     container.innerHTML = html;
+  }
+
+  // 2.6 Detalle y Seguimiento de Pedidos (seguimiento de pedidos - productos.png y seguimiento.png)
+  function selectOrderDetailTab(tabKey) {
+    const tabSeg = document.getElementById('od-tab-seguimiento');
+    const tabProd = document.getElementById('od-tab-productos');
+    const dotSeg = document.getElementById('od-dot-seguimiento');
+    const dotProd = document.getElementById('od-dot-productos');
+    const viewProd = document.getElementById('od-view-productos');
+    const viewSeg = document.getElementById('od-view-seguimiento');
+
+    if (tabKey === 'seguimiento') {
+      if (tabSeg) tabSeg.classList.add('active');
+      if (tabProd) tabProd.classList.remove('active');
+      if (dotSeg) dotSeg.style.display = 'block';
+      if (dotProd) dotProd.style.display = 'none';
+      if (viewSeg) viewSeg.style.display = 'block';
+      if (viewProd) viewProd.style.display = 'none';
+    } else {
+      if (tabProd) tabProd.classList.add('active');
+      if (tabSeg) tabSeg.classList.remove('active');
+      if (dotProd) dotProd.style.display = 'block';
+      if (dotSeg) dotSeg.style.display = 'none';
+      if (viewProd) viewProd.style.display = 'block';
+      if (viewSeg) viewSeg.style.display = 'none';
+    }
+  }
+
+  function openOrderDetail(orderCode) {
+    const clientHeader = document.getElementById('order-detail-header-client');
+    const codeStatus = document.getElementById('od-code-status');
+    const dateEmit = document.getElementById('od-date-emit');
+    const payment = document.getElementById('od-payment');
+    const dateDelivery = document.getElementById('od-date-delivery');
+    const gallons = document.getElementById('od-gallons');
+    const total = document.getElementById('od-total');
+    const undeliveredList = document.getElementById('od-undelivered-products-list');
+    const deliveredList = document.getElementById('od-delivered-products-list');
+    const emitter = document.getElementById('od-timeline-emitter');
+    const emitterTime = document.getElementById('od-timeline-emitter-time');
+
+    const advisorName = state.advisorUsername ? (state.advisorUsername.charAt(0).toUpperCase() + state.advisorUsername.slice(1)) : 'Betsy Ramos';
+
+    if (orderCode === 'P004-022323' && state.finalOrderTotal) {
+      const cliName = (state.selectedClient || 'FERRETERÍA LOS ANDES S.A.C.').toUpperCase();
+      if (clientHeader) clientHeader.textContent = cliName;
+      if (codeStatus) codeStatus.textContent = 'P004-022323 - EMITIDO';
+      if (dateEmit) dateEmit.textContent = '09-sept-2026 - Ahora';
+      if (payment) payment.textContent = (state.orderConfig.paymentConditionLabel || 'CONTADO / LISTA 1').toUpperCase();
+      if (dateDelivery) dateDelivery.textContent = '12 sept 2026';
+      if (gallons) gallons.textContent = '5.0';
+      if (total) total.textContent = `USD ${state.finalOrderTotal.toFixed(2)}`;
+
+      if (undeliveredList) {
+        const prodName = state.cart.productName || 'Shell Helix HX7 10W/40';
+        const prodFmt = state.cart.format || 'Balde 5 Gal';
+        const prodQty = state.cart.qty || 1;
+        undeliveredList.innerHTML = `
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">${prodQty} ${prodName.toUpperCase()}</div>
+              <div class="order-prod-subtitle">${prodFmt.toUpperCase()}</div>
+            </div>
+            <div class="order-prod-price">USD ${state.finalOrderTotal.toFixed(2)}</div>
+          </div>
+        `;
+      }
+      if (deliveredList) {
+        deliveredList.innerHTML = `
+          <div style="font-size:12px; color:#6b7280; text-align:center; padding:12px 0;">
+            Sin entregas registradas aún (en tránsito).
+          </div>
+        `;
+      }
+      if (emitter) emitter.textContent = advisorName;
+      if (emitterTime) emitterTime.textContent = '09-sept-2026 - Ahora';
+    } else if (orderCode === 'P004-022321') {
+      if (clientHeader) clientHeader.textContent = 'MAQUERA CALIZAYA YOVIER';
+      if (codeStatus) codeStatus.textContent = 'P004-022321 - EMITIDO';
+      if (dateEmit) dateEmit.textContent = '09-sept-2026 - 08:08 a.m.';
+      if (payment) payment.textContent = 'CRÉDITO 30 DÍAS / LISTA 1';
+      if (dateDelivery) dateDelivery.textContent = '16 sept 2026';
+      if (gallons) gallons.textContent = '10.0';
+      if (total) total.textContent = 'USD 161.00';
+      if (undeliveredList) {
+        undeliveredList.innerHTML = `
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">2 SHELL RIMULA R4 X 15W-40</div>
+              <div class="order-prod-subtitle">BALDE 5 GAL</div>
+            </div>
+            <div class="order-prod-price">USD 161.00</div>
+          </div>
+        `;
+      }
+      if (deliveredList) {
+        deliveredList.innerHTML = `<div style="font-size:12px; color:#6b7280; text-align:center; padding:12px 0;">Sin entregas registradas aún.</div>`;
+      }
+      if (emitter) emitter.textContent = advisorName;
+      if (emitterTime) emitterTime.textContent = '09-sept-2026 - 08:08 a.m.';
+    } else if (orderCode === 'P004-022319') {
+      if (clientHeader) clientHeader.textContent = 'VIEYRA JARA RODRIGO LUIS';
+      if (codeStatus) codeStatus.textContent = 'P004-022319 - ENTREGADO';
+      if (dateEmit) dateEmit.textContent = '08-sept-2026 - 04:47 p.m.';
+      if (payment) payment.textContent = 'CONTADO / LISTA 1';
+      if (dateDelivery) dateDelivery.textContent = '09 sept 2026';
+      if (gallons) gallons.textContent = '15.0';
+      if (total) total.textContent = 'PEN 496.00';
+      if (undeliveredList) {
+        undeliveredList.innerHTML = `<div style="font-size:12px; color:#6b7280; text-align:center; padding:12px 0;">Todos los productos han sido entregados.</div>`;
+      }
+      if (deliveredList) {
+        deliveredList.innerHTML = `
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">3 SHELL HELIX ULTRA 5W-40</div>
+              <div class="order-prod-subtitle">CAJA 4 X 4 LTS</div>
+            </div>
+            <div class="order-prod-price">PEN 496.00</div>
+          </div>
+        `;
+      }
+      if (emitter) emitter.textContent = 'Rodrigo Vieyra';
+      if (emitterTime) emitterTime.textContent = '08-sept-2026 - 04:47 p.m.';
+    } else {
+      // Caso estándar: P004-022322 (captura oficial de producción)
+      if (clientHeader) clientHeader.textContent = 'SERVICIOS GARCIA GLOBAL S.A.C.';
+      if (codeStatus) codeStatus.textContent = 'P004-022322 - APROBADO';
+      if (dateEmit) dateEmit.textContent = '09-sept-2026 - 08:21 a.m.';
+      if (payment) payment.textContent = 'CONTADO / LISTA 3';
+      if (dateDelivery) dateDelivery.textContent = '15 sept 2026';
+      if (gallons) gallons.textContent = '0.0';
+      if (total) total.textContent = 'USD 86.00';
+
+      if (undeliveredList) {
+        undeliveredList.innerHTML = `
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">1 HELIX HX5G 20W50</div>
+              <div class="order-prod-subtitle">CAJ 6 X 1 LTS</div>
+            </div>
+            <div class="order-prod-price">USD 40.36</div>
+          </div>
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">1 HELIX HX5G 20W50</div>
+              <div class="order-prod-subtitle">BOT 1 LTS</div>
+            </div>
+            <div class="order-prod-price">USD 0.00</div>
+          </div>
+        `;
+      }
+      if (deliveredList) {
+        deliveredList.innerHTML = `
+          <div class="order-prod-card">
+            <div>
+              <div class="order-prod-title">1 HELIX HX5G 20W50</div>
+              <div class="order-prod-subtitle">CAJ 6 X 1 LTS</div>
+            </div>
+            <div class="order-prod-price">USD 40.36</div>
+          </div>
+        `;
+      }
+      if (emitter) emitter.textContent = advisorName;
+      if (emitterTime) emitterTime.textContent = '09-sept-2026 - 08:21 a.m.';
+    }
+
+    selectOrderDetailTab('productos');
+    navigateTo('s-detalle-pedido-seguimiento');
   }
 
   function selectOrderSubtab(subtab) {
@@ -1894,8 +2118,17 @@
     toggleCatalogPromo: (id, checked) => onDetailPromoToggle(checked),
     openSecondaryDrawer: openSecondaryDrawer,
     closeSecondaryDrawer: closeSecondaryDrawer,
+    toggleDrawerClientAccordion: toggleDrawerClientAccordion,
+    onDrawerClientSearch: onDrawerClientSearch,
+    clearDrawerClientSearch: clearDrawerClientSearch,
+    selectDocTypeFilter: selectDocTypeFilter,
+    selectDocStatusFilter: selectDocStatusFilter,
+    onDocsSearch: onDocsSearch,
+    clearDocsSearch: clearDocsSearch,
     toggleProgressDetails: toggleProgressDetails,
     renderOrdersTrackingList: renderOrdersTrackingList,
+    openOrderDetail: openOrderDetail,
+    selectOrderDetailTab: selectOrderDetailTab,
     selectOrderSubtab: selectOrderSubtab,
     selectOrderFilter: selectOrderFilter,
     onOrderSearch: onOrderSearch,
