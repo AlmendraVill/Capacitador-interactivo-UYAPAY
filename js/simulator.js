@@ -40,7 +40,28 @@
       promoType: 'gift',
       promoDiscountAmount: 0.0,
       promoLabel: '🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)'
-    }
+    },
+    cobranza: {
+      deudaVencida: 490.98,
+      invoiceCode: 'F001-00053870',
+      invoiceDueDate: '29 jun',
+      invoiceOriginalAmount: 725.76,
+      client: 'MULTISERVICIOS CUELLAR E.I.R.L.',
+      paymentMethod: 'efectivo',
+      currency: 'USD',
+      tc: 3.38,
+      cashAmount: 0.0,
+      depositAmount: 0.0,
+      bank: 'BCP (EN SOLES)',
+      depositOp: '002-94820194',
+      depositDate: '',
+      hasVoucherPhoto: false,
+      recibosRecientes: [],
+      recibosEnviados: [],
+      currentSubtab: 'reciente',
+      consolidated: false
+    },
+    currentDocType: 'orden'
   };
 
   // Leer parámetros de la URL
@@ -91,19 +112,19 @@
 
   // ================= TAREAS EN VISITA: TASK CAROUSEL OFICIAL =================
   let currentVisitTaskIndex = 0;
-  const visitTaskTitles = ['INICIO', 'FOTOS', 'PRECIOS', 'PEDIDOS'];
+  const visitTaskTitles = ['INICIO', 'FOTOS', 'PRECIOS', 'PEDIDOS', 'COBRANZA'];
 
   function goToVisitTask(index) {
     if (index < 0) index = 0;
-    if (index > 3) index = 3;
+    if (index > 4) index = 4;
     currentVisitTaskIndex = index;
 
     // Actualizar título en barra
     const titleEl = document.getElementById('task-nav-current-title');
     if (titleEl) titleEl.textContent = visitTaskTitles[index];
 
-    // Actualizar dots indicadores
-    for (let i = 0; i < 4; i++) {
+    // Actualizar dots indicadores (5 dots)
+    for (let i = 0; i < 5; i++) {
       const dot = document.getElementById(`dot-task-${i}`);
       if (dot) {
         if (i === index) dot.classList.add('active');
@@ -112,7 +133,7 @@
     }
 
     // Actualizar slides visibles
-    const slideIds = ['task-slide-inicio', 'task-slide-fotos', 'task-slide-precios', 'task-slide-pedidos'];
+    const slideIds = ['task-slide-inicio', 'task-slide-fotos', 'task-slide-precios', 'task-slide-pedidos', 'task-slide-cobranza'];
     slideIds.forEach((sId, idx) => {
       const el = document.getElementById(sId);
       if (el) {
@@ -120,6 +141,10 @@
         else el.classList.remove('active');
       }
     });
+
+    if (index === 4) {
+      renderCobranzaTaskView();
+    }
 
     // Asegurarse de que s-cliente-inicio sea la pantalla activa
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -169,12 +194,7 @@
   }
 
   function onPedidosContinue() {
-    if (state.cart && state.cart.qty > 0) {
-      showHint('Visita completada exitosamente.', false);
-      navigateTo('s-dashboard');
-    } else {
-      showHint('Presiona "＋ CREAR PEDIDO O COTIZACIÓN" para emitir la orden.', true);
-    }
+    goToVisitTask(4); // Avanza a COBRANZA
   }
 
   function switchPriceSubtab(tabKey) {
@@ -250,6 +270,27 @@
       promoType: currentCase.promoType || (currentCase.promoDiscount ? 'gift' : 'none'),
       promoDiscountAmount: currentCase.promoDiscountAmount || 0.0,
       promoLabel: currentCase.promoLabel || 'Promoción oficial'
+    };
+
+    state.cobranza = {
+      deudaVencida: (state.currentCaseId === 'case-19') ? 350.00 : 490.98,
+      invoiceCode: (state.currentCaseId === 'case-19') ? 'F002-00084120' : 'F001-00053870',
+      invoiceDueDate: '29 jun',
+      invoiceOriginalAmount: (state.currentCaseId === 'case-19') ? 350.00 : 725.76,
+      client: currentCase.client || 'MULTISERVICIOS CUELLAR E.I.R.L.',
+      paymentMethod: 'efectivo',
+      currency: 'USD',
+      tc: 3.38,
+      cashAmount: 0.0,
+      depositAmount: 0.0,
+      bank: 'BCP (EN SOLES)',
+      depositOp: '002-94820194',
+      depositDate: new Date().toISOString().split('T')[0],
+      hasVoucherPhoto: false,
+      recibosRecientes: [],
+      recibosEnviados: [],
+      currentSubtab: 'reciente',
+      consolidated: false
     };
 
     // Pre-poblar los selectores y tarjetas en s-nuevo-pedido (Flujo 2)
@@ -384,6 +425,9 @@
         btnAction.onclick = () => navigateTo('s-fotos');
       }
     }
+
+    renderOrderCartInNuevoPedido();
+    renderCobranzaTaskView();
   }
 
   // 2. Login dentro del smartphone
@@ -1041,10 +1085,451 @@
     navigateTo('s-dashboard');
   }
 
-  // 7. Cobranza Mixta (Caso 19)
+  // 7. Cobranza Oficial en Visita (Tarea 5 del Carrusel), Opciones de Pago y Consolidado
+  function renderCobranzaTaskView() {
+    const cob = state.cobranza;
+    if (!cob) return;
+
+    // Actualizar datos del encabezado de deuda vencida
+    const totalEl = document.getElementById('cobranza-total-amount');
+    if (totalEl) totalEl.textContent = `USD ${cob.deudaVencida.toFixed(2)}`;
+
+    const invCodeEl = document.getElementById('cobranza-inv-code');
+    if (invCodeEl) invCodeEl.textContent = cob.invoiceCode;
+
+    const invDueDateEl = document.getElementById('cobranza-inv-duedate');
+    if (invDueDateEl) invDueDateEl.innerHTML = `Venció el <b>${cob.invoiceDueDate}</b>`;
+
+    const invClientEl = document.getElementById('cobranza-inv-client');
+    if (invClientEl) invClientEl.textContent = (state.selectedClient || cob.client).toUpperCase();
+
+    const invAmountEl = document.getElementById('cobranza-inv-amount');
+    if (invAmountEl) invAmountEl.textContent = `USD ${cob.deudaVencida.toFixed(2)}`;
+
+    const btnPagar = document.getElementById('btn-pagar-invoice');
+    if (btnPagar) {
+      if (cob.deudaVencida <= 0) {
+        btnPagar.textContent = 'Pagado ✓';
+        btnPagar.style.background = '#27ae60';
+        btnPagar.disabled = true;
+      } else {
+        btnPagar.textContent = 'Pagar';
+        btnPagar.style.background = '';
+        btnPagar.disabled = false;
+      }
+    }
+
+    // Subtabs de Recibos Electrónicos
+    const lblRecientes = document.getElementById('lbl-recibo-reciente-count');
+    if (lblRecientes) lblRecientes.textContent = `Reciente (${cob.recibosRecientes.length})`;
+
+    const lblEnviados = document.getElementById('lbl-recibo-enviado-count');
+    if (lblEnviados) lblEnviados.textContent = `Enviado (${cob.recibosEnviados.length})`;
+
+    const dotRecientes = document.getElementById('dot-recibo-reciente');
+    if (dotRecientes) {
+      dotRecientes.style.display = cob.recibosRecientes.length > 0 ? 'inline-block' : 'none';
+    }
+
+    // Renderizar lista según subtab activo
+    const emptyEl = document.getElementById('cobranza-recibos-empty');
+    const itemsEl = document.getElementById('cobranza-recibos-items');
+
+    const activeList = cob.currentSubtab === 'reciente' ? cob.recibosRecientes : cob.recibosEnviados;
+
+    if (activeList.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      if (itemsEl) itemsEl.innerHTML = '';
+    } else {
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (itemsEl) {
+        itemsEl.innerHTML = activeList.map(r => `
+          <div class="cobranza-receipt-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+              <span class="cobranza-receipt-num">${r.number}</span>
+              <span class="cobranza-receipt-date">${r.date}</span>
+            </div>
+            <div class="cobranza-receipt-client">${r.client}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; border-top:1px dashed #eee; padding-top:6px;">
+              <span class="cobranza-receipt-method">Medio: <b>${r.method}</b></span>
+              <span class="cobranza-receipt-amount">${r.amount}</span>
+            </div>
+            <div style="margin-top:4px;">
+              <span class="cobranza-receipt-badge ${r.status === 'Enviado' ? 'enviado' : 'pendiente'}">
+                ${r.status === 'Enviado' ? '✓ ENVIADO / CONSOLIDADO' : '● PENDIENTE DE CONSOLIDAR'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Botón Sticky de acción en la tarea COBRANZA
+    const submitBtn = document.getElementById('btn-cobranza-submit-action');
+    if (submitBtn) {
+      if (cob.recibosRecientes.length > 0) {
+        submitBtn.textContent = 'COMPLETAR';
+      } else {
+        submitBtn.textContent = 'CONTINUAR';
+      }
+    }
+  }
+
+  function switchCobranzaSubtab(tabKey) {
+    if (!state.cobranza) return;
+    state.cobranza.currentSubtab = tabKey;
+    const tabRec = document.getElementById('subtab-recibo-reciente');
+    const tabEnv = document.getElementById('subtab-recibo-enviado');
+    if (tabRec && tabEnv) {
+      if (tabKey === 'reciente') {
+        tabRec.classList.add('active');
+        tabEnv.classList.remove('active');
+      } else {
+        tabRec.classList.remove('active');
+        tabEnv.classList.add('active');
+      }
+    }
+    renderCobranzaTaskView();
+  }
+
+  function onCobranzaAction() {
+    const cob = state.cobranza;
+    if (cob && cob.recibosRecientes.length > 0) {
+      openConsolidadoCobranzaModal();
+    } else {
+      if (state.currentCaseId === 'case-19' || state.currentCaseId === 'case-5') {
+        showHint('Debes registrar el pago de la deuda antes de completar la visita.', true);
+      } else {
+        showHint('Visita completada exitosamente.', false);
+        navigateTo('s-dashboard');
+      }
+    }
+  }
+
+  function openOpcionesPagoModal() {
+    const modal = document.getElementById('opcionesPagoModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeOpcionesPagoModal() {
+    const modal = document.getElementById('opcionesPagoModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function goToPagoEfectivo() {
+    closeOpcionesPagoModal();
+    const cob = state.cobranza;
+    if (!cob) return;
+
+    cob.paymentMethod = 'efectivo';
+    cob.currency = 'USD';
+
+    const docEl = document.getElementById('pago-efectivo-doc');
+    if (docEl) docEl.textContent = cob.invoiceCode;
+
+    const amountEl = document.getElementById('pago-efectivo-amount');
+    if (amountEl) amountEl.textContent = `USD ${cob.deudaVencida.toFixed(2)}`;
+
+    const reciboEl = document.getElementById('pago-efectivo-recibo-num');
+    if (reciboEl) reciboEl.textContent = `RE003-${String(14944 + cob.recibosRecientes.length).padStart(6, '0')}`;
+
+    const inputMonto = document.getElementById('pago-efectivo-input-monto');
+    if (inputMonto) inputMonto.value = cob.deudaVencida.toFixed(2);
+
+    const chkUsd = document.getElementById('chk-payment-curr-usd');
+    if (chkUsd) chkUsd.checked = true;
+
+    togglePaymentCurrency('USD');
+    onPaymentAmountChange(cob.deudaVencida);
+
+    navigateTo('s-pago-efectivo');
+  }
+
+  function goToPagoDeposito() {
+    closeOpcionesPagoModal();
+    const cob = state.cobranza;
+    if (!cob) return;
+
+    cob.paymentMethod = 'deposito';
+
+    const amountEl = document.getElementById('pago-deposito-amount');
+    if (amountEl) amountEl.textContent = `USD ${cob.deudaVencida.toFixed(2)}`;
+
+    const dateInput = document.getElementById('pago-deposito-fecha');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    const solEquivalent = (cob.deudaVencida * cob.tc).toFixed(2);
+    const inputMonto = document.getElementById('pago-deposito-input-monto');
+    if (inputMonto) inputMonto.value = solEquivalent;
+
+    onPaymentDepositAmountChange(solEquivalent);
+
+    navigateTo('s-pago-deposito');
+  }
+
+  function goToPagoCheque() {
+    closeOpcionesPagoModal();
+    showHint('Opción Cheque no disponible temporalmente. Seleccione Efectivo o Depósito.', true);
+  }
+
+  function togglePaymentCurrency(curr) {
+    const cob = state.cobranza;
+    if (!cob) return;
+    cob.currency = curr;
+
+    const lblPen = document.getElementById('lbl-curr-pen');
+    const lblUsd = document.getElementById('lbl-curr-usd');
+    const chk = document.getElementById('chk-payment-curr-usd');
+    const input = document.getElementById('pago-efectivo-input-monto');
+
+    if (curr === 'USD') {
+      if (lblUsd) { lblUsd.style.color = '#111827'; lblUsd.style.fontWeight = '800'; }
+      if (lblPen) { lblPen.style.color = '#6b7280'; lblPen.style.fontWeight = 'normal'; }
+      if (chk) chk.checked = true;
+      if (input) input.value = cob.deudaVencida.toFixed(2);
+    } else {
+      if (lblPen) { lblPen.style.color = '#111827'; lblPen.style.fontWeight = '800'; }
+      if (lblUsd) { lblUsd.style.color = '#6b7280'; lblUsd.style.fontWeight = 'normal'; }
+      if (chk) chk.checked = false;
+      if (input) input.value = (cob.deudaVencida * cob.tc).toFixed(2);
+    }
+
+    onPaymentAmountChange(input ? input.value : cob.deudaVencida);
+  }
+
+  function onPaymentAmountChange(val) {
+    const cob = state.cobranza;
+    if (!cob) return;
+    const num = parseFloat(val) || 0;
+    const valInUsd = (cob.currency === 'PEN') ? (num / cob.tc) : num;
+    const saldo = Math.max(0, cob.deudaVencida - valInUsd);
+
+    const saldoEl = document.getElementById('pago-efectivo-saldo');
+    if (saldoEl) saldoEl.textContent = `USD ${saldo.toFixed(2)}`;
+  }
+
+  function onPaymentDepositAmountChange(val) {
+    const cob = state.cobranza;
+    if (!cob) return;
+    const num = parseFloat(val) || 0;
+    const valInUsd = num / cob.tc;
+    const saldo = Math.max(0, cob.deudaVencida - valInUsd);
+
+    const saldoEl = document.getElementById('pago-deposito-saldo');
+    if (saldoEl) saldoEl.textContent = `USD ${saldo.toFixed(2)}`;
+  }
+
+  function onDepositBankChange(bankVal) {
+    const lbl = document.getElementById('lbl-pago-deposito-banco');
+    if (lbl) lbl.textContent = bankVal;
+    if (state.cobranza) state.cobranza.bank = bankVal;
+  }
+
+  function onPaymentCameraClick(type) {
+    if (state.cobranza) state.cobranza.hasVoucherPhoto = true;
+    const lbl = document.getElementById(`lbl-camera-${type}`);
+    if (lbl) lbl.textContent = 'Cámara ✓';
+    showHint('Foto de comprobante / voucher registrada con éxito.', false);
+  }
+
+  function onPaymentFileClick() {
+    showHint('Archivo adjunto registrado con éxito.', false);
+  }
+
+  function openConfirmarPagoModal(method) {
+    const cob = state.cobranza;
+    if (!cob) return;
+    cob.paymentMethod = method;
+
+    const modal = document.getElementById('confirmarPagoModal');
+    if (!modal) return;
+
+    // Poblar modal
+    const cliEl = document.getElementById('confirm-pay-client');
+    if (cliEl) cliEl.textContent = (state.selectedClient || cob.client).toUpperCase();
+
+    const docEl = document.getElementById('confirm-pay-doc');
+    if (docEl) docEl.textContent = cob.invoiceCode;
+
+    const origEl = document.getElementById('confirm-pay-original-amount');
+    if (origEl) origEl.textContent = `USD ${cob.invoiceOriginalAmount.toFixed(2)}`;
+
+    const beforeEl = document.getElementById('confirm-pay-debt-before');
+    if (beforeEl) beforeEl.textContent = `USD ${cob.deudaVencida.toFixed(2)}`;
+
+    const reciboEl = document.getElementById('confirm-pay-recibo-num');
+    const reciboNum = `RE003-${String(14944 + cob.recibosRecientes.length).padStart(6, '0')}`;
+    if (reciboEl) reciboEl.textContent = reciboNum;
+
+    let amountVal = 0;
+    let amountDisplay = '';
+    let afterVal = 0;
+
+    if (method === 'efectivo') {
+      const input = document.getElementById('pago-efectivo-input-monto');
+      const entered = parseFloat(input ? input.value : cob.deudaVencida) || 0;
+      const enteredUsd = cob.currency === 'PEN' ? (entered / cob.tc) : entered;
+      amountVal = enteredUsd;
+      amountDisplay = cob.currency === 'PEN' ? `S/ ${entered.toFixed(2)}` : `USD ${entered.toFixed(2)}`;
+      afterVal = Math.max(0, cob.deudaVencida - enteredUsd);
+
+      const methodLbl = document.getElementById('confirm-pay-method-lbl');
+      if (methodLbl) methodLbl.textContent = 'PAGO EN EFECTIVO';
+    } else {
+      const input = document.getElementById('pago-deposito-input-monto');
+      const entered = parseFloat(input ? input.value : (cob.deudaVencida * cob.tc)) || 0;
+      const enteredUsd = entered / cob.tc;
+      amountVal = enteredUsd;
+      amountDisplay = `S/ ${entered.toFixed(2)}`;
+      afterVal = Math.max(0, cob.deudaVencida - enteredUsd);
+
+      const methodLbl = document.getElementById('confirm-pay-method-lbl');
+      if (methodLbl) methodLbl.textContent = 'PAGO POR DEPÓSITO';
+    }
+
+    const afterEl = document.getElementById('confirm-pay-debt-after');
+    if (afterEl) afterEl.textContent = `USD ${afterVal.toFixed(2)}`;
+
+    const amountBox = document.getElementById('confirm-pay-amount-lbl');
+    if (amountBox) amountBox.textContent = amountDisplay;
+
+    modal.classList.add('active');
+  }
+
+  function closeConfirmarPagoModal() {
+    const modal = document.getElementById('confirmarPagoModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function finalizePayment() {
+    const cob = state.cobranza;
+    if (!cob) return;
+
+    const isEfectivo = cob.paymentMethod === 'efectivo';
+    let paidUsd = 0;
+    let paidDisplay = '';
+
+    if (isEfectivo) {
+      const input = document.getElementById('pago-efectivo-input-monto');
+      const entered = parseFloat(input ? input.value : cob.deudaVencida) || 0;
+      paidUsd = cob.currency === 'PEN' ? (entered / cob.tc) : entered;
+      paidDisplay = cob.currency === 'PEN' ? `S/ ${entered.toFixed(2)}` : `USD ${entered.toFixed(2)}`;
+      cob.cashAmount += paidUsd;
+    } else {
+      const input = document.getElementById('pago-deposito-input-monto');
+      const entered = parseFloat(input ? input.value : (cob.deudaVencida * cob.tc)) || 0;
+      paidUsd = entered / cob.tc;
+      paidDisplay = `S/ ${entered.toFixed(2)}`;
+      cob.depositAmount += paidUsd;
+    }
+
+    const reciboNum = `RE003-${String(14944 + cob.recibosRecientes.length).padStart(6, '0')}`;
+    const newReceipt = {
+      number: reciboNum,
+      client: state.selectedClient || cob.client,
+      doc: cob.invoiceCode,
+      method: isEfectivo ? 'EFECTIVO' : 'DEPÓSITO',
+      amount: paidDisplay,
+      amountUsd: paidUsd,
+      date: new Date().toLocaleDateString('es-PE'),
+      status: 'Pendiente de consolidar'
+    };
+
+    cob.recibosRecientes.unshift(newReceipt);
+    cob.deudaVencida = Math.max(0, cob.deudaVencida - paidUsd);
+
+    closeConfirmarPagoModal();
+    showHint(`Pago finalizado con éxito. Recibo ${reciboNum} generado en Recientes.`, false);
+
+    // Regresar al carrusel en la tarea 4 (COBRANZA)
+    navigateTo('s-cliente-inicio');
+    goToVisitTask(4);
+  }
+
+  function openConsolidadoCobranzaModal() {
+    const cob = state.cobranza;
+    if (!cob) return;
+
+    const modal = document.getElementById('consolidadoCobranzaModal');
+    if (!modal) return;
+
+    const totalRecibosEl = document.getElementById('cons-total-recibos');
+    if (totalRecibosEl) totalRecibosEl.textContent = `${cob.recibosRecientes.length} recibo(s)`;
+
+    const cashUsdEl = document.getElementById('cons-cash-usd');
+    if (cashUsdEl) cashUsdEl.textContent = `USD ${cob.cashAmount.toFixed(2)}`;
+
+    const depUsdEl = document.getElementById('cons-deposit-usd');
+    if (depUsdEl) depUsdEl.textContent = `USD ${cob.depositAmount.toFixed(2)}`;
+
+    const pendingCountEl = document.getElementById('cons-pending-count');
+    if (pendingCountEl) pendingCountEl.textContent = `${cob.recibosRecientes.length} pendiente(s)`;
+
+    const listEl = document.getElementById('cons-receipts-list-details');
+    if (listEl) {
+      listEl.innerHTML = cob.recibosRecientes.map(r => `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; margin-bottom:6px; font-size:11.5px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <b>${r.number}</b> (${r.method}) - ${r.client}
+          </div>
+          <b style="color:var(--text-dark);">${r.amount}</b>
+        </div>
+      `).join('');
+    }
+
+    modal.classList.add('active');
+  }
+
+  function closeConsolidadoCobranzaModal() {
+    const modal = document.getElementById('consolidadoCobranzaModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitConsolidadoCobranza() {
+    const cob = state.cobranza;
+    if (!cob) return;
+
+    const totalCollected = (cob.cashAmount + cob.depositAmount) || 350;
+
+    emitSimulatorEvent('COLLECT_DEBTS', {
+      cashAmount: cob.cashAmount > 0 ? cob.cashAmount : 200,
+      depositAmount: cob.depositAmount > 0 ? cob.depositAmount : 150,
+      voucher: 'OP-948201.jpg',
+      currency: 'USD'
+    });
+
+    emitSimulatorEvent('CONFIRM_RECEIPTS', {
+      confirmed: true,
+      total: totalCollected,
+      receiptsCount: Math.max(1, cob.recibosRecientes.length)
+    });
+
+    // Mover de Recientes a Enviados
+    cob.recibosRecientes.forEach(r => {
+      r.status = 'Enviado';
+      cob.recibosEnviados.unshift(r);
+    });
+    cob.recibosRecientes = [];
+    cob.consolidated = true;
+
+    closeConsolidadoCobranzaModal();
+    showHint('¡Consolidado de cobranzas generado y transmitido exitosamente!', false);
+
+    const finishTitle = document.getElementById('finish-title');
+    const finishDesc = document.getElementById('finish-desc');
+    if (finishTitle) finishTitle.textContent = '¡Cobranza Consolidada con Éxito!';
+    if (finishDesc) finishDesc.innerHTML = `Se generó el consolidado de cobranzas por <b>USD ${totalCollected.toFixed(2)}</b> con todos los recibos electrónicos transmitidos a SOLAR.`;
+
+    navigateTo('s-dashboard');
+  }
+
+  // Métodos de compatibilidad con modal legacy de cobranza mixta
   function openCobranzaModal() {
     const modal = document.getElementById('cobranzaModal');
     if (modal) modal.classList.add('active');
+    else openOpcionesPagoModal();
   }
 
   function closeCobranzaModal() {
@@ -1055,6 +1540,21 @@
   function submitCobranza() {
     const cashVal = parseFloat(document.getElementById('cobranza-cash')?.value || '200');
     const depVal = parseFloat(document.getElementById('cobranza-deposit')?.value || '150');
+
+    if (state.cobranza) {
+      state.cobranza.cashAmount = cashVal;
+      state.cobranza.depositAmount = depVal;
+      state.cobranza.recibosRecientes.push({
+        number: 'RE003-014944',
+        client: state.selectedClient || state.cobranza.client,
+        doc: state.cobranza.invoiceCode,
+        method: 'MIXTO',
+        amount: `USD ${(cashVal + depVal).toFixed(2)}`,
+        amountUsd: cashVal + depVal,
+        date: new Date().toLocaleDateString('es-PE'),
+        status: 'Pendiente de consolidar'
+      });
+    }
 
     emitSimulatorEvent('COLLECT_DEBTS', {
       cashAmount: cashVal,
@@ -1519,38 +2019,120 @@
     }
   }
 
+  function renderConfirmationOrderSummary() {
+    updateReceiptCalculations();
+  }
+
   function renderOrderCartInNuevoPedido() {
     const list = document.getElementById('nuevo-pedido-cart-list');
     const btnComp = document.getElementById('btn-completar-pedido');
     if (!list) return;
 
     if (state.cart && state.cart.qty > 0 && state.cart.product) {
-      const totalItem = (state.cart.qty * state.cart.unitPrice).toFixed(2);
+      const rawTotal = (state.cart.qty * state.cart.unitPrice);
+      const cond = state.orderConfig.paymentCondition || 'contado';
+      let rate = 0.05;
+      if (cond === 'credito_15') rate = 0.04;
+      else if (cond === 'credito_30') rate = 0.03;
+      else if (cond === 'credito_45') rate = 0.02;
+      else if (cond === 'credito_60') rate = 0.01;
+
+      const discountVal = rawTotal * rate;
+      const orderTotal = Math.max(0, rawTotal - discountVal);
+      const invoiceTotal = orderTotal * 1.18;
+
       list.innerHTML = `
-        <div class="task-card" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-size:13px; font-weight:700; color:var(--text-dark);">${state.cart.product}</div>
-            <div style="font-size:11px; color:var(--text-light); margin-top:2px;">
-              Cant: <b>${state.cart.qty}</b> | P.U.: USD ${state.cart.unitPrice.toFixed(2)}
-              ${state.cart.promoDiscount ? `<span style="color:var(--success-color); margin-left:4px;">🎁 Promo</span>` : ''}
+        <div class="cart-product-rich-card">
+          <div class="cart-product-header">
+            <div>
+              <div class="cart-product-name">${state.cart.product}</div>
+              <div class="cart-product-meta">SKU: ${state.cart.sku || '550041216'} | Formato: ${state.cart.line ? state.cart.line.toUpperCase() : 'B2C'}</div>
+            </div>
+            <div class="cart-product-thumb">
+              <img src="images/logo_solar_sin_fondo.png" onerror="this.src='images/solar.png'" alt="prod" style="max-height:40px;" />
             </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);">USD ${totalItem}</div>
-            <span style="font-size:10px; color:var(--text-light);">(con IGV)</span>
+          
+          <div class="cart-product-price-row">
+            <span class="cart-product-price">Precio: $${state.cart.unitPrice.toFixed(2)}</span>
+            <span class="cart-product-qty">Cantidad: <b>${state.cart.qty}</b></span>
+          </div>
+
+          <div class="cart-product-actions-bar">
+            <span class="cart-action-btn" onclick="window.UyapaySimulator.editCartProduct()">EDITAR</span>
+            <span class="cart-action-btn delete" onclick="window.UyapaySimulator.removeProductFromCart()">ELIMINAR</span>
+          </div>
+        </div>
+
+        <!-- Botón + Agregar producto secundario -->
+        <div class="add-product-btn-card" style="margin-top:10px;" onclick="window.UyapaySimulator.onAddProductClick()">
+          <span style="font-weight:bold; margin-right:4px;">＋</span> Agregar producto
+        </div>
+
+        <!-- Tarjeta de Totales Financieros Oficiales -->
+        <div class="order-totals-summary-card">
+          <div class="order-total-row">
+            <span>Sub total</span>
+            <b>$${rawTotal.toFixed(2)}</b>
+          </div>
+          <div class="order-total-row discount">
+            <span>Descuento</span>
+            <b>-$${discountVal.toFixed(2)}</b>
+          </div>
+          <div class="order-total-row">
+            <span>Total pedido</span>
+            <b>$${orderTotal.toFixed(2)}</b>
+          </div>
+          <div class="order-total-row final">
+            <span>Total factura</span>
+            <b style="color:var(--text-dark);">$${invoiceTotal.toFixed(2)}</b>
           </div>
         </div>
       `;
+
       if (btnComp) {
         btnComp.className = 'btn-completar-disabled btn-completar-active';
         btnComp.disabled = false;
       }
     } else {
-      list.innerHTML = '';
+      list.innerHTML = `
+        <div class="add-product-btn-card" onclick="window.UyapaySimulator.onAddProductClick()">
+          <span style="font-weight:bold; margin-right:4px;">＋</span> Agregar producto
+        </div>
+        <div style="text-align:center; padding:20px; color:var(--text-light); font-size:12px;">
+          No hay productos añadidos al pedido.
+        </div>
+      `;
       if (btnComp) {
         btnComp.className = 'btn-completar-disabled';
         btnComp.disabled = true;
       }
+    }
+  }
+
+  function removeProductFromCart() {
+    state.cart = {
+      productId: '',
+      product: '',
+      sku: '',
+      line: '',
+      brand: '',
+      unitPrice: 0,
+      qty: 0,
+      promoDiscount: false,
+      promoType: 'none',
+      promoDiscountAmount: 0,
+      promoLabel: ''
+    };
+    renderOrderCartInNuevoPedido();
+    showHint('Producto eliminado del pedido.', false);
+  }
+
+  function editCartProduct() {
+    if (state.cart && state.cart.productId) {
+      openProductDetail(state.cart.productId);
+    } else {
+      onAddProductClick();
     }
   }
 
@@ -2013,6 +2595,116 @@
     navigateTo('s-dashboard');
   }
 
+  // 16. Pantalla Oficial de Voucher / Comprobante (visitas-pedidos-comprobante cotización.png)
+  function openOrderVoucher(docType = 'orden') {
+    state.currentDocType = docType;
+    const isCotizacion = docType === 'cotizacion';
+    const currentCase = getCaseData();
+
+    // Asegurar que los cálculos del pedido estén actualizados
+    updateReceiptCalculations();
+
+    const titleEl = document.getElementById('voucher-title');
+    if (titleEl) {
+      titleEl.textContent = isCotizacion ? 'COTIZACIÓN 1109-000042' : 'PEDIDO 1109-000042';
+    }
+
+    const now = new Date();
+    const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const dateStr = `${days[now.getDay()]}, ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()} - ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    
+    const datetimeEl = document.getElementById('voucher-datetime');
+    if (datetimeEl) datetimeEl.textContent = dateStr;
+
+    const advisorEl = document.getElementById('voucher-advisor-name');
+    if (advisorEl) advisorEl.textContent = (state.advisorUsername ? state.advisorUsername.toUpperCase() : 'BETSY RAMOS');
+
+    const clientEl = document.getElementById('voucher-client-name');
+    if (clientEl) clientEl.textContent = (state.selectedClient || (currentCase ? currentCase.client : 'CUELLAR INFANTES WILBER ELISBRANDO')).toUpperCase();
+
+    const addrSelect = document.getElementById('confirm-address-select');
+    const addrText = addrSelect && addrSelect.options[addrSelect.selectedIndex] ? addrSelect.options[addrSelect.selectedIndex].text : (currentCase ? currentCase.clientAddress : 'FUTURO MAJES LOTE 16 MZA U');
+    const deliveryEl = document.getElementById('voucher-delivery-address');
+    if (deliveryEl) deliveryEl.textContent = addrText;
+
+    const cond = state.orderConfig.paymentCondition || 'contado';
+    const termsEl = document.getElementById('voucher-payment-terms');
+    if (termsEl) {
+      termsEl.textContent = cond === 'contado' ? 'CONTADO' : cond.replace('_', ' ').toUpperCase();
+    }
+
+    // Tabla de Items del comprobante
+    const tbody = document.getElementById('voucher-items-tbody');
+    if (tbody && state.cart && state.cart.qty > 0) {
+      const rawTotal = (state.cart.qty * state.cart.unitPrice);
+      let rate = 0.05;
+      if (cond === 'credito_15') rate = 0.04;
+      else if (cond === 'credito_30') rate = 0.03;
+      else if (cond === 'credito_45') rate = 0.02;
+      else if (cond === 'credito_60') rate = 0.01;
+
+      const discountVal = rawTotal * rate;
+      const finalItemTotal = rawTotal - discountVal;
+
+      tbody.innerHTML = `
+        <tr>
+          <td class="text-left"><b>${state.cart.product}</b><br><span style="font-size:9.5px; color:#6b7280;">SKU: ${state.cart.sku || '550041216'}</span></td>
+          <td>${state.cart.qty}</td>
+          <td>$${state.cart.unitPrice.toFixed(2)}</td>
+          <td style="color:var(--error-color);">-$${discountVal.toFixed(2)}</td>
+          <td><b>$${finalItemTotal.toFixed(2)}</b></td>
+        </tr>
+      `;
+
+      const subtotalEl = document.getElementById('voucher-subtotal');
+      if (subtotalEl) subtotalEl.textContent = `$${rawTotal.toFixed(2)}`;
+
+      const discountEl = document.getElementById('voucher-discount');
+      if (discountEl) discountEl.textContent = `-$${discountVal.toFixed(2)}`;
+
+      const orderTotalEl = document.getElementById('voucher-order-total');
+      if (orderTotalEl) orderTotalEl.textContent = `$${finalItemTotal.toFixed(2)}`;
+
+      const invoiceTotalEl = document.getElementById('voucher-invoice-total');
+      if (invoiceTotalEl) invoiceTotalEl.textContent = `$${(finalItemTotal * 1.18).toFixed(2)}`;
+    }
+
+    // Fechas de control
+    const deliveryDateInput = document.getElementById('confirm-delivery-date');
+    const delivDateEl = document.getElementById('voucher-delivery-date');
+    if (delivDateEl && deliveryDateInput && deliveryDateInput.value) {
+      delivDateEl.textContent = deliveryDateInput.value;
+    }
+
+    const payDateEl = document.getElementById('voucher-payment-date');
+    if (payDateEl) {
+      const payD = new Date();
+      payD.setDate(payD.getDate() + 30);
+      payDateEl.textContent = payD.toISOString().split('T')[0];
+    }
+
+    const updateDateEl = document.getElementById('voucher-update-date');
+    if (updateDateEl) {
+      updateDateEl.textContent = `${now.getDate()} ${months[now.getMonth()].slice(0, 3)} - ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    const thanksDesc = document.getElementById('voucher-thanks-desc');
+    if (thanksDesc) {
+      thanksDesc.textContent = `Guarda este comprobante digital como respaldo para validar tu ${isCotizacion ? 'cotización' : 'orden de compra'}.`;
+    }
+
+    navigateTo('s-comprobante-pedido');
+  }
+
+  function onVoucherShare() {
+    showHint('¡Comprobante copiado al portapapeles y listo para compartir!', false);
+  }
+
+  function onVoucherContinue() {
+    submitFinalOrder(state.currentDocType || 'orden');
+  }
+
   function finishSimulation() {
     emitSimulatorEvent('SUBMIT_EVALUATION', {
       caseId: state.currentCaseId,
@@ -2035,6 +2727,15 @@
       if (event.data.nextScreen) {
         navigateTo(event.data.nextScreen);
       }
+    }
+
+    if (event.data.type === 'PORTAL_SET_CASE') {
+      state.currentCaseId = event.data.caseId;
+      state.currentTabIndex = event.data.tabIndex;
+      if (event.data.username) state.advisorUsername = event.data.username;
+      initializeCaseEnvironment();
+      goToVisitTask(0);
+      navigateTo('s-visitas');
     }
   });
 
@@ -2061,6 +2762,26 @@
     openCobranzaModal: openCobranzaModal,
     closeCobranzaModal: closeCobranzaModal,
     submitCobranza: submitCobranza,
+    renderCobranzaTaskView: renderCobranzaTaskView,
+    switchCobranzaSubtab: switchCobranzaSubtab,
+    onCobranzaAction: onCobranzaAction,
+    openOpcionesPagoModal: openOpcionesPagoModal,
+    closeOpcionesPagoModal: closeOpcionesPagoModal,
+    goToPagoEfectivo: goToPagoEfectivo,
+    goToPagoDeposito: goToPagoDeposito,
+    goToPagoCheque: goToPagoCheque,
+    togglePaymentCurrency: togglePaymentCurrency,
+    onPaymentAmountChange: onPaymentAmountChange,
+    onPaymentDepositAmountChange: onPaymentDepositAmountChange,
+    onDepositBankChange: onDepositBankChange,
+    onPaymentCameraClick: onPaymentCameraClick,
+    onPaymentFileClick: onPaymentFileClick,
+    openConfirmarPagoModal: openConfirmarPagoModal,
+    closeConfirmarPagoModal: closeConfirmarPagoModal,
+    finalizePayment: finalizePayment,
+    openConsolidadoCobranzaModal: openConsolidadoCobranzaModal,
+    closeConsolidadoCobranzaModal: closeConsolidadoCobranzaModal,
+    submitConsolidadoCobranza: submitConsolidadoCobranza,
     openOutRouteModal: openOutRouteModal,
     closeOutRouteModal: closeOutRouteModal,
     onOutRouteClientChange: onOutRouteClientChange,
@@ -2105,6 +2826,9 @@
     onAddProductClick: onAddProductClick,
     onCompletarPedido: onCompletarPedido,
     renderOrderCartInNuevoPedido: renderOrderCartInNuevoPedido,
+    removeProductFromCart: removeProductFromCart,
+    editCartProduct: editCartProduct,
+    renderConfirmationOrderSummary: renderConfirmationOrderSummary,
     renderCatalogProducts: renderCatalogProducts,
     openProductDetail: openProductDetail,
     stepDetailQty: stepDetailQty,
@@ -2134,6 +2858,9 @@
     onOrderSearch: onOrderSearch,
     clearOrderSearch: clearOrderSearch,
     selectProduct: selectProduct,
+    openOrderVoucher: openOrderVoucher,
+    onVoucherShare: onVoucherShare,
+    onVoucherContinue: onVoucherContinue,
     submitFinalOrder: submitFinalOrder,
     finish: finishSimulation,
     hint: (msg) => showHint(msg, false)

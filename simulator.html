@@ -1069,6 +1069,7 @@
         <span class="carousel-dot" id="dot-task-1" onclick="window.UyapaySimulator.goToVisitTask(1)"></span>
         <span class="carousel-dot" id="dot-task-2" onclick="window.UyapaySimulator.goToVisitTask(2)"></span>
         <span class="carousel-dot" id="dot-task-3" onclick="window.UyapaySimulator.goToVisitTask(3)"></span>
+        <span class="carousel-dot" id="dot-task-4" onclick="window.UyapaySimulator.goToVisitTask(4)"></span>
       </div>
     </div>
 
@@ -1397,6 +1398,59 @@
         </div>
       </div>
 
+      <!-- ================= PÁGINA 5: COBRANZA (Deuda Vencida y Recibos) ================= -->
+      <div class="task-slide" id="task-slide-cobranza">
+        <!-- Tarjeta 1: Deuda vencida -->
+        <div class="task-card" style="margin-bottom:12px;">
+          <div class="card-title-main" style="font-size:16px;">Deuda vencida</div>
+          <div id="cobranza-total-amount" style="font-size:26px; font-weight:800; text-align:center; color:var(--text-dark); margin:12px 0 16px;">USD 490.98</div>
+          
+          <div class="cobranza-invoice-card" id="cobranza-invoice-box">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+              <b id="cobranza-inv-code" style="font-size:13px; color:var(--text-dark);">F001-00053870</b>
+              <span id="cobranza-inv-duedate" style="font-size:11.5px; color:var(--text-light);">Vencio el <b>29 jun</b></span>
+            </div>
+            <div id="cobranza-inv-client" style="font-size:11px; color:var(--text-light); text-transform:uppercase; margin-bottom:8px;">MULTISERVICIOS CUELLAR E.I.R.L.</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #eee; padding-top:8px;">
+              <span style="font-size:12px; color:var(--text-light);">Deuda: <b id="cobranza-inv-amount" style="color:var(--text-dark); font-size:13px;">USD 490.98</b></span>
+              <button class="btn-pagar-invoice" id="btn-pagar-invoice" onclick="window.UyapaySimulator.openOpcionesPagoModal()">Pagar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Recibos electrónicos -->
+        <div class="task-card" style="margin-bottom:12px;">
+          <div class="card-title-main" style="font-size:16px; text-align:center; margin-bottom:12px;">Recibos electrónicos</div>
+          
+          <div class="cobranza-recibos-subtabs">
+            <div class="cobranza-subtab active" id="subtab-recibo-reciente" onclick="window.UyapaySimulator.switchCobranzaSubtab('reciente')">
+              <span id="lbl-recibo-reciente-count">Reciente (0)</span>
+              <span class="cobranza-subtab-dot" id="dot-recibo-reciente"></span>
+            </div>
+            <div class="cobranza-subtab" id="subtab-recibo-enviado" onclick="window.UyapaySimulator.switchCobranzaSubtab('enviado')">
+              <span id="lbl-recibo-enviado-count">Enviado (0)</span>
+              <span class="cobranza-subtab-dot" id="dot-recibo-enviado" style="display:none;"></span>
+            </div>
+          </div>
+
+          <!-- Contenedor dinámico de recibos -->
+          <div id="cobranza-recibos-list" style="min-height:90px; padding:6px 0;">
+            <!-- Estado vacío por defecto -->
+            <div id="cobranza-recibos-empty" style="text-align:center; padding:20px 10px; color:var(--text-light);">
+              <div style="font-size:32px; margin-bottom:6px; opacity:0.6;">🗎</div>
+              <div style="font-size:12.5px; font-weight:500;">No hay información disponible.</div>
+            </div>
+            <div id="cobranza-recibos-items"></div>
+          </div>
+        </div>
+
+        <div class="sticky-footer-btn-container">
+          <button class="brand-btn-yellow" id="btn-cobranza-submit-action" onclick="window.UyapaySimulator.onCobranzaAction()">
+            CONTINUAR
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1436,6 +1490,13 @@
         <div>
           <span>4. PEDIDOS</span>
           <span class="opcion-desc">Crear nueva orden o cotización comercial</span>
+        </div>
+        <span>›</span>
+      </div>
+      <div class="opcion-row" onclick="window.UyapaySimulator.goToVisitTask(4); window.UyapaySimulator.closeTaskDropdown();">
+        <div>
+          <span>5. COBRANZA</span>
+          <span class="opcion-desc">Gestión de deuda vencida y recaudación</span>
         </div>
         <span>›</span>
       </div>
@@ -1817,13 +1878,277 @@
 
       <!-- BOTONES DE ACCIÓN FLUTTER -->
       <div style="margin-top:14px; padding-bottom:20px;">
-        <button class="login-btn" onclick="window.UyapaySimulator.submitFinalOrder('orden')">
+        <button class="login-btn" onclick="window.UyapaySimulator.openOrderVoucher('orden')">
           Confirmar Orden de compra
         </button>
-        <button class="login-btn" style="background:#ffffff; color:#2c3e50; border:1.5px solid #2c3e50; margin-top:8px;" onclick="window.UyapaySimulator.submitFinalOrder('cotizacion')">
+        <button class="login-btn" style="background:#ffffff; color:#2c3e50; border:1.5px solid #2c3e50; margin-top:8px;" onclick="window.UyapaySimulator.openOrderVoucher('cotizacion')">
           Guardar como Cotización
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= PANTALLA OFICIAL: COMPROBANTE / VOUCHER DE PEDIDO O COTIZACIÓN ================= -->
+  <div class="screen" id="s-comprobante-pedido" style="position:relative; background:#ffffff; overflow:hidden;">
+    <div class="voucher-screen-container">
+      <!-- Encabezado con Logo Oficial de Solar Representaciones -->
+      <div class="voucher-brand-header">
+        <img src="images/logo_solar_sin_fondo.png" alt="SOLAR" class="voucher-logo-img" onerror="this.src='images/solar.png'" />
+        <div class="voucher-doc-title" id="voucher-title">COTIZACIÓN 1109-000042</div>
+        <div class="voucher-company-name">SOLAR REPRESENTACIONES S.A.C.</div>
+        <div class="voucher-company-ruc">RUC: 20453967469</div>
+        <div class="voucher-datetime" id="voucher-datetime">miércoles, 09 septiembre 2026 - 09:35 p. m.</div>
+      </div>
+
+      <div class="voucher-divider"></div>
+
+      <!-- Metadatos de la Operación -->
+      <div class="voucher-meta-table">
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Asesor</span>
+          <span class="voucher-meta-val" id="voucher-advisor-name">BETSY RAMOS</span>
+        </div>
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Cliente</span>
+          <span class="voucher-meta-val" id="voucher-client-name">CUELLAR INFANTES WILBER ELISBRANDO</span>
+        </div>
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Entrega</span>
+          <span class="voucher-meta-val" id="voucher-delivery-address">FUTURO MAJES LOTE 16 MZA U REF: FRENDE ESTADIO MIGUEL GRAU</span>
+        </div>
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Forma de pago</span>
+          <span class="voucher-meta-val" id="voucher-payment-terms">CRÉDITO 30D</span>
+        </div>
+      </div>
+
+      <div class="voucher-divider"></div>
+
+      <!-- Tabla de Productos -->
+      <table class="voucher-items-table">
+        <thead>
+          <tr>
+            <th class="text-left" style="width:45%;">DESC.</th>
+            <th>CANT.</th>
+            <th>P. UNIT.</th>
+            <th>DSCTO.</th>
+            <th>IMPORTE</th>
+          </tr>
+        </thead>
+        <tbody id="voucher-items-tbody">
+          <!-- Renderizado dinámico -->
+        </tbody>
+      </table>
+
+      <div class="voucher-divider"></div>
+
+      <!-- Desglose Financiero -->
+      <div class="voucher-totals-box">
+        <div class="voucher-total-line">
+          <span>Subtotal</span>
+          <b id="voucher-subtotal">$86.35</b>
+        </div>
+        <div class="voucher-total-line" style="color:var(--error-color);">
+          <span>Descuentos</span>
+          <b id="voucher-discount">-$1.73</b>
+        </div>
+        <div class="voucher-total-line">
+          <span>Total pedido</span>
+          <b id="voucher-order-total">$84.62</b>
+        </div>
+        <div class="voucher-total-line final">
+          <span>Total factura</span>
+          <b id="voucher-invoice-total" style="color:var(--text-dark);">$99.85</b>
+        </div>
+      </div>
+
+      <div class="voucher-divider"></div>
+
+      <!-- Fechas de Control -->
+      <div class="voucher-meta-table">
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Fecha de entrega estimada</span>
+          <span class="voucher-meta-val" id="voucher-delivery-date">10-09-2026</span>
+        </div>
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Fecha de pago</span>
+          <span class="voucher-meta-val" id="voucher-payment-date">09-10-2026</span>
+        </div>
+        <div class="voucher-meta-row">
+          <span class="voucher-meta-key">Fecha de actualización</span>
+          <span class="voucher-meta-val" id="voucher-update-date">09 sept - 09:37 p. m.</span>
+        </div>
+      </div>
+
+      <!-- Agradecimiento Oficial -->
+      <div class="voucher-thanks-box">
+        <div class="voucher-thanks-title">¡GRACIAS POR TU COMPRA!</div>
+        <div class="voucher-thanks-subtitle" id="voucher-thanks-desc">
+          Guarda este comprobante digital como respaldo para validar tu cotización.
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones Flotantes Oficiales: Compartir y Continuar -->
+    <div class="voucher-floating-footer">
+      <button class="voucher-btn-action" onclick="window.UyapaySimulator.onVoucherShare()" title="Compartir comprobante">
+        <span class="voucher-btn-icon">🔗</span>
+        <span class="voucher-btn-label">Compartir</span>
+      </button>
+      <button class="voucher-btn-action" onclick="window.UyapaySimulator.onVoucherContinue()" title="Continuar">
+        <span class="voucher-btn-icon">›</span>
+        <span class="voucher-btn-label">Continuar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= PANTALLA OFICIAL: PAGO CON EFECTIVO ================= -->
+  <div class="screen" id="s-pago-efectivo" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-cliente-inicio'); window.UyapaySimulator.goToVisitTask(4);">‹</span>
+      <span class="visit-header-title">PAGO CON EFECTIVO</span>
+    </div>
+
+    <div class="pago-screen-body">
+      <!-- Tarjeta superior de deuda -->
+      <div class="pago-header-card">
+        <div class="pago-header-doc" id="pago-efectivo-doc">F001-00053870</div>
+        <div class="pago-header-amount" id="pago-efectivo-amount">USD 490.98</div>
+        <div class="pago-header-overdue">
+          <span>Deuda vencida hace 72 días</span>
+          <span>➔</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta de formulario de pago -->
+      <div class="pago-form-card">
+        <div class="pago-form-title">Pago en efectivo</div>
+
+        <div class="pago-field-row">
+          <span class="pago-field-label">Recibo electrónico</span>
+          <span class="pago-field-val-bold" id="pago-efectivo-recibo-num">RE003-014944</span>
+        </div>
+
+        <div class="pago-field-row">
+          <span class="pago-field-label">Moneda</span>
+          <div class="pago-currency-segmented">
+            <span id="lbl-curr-pen" style="color:#6b7280; cursor:pointer;" onclick="window.UyapaySimulator.togglePaymentCurrency('PEN')">PEN</span>
+            <label class="brand-toggle-switch">
+              <input type="checkbox" id="chk-payment-curr-usd" checked onchange="window.UyapaySimulator.togglePaymentCurrency(this.checked ? 'USD' : 'PEN')" />
+              <span class="brand-toggle-slider"></span>
+            </label>
+            <span id="lbl-curr-usd" style="color:#111827; font-weight:800; cursor:pointer;" onclick="window.UyapaySimulator.togglePaymentCurrency('USD')">USD</span>
+          </div>
+        </div>
+
+        <div class="pago-input-amount-wrap">
+          <div class="pago-amount-tag">Monto</div>
+          <input type="number" step="0.01" id="pago-efectivo-input-monto" class="pago-amount-input" value="490.98" oninput="window.UyapaySimulator.onPaymentAmountChange(this.value)" />
+        </div>
+      </div>
+
+      <!-- Tarjeta de Saldo Resultante -->
+      <div class="pago-saldo-card">
+        <span class="pago-saldo-label">Saldo</span>
+        <span class="pago-saldo-val" id="pago-efectivo-saldo">USD 0.00</span>
+      </div>
+
+      <!-- Botón Cámara para comprobante / voucher -->
+      <div class="btn-pago-action-card" id="btn-camera-efectivo" onclick="window.UyapaySimulator.onPaymentCameraClick('efectivo')">
+        <span style="font-size:18px;">📷</span>
+        <span id="lbl-camera-efectivo">Cámara</span>
+      </div>
+    </div>
+
+    <!-- Botón Sticky Continuar -->
+    <div class="sticky-footer-btn-container">
+      <button class="brand-btn-yellow" onclick="window.UyapaySimulator.openConfirmarPagoModal('efectivo')">
+        CONTINUAR
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= PANTALLA OFICIAL: PAGO POR DEPÓSITO ================= -->
+  <div class="screen" id="s-pago-deposito" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-cliente-inicio'); window.UyapaySimulator.goToVisitTask(4);">‹</span>
+      <span class="visit-header-title">PAGO POR DEPÓSITO</span>
+    </div>
+
+    <div class="pago-screen-body">
+      <!-- Tarjeta superior de deuda -->
+      <div class="pago-header-card">
+        <div class="pago-header-amount" id="pago-deposito-amount">USD 490.98</div>
+        <div class="pago-header-overdue">
+          <span>Deuda vencida hace 72 días</span>
+          <span>➔</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta formulario de depósito -->
+      <div class="pago-form-card">
+        <div class="pago-form-title">Pago por depósito</div>
+
+        <div class="pago-field-row">
+          <span class="pago-field-label">Recibo electrónico</span>
+          <span class="pago-field-val-bold" id="pago-deposito-recibo-num">RE003-014944</span>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label class="form-field-label">Cuenta bancaria</label>
+          <div class="form-select-card" style="margin-bottom:0;">
+            <select id="pago-deposito-banco" class="form-select-card-native" onchange="window.UyapaySimulator.onDepositBankChange(this.value)">
+              <option value="BCP (EN SOLES)" selected>BCP (EN SOLES)</option>
+              <option value="BBVA (EN DÓLARES)">BBVA (EN DÓLARES)</option>
+              <option value="INTERBANK (EN SOLES)">INTERBANK (EN SOLES)</option>
+              <option value="SCOTIABANK (EN SOLES)">SCOTIABANK (EN SOLES)</option>
+            </select>
+            <span class="form-select-card-val" id="lbl-pago-deposito-banco">BCP (EN SOLES)</span>
+            <span class="form-select-card-chevron">∨</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label class="form-field-label">Fecha de depósito</label>
+          <input type="date" id="pago-deposito-fecha" class="form-input" />
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label class="form-field-label">Número de depósito</label>
+          <input type="text" id="pago-deposito-num-op" class="form-input" placeholder="Ej: 002-94820194" value="002-94820194" />
+        </div>
+
+        <div class="pago-input-amount-wrap">
+          <div class="pago-amount-tag">Monto de depósito</div>
+          <input type="number" step="0.01" id="pago-deposito-input-monto" class="pago-amount-input" value="1659.51" oninput="window.UyapaySimulator.onPaymentDepositAmountChange(this.value)" />
+          <div style="font-size:11px; color:#6b7280; margin-top:2px;">TC: 3.38</div>
+        </div>
+      </div>
+
+      <!-- Saldo -->
+      <div class="pago-saldo-card">
+        <span class="pago-saldo-label">Saldo</span>
+        <span class="pago-saldo-val" id="pago-deposito-saldo">USD 0.00</span>
+      </div>
+
+      <!-- Acciones de foto/archivo de voucher -->
+      <div class="pago-action-btn-row">
+        <div class="btn-pago-action-card active" id="btn-camera-deposito" onclick="window.UyapaySimulator.onPaymentCameraClick('deposito')">
+          <span style="font-size:16px;">📷</span>
+          <span id="lbl-camera-deposito">Cámara ✓</span>
+        </div>
+        <div class="btn-pago-action-card" id="btn-file-deposito" onclick="window.UyapaySimulator.onPaymentFileClick()">
+          <span style="font-size:16px;">📄</span>
+          <span>Archivo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón Sticky Continuar -->
+    <div class="sticky-footer-btn-container">
+      <button class="brand-btn-yellow" onclick="window.UyapaySimulator.openConfirmarPagoModal('deposito')">
+        CONTINUAR
+      </button>
     </div>
   </div>
 
@@ -1989,7 +2314,110 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: COBRANZA MIXTA ================= -->
+  <!-- ================= MODAL BOTTOM SHEET: OPCIONES DE PAGO ================= -->
+  <div class="modal-overlay" id="opcionesPagoModal">
+    <div class="bottom-sheet" style="padding:16px 18px 24px;">
+      <div class="bs-header" style="margin-bottom:12px;">
+        <span style="font-size:14px; font-weight:800; letter-spacing:0.5px;">OPCIONES DE PAGO</span>
+        <span class="close-btn" onclick="window.UyapaySimulator.closeOpcionesPagoModal()">✕</span>
+      </div>
+      <div class="pago-opcion-row" onclick="window.UyapaySimulator.goToPagoEfectivo()">
+        <div>
+          <div class="pago-opcion-title">EFECTIVO</div>
+          <div class="pago-opcion-desc">Registre el pago en soles o en dólares.</div>
+        </div>
+        <span class="pago-opcion-chevron">›</span>
+      </div>
+      <div class="pago-opcion-row" onclick="window.UyapaySimulator.goToPagoDeposito()">
+        <div>
+          <div class="pago-opcion-title">DEPOSITO</div>
+          <div class="pago-opcion-desc">Registre el deposito realizado por el cliente.</div>
+        </div>
+        <span class="pago-opcion-chevron">›</span>
+      </div>
+      <div class="pago-opcion-row" onclick="window.UyapaySimulator.goToPagoCheque()">
+        <div>
+          <div class="pago-opcion-title">CHEQUE</div>
+          <div class="pago-opcion-desc">Registre los datos del cheque recibido.</div>
+        </div>
+        <span class="pago-opcion-chevron">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL BOTTOM SHEET: CONFIRMAR PAGO ================= -->
+  <div class="modal-overlay" id="confirmarPagoModal">
+    <div class="bottom-sheet confirm-payment-bs">
+      <div class="bs-header">
+        <span style="font-size:13px; font-weight:800; letter-spacing:0.5px;">CONFIRMAR PAGO</span>
+        <span class="close-btn" onclick="window.UyapaySimulator.closeConfirmarPagoModal()">✕</span>
+      </div>
+      <div class="confirm-payment-client" id="confirm-pay-client">MULTISERVICIOS CUELLAR E.I.R.L.</div>
+
+      <div class="confirm-payment-row">
+        <span>Documento a pagar</span>
+        <b id="confirm-pay-doc">F001-00053870</b>
+      </div>
+      <div class="confirm-payment-row">
+        <span>Importe</span>
+        <b id="confirm-pay-original-amount">USD 725.76</b>
+      </div>
+      <div class="confirm-payment-row">
+        <span>Deuda antes del pago</span>
+        <b id="confirm-pay-debt-before">USD 490.98</b>
+      </div>
+      <div class="confirm-payment-row">
+        <span>Deuda después del pago</span>
+        <b id="confirm-pay-debt-after" style="color:var(--success-color);">USD 0.00</b>
+      </div>
+      <div class="confirm-payment-row" style="border-top:1px dashed #e5e7eb; margin-top:6px; padding-top:6px;">
+        <span>Recibo electrónico</span>
+        <b id="confirm-pay-recibo-num">RE003-014944</b>
+      </div>
+
+      <div class="confirm-payment-big-box">
+        <div class="confirm-payment-type-lbl" id="confirm-pay-method-lbl">PAGO EN EFECTIVO</div>
+        <div class="confirm-payment-amount" id="confirm-pay-amount-lbl">USD 490.98</div>
+      </div>
+
+      <button class="login-btn" onclick="window.UyapaySimulator.finalizePayment()">
+        FINALIZAR PAGO
+      </button>
+      <button class="btn-cancel-operation" onclick="window.UyapaySimulator.closeConfirmarPagoModal()">
+        CANCELAR OPERACIÓN
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL BOTTOM SHEET: CONSOLIDADO DE COBRANZAS DE VISITA ================= -->
+  <div class="modal-overlay" id="consolidadoCobranzaModal">
+    <div class="bottom-sheet" style="padding:16px 18px 24px;">
+      <div class="bs-header">
+        <span style="font-size:13px; font-weight:800; letter-spacing:0.5px;">CONSOLIDADO DE COBRANZAS DE VISITA</span>
+        <span class="close-btn" onclick="window.UyapaySimulator.closeConsolidadoCobranzaModal()">✕</span>
+      </div>
+      <div style="padding:10px 0;">
+        <div class="card-task" style="margin-bottom:12px;">
+          <div style="font-size:12.5px; font-weight:800; margin-bottom:8px; color:var(--text-dark);">Arqueo de Recaudación de la Visita</div>
+          <div class="profile-row"><span>Recibos emitidos en visita:</span><b id="cons-total-recibos">1 recibo</b></div>
+          <div class="profile-row"><span>Recaudación Efectivo Soles:</span><b id="cons-cash-sol">S/ 0.00</b></div>
+          <div class="profile-row"><span>Recaudación Efectivo Dólares:</span><b id="cons-cash-usd">USD 490.98</b></div>
+          <div class="profile-row"><span>Depósitos Bancarios con Voucher:</span><b id="cons-deposit-usd">USD 0.00</b></div>
+          <div class="profile-row"><span>Recibos pendientes de consolidar:</span><b style="color:var(--warning-color);" id="cons-pending-count">1 pendiente</b></div>
+        </div>
+
+        <div id="cons-receipts-list-details" style="max-height:140px; overflow-y:auto; margin-bottom:12px;">
+          <!-- Listado de recibos emitidos -->
+        </div>
+
+        <button class="login-btn" style="background:#27ae60;" onclick="window.UyapaySimulator.submitConsolidadoCobranza()">
+          Generar Consolidado de Cobranzas y Finalizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: COBRANZA MIXTA (LEGACY/FALLBACK) ================= -->
   <div class="modal-overlay" id="cobranzaModal">
     <div class="bottom-sheet" style="padding:16px;">
       <div class="bs-header">

@@ -3395,5 +3395,661 @@ input:checked + .slider:before {
   line-height: 1.35;
 }
 
+/* ================= 28. TAREA COBRANZA EN VISITA (VISITAS-COBRANZA) ================= */
+.cobranza-invoice-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
 
+.btn-pagar-invoice {
+  background: transparent;
+  border: none;
+  color: #1d4ed8;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
 
+.btn-pagar-invoice:hover {
+  background: #eff6ff;
+}
+
+.cobranza-recibos-subtabs {
+  display: flex;
+  border-bottom: 1.5px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.cobranza-subtab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cobranza-subtab.active {
+  color: #111827;
+  font-weight: 700;
+}
+
+.cobranza-subtab-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--primary-yellow);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cobranza-receipt-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cobranza-receipt-num {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cobranza-receipt-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.cobranza-receipt-badge.reciente {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.cobranza-receipt-badge.enviado {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* ================= 29. MODAL OPCIONES DE PAGO ================= */
+.pago-opcion-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 4px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+}
+
+.pago-opcion-row:hover {
+  background: #fdfdfd;
+}
+
+.pago-opcion-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.5px;
+}
+
+.pago-opcion-desc {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.pago-opcion-chevron {
+  font-size: 16px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+/* ================= 30. PANTALLAS DE PAGO (EFECTIVO Y DEPÓSITO) ================= */
+.pago-screen-body {
+  padding: 14px 16px 90px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.pago-header-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.pago-header-doc {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pago-header-amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.pago-header-overdue {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ea580c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.pago-form-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.pago-form-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 14px;
+}
+
+.pago-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.pago-field-label {
+  font-size: 12.5px;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.pago-field-val-bold {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.pago-currency-segmented {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pago-input-amount-wrap {
+  position: relative;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.pago-input-amount-wrap:focus-within {
+  border-color: var(--primary-yellow);
+  background: #ffffff;
+}
+
+.pago-amount-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.pago-amount-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  outline: none;
+  margin-top: 2px;
+}
+
+.pago-saldo-card {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.pago-saldo-label {
+  font-size: 13px;
+  color: #166534;
+  font-weight: 600;
+}
+
+.pago-saldo-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: #166534;
+}
+
+.pago-action-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.btn-pago-action-card {
+  flex: 1;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-pago-action-card:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.btn-pago-action-card.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+/* ================= 31. MODAL CONFIRMAR PAGO ================= */
+.confirm-payment-bs {
+  padding: 20px 18px 24px;
+}
+
+.confirm-payment-client {
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  color: #111827;
+  margin-bottom: 14px;
+}
+
+.confirm-payment-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.confirm-payment-row b {
+  color: #111827;
+}
+
+.confirm-payment-big-box {
+  margin: 16px 0;
+  text-align: center;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px dashed #d1d5db;
+}
+
+.confirm-payment-type-lbl {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.confirm-payment-amount {
+  font-size: 28px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.btn-cancel-operation {
+  width: 100%;
+  background: #ffffff;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: 24px;
+  padding: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* ================= 32. PRODUCT CARD EN NUEVO PEDIDO ================= */
+.order-product-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.order-product-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.order-product-img-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.order-product-img-box img {
+  max-width: 48px;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.order-product-info {
+  flex: 1;
+}
+
+.order-product-sku {
+  font-size: 10.5px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.order-product-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.25;
+  margin: 1px 0;
+}
+
+.order-product-format {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.order-product-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.order-product-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.order-product-qty {
+  font-size: 11.5px;
+  color: #4b5563;
+}
+
+.order-product-footer-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.order-product-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4b5563;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.order-product-link:hover {
+  color: #111827;
+}
+
+.order-totals-card {
+  padding: 10px 2px;
+  margin-top: 6px;
+}
+
+.order-totals-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12.5px;
+  color: #374151;
+}
+
+.order-totals-row.bold {
+  font-weight: 800;
+  color: #111827;
+  font-size: 13.5px;
+}
+
+/* ================= 33. PANTALLA COMPROBANTE / VOUCHER ================= */
+.voucher-screen-container {
+  background: #ffffff;
+  min-height: 100%;
+  padding: 24px 18px 100px;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1f2937;
+}
+
+.voucher-brand-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.voucher-logo-img {
+  max-width: 140px;
+  height: auto;
+  margin-bottom: 6px;
+}
+
+.voucher-doc-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #111827;
+  margin-top: 4px;
+}
+
+.voucher-company-name {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.voucher-company-ruc {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.voucher-datetime {
+  font-size: 10.5px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.voucher-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 12px 0;
+}
+
+.voucher-meta-table {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.voucher-meta-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 11.5px;
+}
+
+.voucher-meta-key {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.voucher-meta-val {
+  font-weight: 700;
+  color: #111827;
+  text-align: right;
+  max-width: 200px;
+}
+
+.voucher-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin: 10px 0;
+}
+
+.voucher-items-table th {
+  background: #f9fafb;
+  padding: 6px 4px;
+  font-weight: 800;
+  color: #374151;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.voucher-items-table td {
+  padding: 8px 4px;
+  color: #1f2937;
+  border-bottom: 1px dashed #f3f4f6;
+  text-align: center;
+}
+
+.voucher-items-table td.text-left {
+  text-align: left;
+}
+
+.voucher-totals-box {
+  margin: 10px 0;
+}
+
+.voucher-total-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 12px;
+  color: #374151;
+}
+
+.voucher-total-line.final {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #111827;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+.voucher-thanks-box {
+  text-align: center;
+  margin-top: 20px;
+  padding: 12px 10px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.voucher-thanks-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.5px;
+}
+
+.voucher-thanks-subtitle {
+  font-size: 10.5px;
+  color: #6b7280;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.voucher-floating-footer {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.voucher-btn-action {
+  background: var(--primary-yellow);
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  min-width: 58px;
+}
+
+.voucher-btn-icon {
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.voucher-btn-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #111827;
+}

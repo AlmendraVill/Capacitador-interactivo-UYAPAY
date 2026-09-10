@@ -4,6 +4,9 @@
  * Incluye Casos Base, Casos Borde, Flujos Ocultos de Producción y Flujos de Resolución Oficiales.
  * Basado estrictamente en la arquitectura Flutter (appSellerV1) y Backend C# (solar-web-app-backend).
  */
+if (typeof window === 'undefined') {
+  global.window = {};
+}
 window.UyapayData = window.UyapayData || {};
 
 window.UyapayData.PRODUCTS = [
@@ -1869,3 +1872,7 @@ window.UyapayData.CASES = [
   ]
 }
 ];
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = window.UyapayData;
+}

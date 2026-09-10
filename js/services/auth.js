@@ -22,6 +22,9 @@ window.UyapayServices = window.UyapayServices || {};
         });
         const data = await res.json();
         if (res.ok && data.success) {
+          if (data.token) {
+            data.user.token = data.token;
+          }
           Storage.setCurrentSession(data.user);
           return { success: true, user: data.user };
         } else if (res.status === 401) {

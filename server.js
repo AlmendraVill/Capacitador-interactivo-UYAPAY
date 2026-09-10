@@ -7,6 +7,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
@@ -17,9 +18,89 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// ================= INICIALIZACIÓN BASE DE DATOS SQLITE =================
+// ================= INICIALIZACIÓN BASE DE DATOS SQLITE (CON WAL Y BUSY TIMEOUT) =================
 const dbPath = path.join(__dirname, 'uyapay.sqlite');
 const db = new DatabaseSync(dbPath);
+
+// Configuración de alto rendimiento y concurrencia SQLite WAL
+try {
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA busy_timeout = 5000;
+    PRAGMA synchronous = NORMAL;
+  `);
+} catch (e) {
+  console.warn('[DB Warning] Configurando pragmas WAL:', e.message);
+}
+
+// ================= SEGURIDAD, HASHING PBKDF2 Y SESIONES =================
+const ACTIVE_SESSIONS = new Map(); // token -> { user, expiresAt }
+
+function hashPassword(password) {
+  if (!password) password = '123';
+  const salt = crypto.randomBytes(16).toString('hex');
+  const iterations = 10000;
+  const derived = crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha512').toString('hex');
+  return `$pbkdf2$${iterations}$${salt}$${derived}`;
+}
+
+function verifyPassword(password, storedHash) {
+  if (!storedHash) return false;
+  if (!storedHash.startsWith('$pbkdf2$')) {
+    // Compatibilidad y migración automática desde texto plano existente
+    return storedHash === password;
+  }
+  const parts = storedHash.split('$');
+  if (parts.length !== 5) return false;
+  const iterations = parseInt(parts[2], 10);
+  const salt = parts[3];
+  const expectedHash = parts[4];
+  const actualHash = crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha512').toString('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(actualHash, 'utf8'), Buffer.from(expectedHash, 'utf8'));
+  } catch (e) {
+    return false;
+  }
+}
+
+function generateSessionToken(user) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 horas de vigencia
+  ACTIVE_SESSIONS.set(token, { user, expiresAt });
+  return token;
+}
+
+function authMiddleware(req, res, next) {
+  let token = null;
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim();
+  } else if (req.query && req.query.token) {
+    token = String(req.query.token).trim();
+  }
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Autenticación requerida. Token no suministrado.' });
+  }
+
+  const session = ACTIVE_SESSIONS.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    if (session) ACTIVE_SESSIONS.delete(token);
+    return res.status(401).json({ success: false, message: 'Sesión expirada o no válida.' });
+  }
+
+  req.user = session.user;
+  next();
+}
+
+function adminMiddleware(req, res, next) {
+  authMiddleware(req, res, () => {
+    if (req.user && req.user.role === 'admin') {
+      return next();
+    }
+    return res.status(403).json({ success: false, message: 'Acceso restringido a administradores.' });
+  });
+}
 
 // Crear tablas si no existen
 db.exec(`
@@ -103,18 +184,27 @@ const INITIAL_USERS = [
   { id: 'usr-hernan', username: 'hernan', name: 'Hernan Pacco', role: 'asesor', password: '123' }
 ];
 
-// Sincronizar / actualizar usuarios en la base de datos SQLite
-const upsertUser = db.prepare(`
+// Sincronizar / actualizar usuarios en la base de datos SQLite de forma segura con PBKDF2
+const selectUserByUsername = db.prepare('SELECT id, password FROM users WHERE username = ?');
+const insertUser = db.prepare(`
   INSERT INTO users (id, username, name, role, password, created_at)
   VALUES (?, ?, ?, ?, ?, ?)
-  ON CONFLICT(username) DO UPDATE SET
-    name = excluded.name,
-    role = excluded.role,
-    password = excluded.password
+`);
+const updateUser = db.prepare(`
+  UPDATE users SET name = ?, role = ?, password = ? WHERE username = ?
 `);
 
 for (const u of INITIAL_USERS) {
-  upsertUser.run(u.id, u.username, u.name, u.role, u.password, new Date().toISOString());
+  const existing = selectUserByUsername.get(u.username);
+  if (!existing) {
+    insertUser.run(u.id, u.username, u.name, u.role, hashPassword(u.password), new Date().toISOString());
+  } else {
+    // Si la contraseña almacenada ya es un hash PBKDF2 válido, preservarlo; si es texto plano ('123'), migrarla a PBKDF2
+    const passToSave = (existing.password && existing.password.startsWith('$pbkdf2$'))
+      ? existing.password
+      : hashPassword(u.password);
+    updateUser.run(u.name, u.role, passToSave, u.username);
+  }
 }
 
 // Limpiar usuarios antiguos de demo que no pertenezcan a la nómina oficial
@@ -125,7 +215,7 @@ for (const row of allUsersInDb) {
     db.prepare('DELETE FROM users WHERE username = ?').run(row.username);
   }
 }
-console.log(`[DB] Nómina oficial de ${INITIAL_USERS.length} usuarios sincronizada correctamente.`);
+console.log(`[DB] Nómina oficial de ${INITIAL_USERS.length} usuarios sincronizada y asegurada correctamente.`);
 
 // Sembrar evaluaciones iniciales de demostración si la tabla está vacía
 const resultsCount = db.prepare('SELECT COUNT(*) as count FROM results').get().count;
@@ -183,8 +273,16 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Usuario no encontrado en la plataforma.' });
   }
 
-  if (user.password && password && user.password !== password.trim()) {
-    return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
+  const inputPassword = (password || '').trim();
+  if (user.password) {
+    if (!verifyPassword(inputPassword, user.password)) {
+      return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
+    }
+    // Auto-actualizar contraseña de texto plano a PBKDF2
+    if (!user.password.startsWith('$pbkdf2$')) {
+      const secureHash = hashPassword(inputPassword);
+      db.prepare('UPDATE users SET password = ? WHERE id = ?').run(secureHash, user.id);
+    }
   }
 
   const sessionUser = {
@@ -194,7 +292,9 @@ app.post('/api/auth/login', (req, res) => {
     role: user.role
   };
 
-  res.json({ success: true, user: sessionUser });
+  const token = generateSessionToken(sessionUser);
+
+  res.json({ success: true, user: sessionUser, token });
 });
 
 // 3. Listar usuarios
@@ -217,10 +317,11 @@ app.post('/api/users', (req, res) => {
   }
 
   const newId = 'usr-' + Date.now();
+  const hashedPassword = hashPassword(password.trim());
   db.prepare(`
     INSERT INTO users (id, username, name, role, password, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(newId, cleanUsername, name.trim(), role, password.trim(), new Date().toISOString());
+  `).run(newId, cleanUsername, name.trim(), role, hashedPassword, new Date().toISOString());
 
   res.status(201).json({
     success: true,
@@ -385,8 +486,8 @@ app.get('/api/settings/podium', (req, res) => {
   }
 });
 
-// Modificar publicación del podio (Mostrar/Ocultar a asesores)
-app.post('/api/settings/podium', (req, res) => {
+// Modificar publicación del podio (Mostrar/Ocultar a asesores - Solo Admin)
+app.post('/api/settings/podium', adminMiddleware, (req, res) => {
   try {
     const { visible } = req.body;
     const val = visible ? '1' : '0';
@@ -418,7 +519,7 @@ app.post('/api/settings/podium', (req, res) => {
 });
 
 // ================= ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (EXCLUSIVO ADMIN) =================
-app.get('/api/admin/error-analytics', (req, res) => {
+app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
   try {
     const allResults = db.prepare('SELECT * FROM results ORDER BY rowid DESC').all();
     const casesStats = {};
@@ -631,7 +732,7 @@ app.get('/api/live-events/stream', (req, res) => {
 });
 
 // 11. Reiniciar datos demo (solo administración)
-app.post('/api/reset', (req, res) => {
+app.post('/api/reset', adminMiddleware, (req, res) => {
   db.exec('DELETE FROM results; DELETE FROM live_events;');
   currentLiveState = {
     advisor: 'En espera',
@@ -668,6 +769,102 @@ app.post('/api/reset', (req, res) => {
   res.json({ success: true, message: 'Datos restablecidos con éxito.' });
 });
 
+// 12. Exportación de reportes administrativos (CSV y Excel XML - Solo Admin)
+app.get('/api/admin/export', adminMiddleware, (req, res) => {
+  try {
+    const format = (req.query.format || 'csv').toLowerCase();
+    const allResults = db.prepare('SELECT * FROM results ORDER BY rowid DESC').all();
+
+    if (format === 'excel' || format === 'xls') {
+      let rowsXml = '';
+      allResults.forEach(r => {
+        rowsXml += `
+        <Row>
+          <Cell><Data ss:Type="String">${r.id || ''}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.advisor_name || ''}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.username || ''}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.case_code || ''}</Data></Cell>
+          <Cell><Data ss:Type="String">${(r.case_title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.score || ''}</Data></Cell>
+          <Cell><Data ss:Type="Number">${r.numeric_score || 0}</Data></Cell>
+          <Cell><Data ss:Type="Number">${r.errors || 0}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.status || ''}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.formatted_duration || ''}</Data></Cell>
+          <Cell><Data ss:Type="String">${r.completed_at || ''}</Data></Cell>
+        </Row>`;
+      });
+
+      const excelXml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#008080" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Evaluaciones">
+  <Table>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">ID Evaluación</Data></Cell>
+    <Cell><Data ss:Type="String">Asesor</Data></Cell>
+    <Cell><Data ss:Type="String">Usuario</Data></Cell>
+    <Cell><Data ss:Type="String">Código Caso</Data></Cell>
+    <Cell><Data ss:Type="String">Título Caso</Data></Cell>
+    <Cell><Data ss:Type="String">Nota</Data></Cell>
+    <Cell><Data ss:Type="String">Puntaje Numérico</Data></Cell>
+    <Cell><Data ss:Type="String">Errores</Data></Cell>
+    <Cell><Data ss:Type="String">Estado</Data></Cell>
+    <Cell><Data ss:Type="String">Duración</Data></Cell>
+    <Cell><Data ss:Type="String">Fecha Realización</Data></Cell>
+   </Row>
+   ${rowsXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+      const filename = `reporte_uyapay_${new Date().toISOString().slice(0, 10)}.xls`;
+      res.setHeader('Content-Type', 'application/vnd.ms-excel; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(excelXml);
+    }
+
+    // Por defecto: CSV UTF-8 con BOM
+    const headers = ['ID Evaluación', 'Asesor', 'Usuario', 'Código Caso', 'Título Caso', 'Nota', 'Puntaje Numérico', 'Errores', 'Estado', 'Duración', 'Fecha Realización'];
+    const csvRows = [headers.map(h => `"${h}"`).join(',')];
+
+    allResults.forEach(r => {
+      const row = [
+        r.id || '',
+        r.advisor_name || '',
+        r.username || '',
+        r.case_code || '',
+        (r.case_title || '').replace(/"/g, '""'),
+        r.score || '',
+        r.numeric_score || 0,
+        r.errors || 0,
+        r.status || '',
+        r.formatted_duration || '',
+        r.completed_at || ''
+      ];
+      csvRows.push(row.map(val => `"${val}"`).join(','));
+    });
+
+    const bom = '\uFEFF';
+    const csvContent = bom + csvRows.join('\r\n');
+    const filename = `reporte_uyapay_${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(csvContent);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Función para obtener dinámicamente la IP de la red local (Wi-Fi / Ethernet)
 function getLocalNetworkIp() {
   const interfaces = os.networkInterfaces();
@@ -683,13 +880,27 @@ function getLocalNetworkIp() {
 }
 
 // Iniciar servidor escuchando en todas las interfaces de red (0.0.0.0) para soporte multi-dispositivo
-app.listen(PORT, '0.0.0.0', () => {
-  const localIp = getLocalNetworkIp();
-  console.log(`=======================================================`);
-  console.log(`🚀 Servidor UYAPAY activo en: http://localhost:${PORT}`);
-  if (localIp !== 'localhost') {
-    console.log(`🌐 Acceso en Red Local (Celular u otro equipo): http://${localIp}:${PORT}`);
-  }
-  console.log(`📁 Base de Datos SQLite: ${dbPath}`);
-  console.log(`=======================================================`);
-});
+let serverInstance = null;
+function startServer(port = PORT) {
+  return new Promise((resolve) => {
+    const s = app.listen(port, '0.0.0.0', () => {
+      const localIp = getLocalNetworkIp();
+      console.log(`=======================================================`);
+      console.log(`🚀 Servidor UYAPAY activo en: http://localhost:${port}`);
+      if (localIp !== 'localhost') {
+        console.log(`🌐 Acceso en Red Local (Celular u otro equipo): http://${localIp}:${port}`);
+      }
+      console.log(`📁 Base de Datos SQLite: ${dbPath}`);
+      console.log(`=======================================================`);
+      resolve(s);
+    });
+    serverInstance = s;
+  });
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer, db };
+

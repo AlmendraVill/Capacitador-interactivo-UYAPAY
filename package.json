@@ -2,10 +2,10 @@
   "name": "capacitador-interactivo-uyapay",
   "version": "1.0.0",
   "description": "Plataforma web interactiva para la capacitación, simulación móvil y evaluación práctica de asesores de ventas de **UYAPAY**.",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/*.test.js"
   },
   "repository": {
     "type": "git",

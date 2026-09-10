@@ -646,14 +646,74 @@
   let evaluationCases = [];
   let currentActiveTab = 0;
 
+  /**
+   * Selección balanceada de 5 casos estratificados por áreas de competencia:
+   * 1. Venta Regular & Catálogo Base (B2C-01, B2C-02, B2C-03, B2C-04)
+   * 2. Reglas Comerciales, Listas de Precio & Moneda (B2C-06, B2C-08, B2C-09, B2C-10, B2C-11, B2C-14)
+   * 3. Promociones, Bonificaciones & Exclusión Mutua (B2C-07, B2C-20, B2C-21)
+   * 4. Gestión de Ruta, Historial & Justificaciones (B2C-15, B2C-16, B2C-17, B2C-22)
+   * 5. Cobranzas, Cotizaciones & Cierre Operativo (B2C-05, B2C-18, B2C-19, B2C-23)
+   * 
+   * Incluye filtro anti-repetición respecto al último intento del asesor.
+   */
   function selectFiveEvaluationCases() {
-    const all = [...Cases];
-    // Algoritmo de barajado Fisher-Yates
-    for (let i = all.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [all[i], all[j]] = [all[j], all[i]];
+    const user = Auth.getCurrentUser();
+    const historyKey = user ? `uyapay_last_cases_${user.username.toLowerCase()}` : 'uyapay_last_cases';
+    let recentCaseIds = [];
+    try {
+      recentCaseIds = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    } catch(e) {}
+
+    // Definición de estratos temáticos oficiales
+    const strata = [
+      // Estrato 1: Venta regular y catálogo base
+      ['case-1', 'case-2', 'case-3', 'case-4'],
+      // Estrato 2: Condiciones especiales de pago, listas y multi-marca
+      ['case-6', 'case-8', 'case-9', 'case-10', 'case-11', 'case-14'],
+      // Estrato 3: Políticas promocionales y descuentos de escala
+      ['case-7', 'case-20', 'case-21'],
+      // Estrato 4: Procedimientos de visita, historial y excepciones de ruta
+      ['case-15', 'case-16', 'case-17', 'case-22'],
+      // Estrato 5: Cobranza vencida, cotizaciones Tipo 3 y liquidación de recaudación
+      ['case-5', 'case-18', 'case-19', 'case-23']
+    ];
+
+    const selectedCases = [];
+    const chosenIds = [];
+
+    strata.forEach((stratumIds) => {
+      // Filtrar candidatos disponibles en el catálogo activo
+      const candidates = stratumIds
+        .map(id => Cases.find(c => c.id === id))
+        .filter(c => c && c.active !== false);
+
+      if (candidates.length === 0) return;
+
+      // Priorizar candidatos que no se hayan presentado en la última evaluación del asesor
+      let pool = candidates.filter(c => !recentCaseIds.includes(c.id));
+      if (pool.length === 0) pool = candidates;
+
+      // Selección aleatoria dentro del estrato
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      selectedCases.push(chosen);
+      chosenIds.push(chosen.id);
+    });
+
+    // Guardar para evitar repetición inmediata en el próximo intento
+    try {
+      localStorage.setItem(historyKey, JSON.stringify(chosenIds));
+    } catch(e) {}
+
+    // En caso de que algún estrato no complete 5 (fallback de seguridad)
+    if (selectedCases.length < 5) {
+      const remaining = Cases.filter(c => !chosenIds.includes(c.id) && c.active !== false);
+      while (selectedCases.length < 5 && remaining.length > 0) {
+        const extraIdx = Math.floor(Math.random() * remaining.length);
+        selectedCases.push(remaining.splice(extraIdx, 1)[0]);
+      }
     }
-    return all.slice(0, 5);
+
+    return selectedCases.slice(0, 5);
   }
 
   function startExam() {
@@ -784,10 +844,27 @@
     // Refrescar clases de tabs
     renderEvaluationTabs();
 
-    // Cargar simulador móvil para este caso específico
+    // Cargar o conmutar simulador móvil sin recargar iframe para eliminar parpadeo blanco
     const frame = document.getElementById('simulador-frame');
     if (frame && user) {
-      frame.src = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1`;
+      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1`;
+      const isAlreadyLoaded = frame.dataset.loaded === 'true' && frame.contentWindow;
+
+      if (isAlreadyLoaded) {
+        // Conmutación instantánea en caliente sin recargar el iframe
+        frame.contentWindow.postMessage({
+          type: 'PORTAL_SET_CASE',
+          caseId: activeCase.id,
+          tabIndex: tabIndex,
+          username: user.username
+        }, '*');
+      } else {
+        // Carga inicial
+        frame.onload = () => {
+          frame.dataset.loaded = 'true';
+        };
+        frame.src = targetUrl;
+      }
     }
   }
 
@@ -817,7 +894,10 @@
       }
       Evaluator.cancelEvaluation();
       const frame = document.getElementById('simulador-frame');
-      frame.src = '';
+      if (frame) {
+        delete frame.dataset.loaded;
+        frame.src = '';
+      }
       document.getElementById('evaluation-arena').style.display = 'none';
       document.getElementById('top-navbar').style.display = 'flex';
       document.getElementById('asesor-eval-intro').classList.add('active');
@@ -961,7 +1041,10 @@
     });
 
     const frame = document.getElementById('simulador-frame');
-    if (frame) frame.src = '';
+    if (frame) {
+      delete frame.dataset.loaded;
+      frame.src = '';
+    }
 
     document.getElementById('evaluation-arena').style.display = 'none';
     document.getElementById('top-navbar').style.display = 'flex';
@@ -1042,6 +1125,142 @@
     }
   }
 
+  // ================= EXPORTACIÓN DE REPORTES (CSV Y EXCEL) =================
+  async function exportReport(format = 'csv') {
+    const results = await Storage.getResults();
+    if (!results || results.length === 0) {
+      alert('No hay evaluaciones registradas para exportar.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+    if (format === 'csv') {
+      const headers = [
+        'ID_Evaluacion',
+        'Asesor',
+        'Usuario',
+        'Caso_Codigo',
+        'Caso_Titulo',
+        'Calificacion',
+        'Puntaje_Numerico',
+        'Errores',
+        'Max_Errores',
+        'Estado',
+        'Duracion_Segundos',
+        'Tiempo_Formateado',
+        'Fecha_Hora',
+        'Detalle_Casos'
+      ];
+
+      const rows = results.map(r => {
+        const details = (r.casesDetails || []).map(cd => `${cd.caseCode || 'B2C'}: ${cd.score || '20/20'} (${cd.errors || 0} err)`).join(' | ');
+        return [
+          r.id,
+          `"${(r.advisorName || r.username || '').replace(/"/g, '""')}"`,
+          `"${(r.username || '').replace(/"/g, '""')}"`,
+          `"${(r.caseCode || '').replace(/"/g, '""')}"`,
+          `"${(r.caseTitle || '').replace(/"/g, '""')}"`,
+          `"${(r.score || '').replace(/"/g, '""')}"`,
+          r.numericScore !== undefined ? r.numericScore : 20,
+          r.errors !== undefined ? r.errors : 0,
+          r.maxErrors !== undefined ? r.maxErrors : 2,
+          `"${(r.status || '').replace(/"/g, '""')}"`,
+          r.durationSeconds || 0,
+          `"${(r.formattedDuration || '00:00').replace(/"/g, '""')}"`,
+          `"${(r.completedAt || '').replace(/"/g, '""')}"`,
+          `"${details.replace(/"/g, '""')}"`
+        ].join(',');
+      });
+
+      // UTF-8 BOM (\uFEFF) para visualización correcta en Excel en español
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `reporte_evaluaciones_uyapay_${timestamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Exportación a Excel nativo HTML Workbook (.xls)
+      let tableHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+          <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Evaluaciones UYAPAY</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+          <style>
+            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+            th { background-color: #107c41; color: #ffffff; font-weight: bold; border: 1px solid #0b582e; padding: 8px; text-align: left; }
+            td { border: 1px solid #dcdcdc; padding: 6px 8px; font-size: 12px; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .aprobado { background-color: #d4edda; color: #155724; font-weight: bold; }
+            .desaprobado { background-color: #f8d7da; color: #721c24; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h2>Reporte Oficial de Evaluaciones - UYAPAY B2C</h2>
+          <p>Generado el: ${new Date().toLocaleString('es-PE')}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Asesor</th>
+                <th>Usuario</th>
+                <th>Caso</th>
+                <th>Calificación</th>
+                <th>Puntaje</th>
+                <th>Errores</th>
+                <th>Estado</th>
+                <th>Tiempo</th>
+                <th>Fecha y Hora</th>
+                <th>Detalle de los 5 Casos</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      results.forEach(r => {
+        const details = (r.casesDetails || []).map(cd => `${cd.caseCode || 'B2C'}: ${cd.score || '20/20'} (${cd.errors || 0} err)`).join(' | ');
+        const statusClass = r.status === 'Aprobado' ? 'aprobado' : 'desaprobado';
+        tableHtml += `
+          <tr>
+            <td>${escapeHtml(r.id)}</td>
+            <td><b>${escapeHtml(r.advisorName || r.username)}</b></td>
+            <td>${escapeHtml(r.username)}</td>
+            <td>${escapeHtml(r.caseTitle || r.caseCode)}</td>
+            <td><b>${escapeHtml(r.score)}</b></td>
+            <td>${r.numericScore !== undefined ? r.numericScore : 20}</td>
+            <td>${r.errors !== undefined ? r.errors : 0}</td>
+            <td class="${statusClass}">${escapeHtml(r.status)}</td>
+            <td>${escapeHtml(r.formattedDuration || '00:00')}</td>
+            <td>${escapeHtml(r.completedAt)}</td>
+            <td>${escapeHtml(details)}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `reporte_evaluaciones_uyapay_${timestamp}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  }
+
   window.UyapayPortal = {
     logout: () => Auth.logout(),
     startExam: startExam,
@@ -1056,6 +1275,7 @@
     closeAuditModal: closeAuditModal,
     closePersonalModal: closePersonalModal,
     goToMyGrades: goToMyGrades,
+    exportReport: exportReport,
     resetData: async () => {
       if (confirm('¿Restablecer base de datos y reiniciar el ranking?')) {
         await Storage.resetAll();

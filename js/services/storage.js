@@ -57,6 +57,15 @@ window.UyapayServices = window.UyapayServices || {};
     return 'http://localhost:3000' + url;
   }
 
+  function getAuthHeaders() {
+    const session = getLocalItem(KEYS.SESSION, null);
+    const headers = { 'Content-Type': 'application/json' };
+    if (session && session.token) {
+      headers['Authorization'] = `Bearer ${session.token}`;
+    }
+    return headers;
+  }
+
   window.UyapayServices.Storage = {
     // ---- USUARIOS ----
     async getUsers() {
@@ -196,7 +205,7 @@ window.UyapayServices = window.UyapayServices || {};
       try {
         const res = await fetch(resolveUrl('/api/settings/podium'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ visible: Boolean(visible) })
         });
         if (res.ok) {
@@ -212,7 +221,9 @@ window.UyapayServices = window.UyapayServices || {};
     // ---- ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (ADMIN) ----
     async getErrorAnalytics() {
       try {
-        const res = await fetch(resolveUrl('/api/admin/error-analytics'));
+        const res = await fetch(resolveUrl('/api/admin/error-analytics'), {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           return await res.json();
         }
@@ -305,7 +316,10 @@ window.UyapayServices = window.UyapayServices || {};
     // ---- RESETEAR A DEMO ----
     async resetAll() {
       try {
-        await fetch('/api/reset', { method: 'POST' });
+        await fetch(resolveUrl('/api/reset'), {
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
       } catch (e) {}
 
       if (hasStorage) {
