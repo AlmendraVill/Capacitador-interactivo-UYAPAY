@@ -351,33 +351,72 @@
         <!-- Generado dinámicamente por JS con los 5 casos seleccionados -->
       </div>
 
-      <!-- INSTRUCCIONES DEL CASO ACTIVO -->
-      <div class="exam-instructions">
-        <div class="card" style="border-left: 5px solid var(--yellow); margin-bottom:0;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-            <span id="case-module-badge" style="background:#f0f0f0; color:#444; font-size:11px; padding:3px 8px; border-radius:6px; font-weight:700;">Módulo B2C</span>
-            <span id="case-tab-status" class="badge badge-warning">⏳ En curso</span>
-          </div>
-          <h3 id="case-title" style="color:var(--yellow-dark); margin:0 0 6px 0; font-size:15px;">Cargando caso...</h3>
-          <div id="case-client-box" style="font-size:12px; font-weight:600; color:#222; margin-bottom:8px; padding-bottom:6px; border-bottom:1px dashed #eee;">
-            Cliente asignado: <span id="case-client-name" style="color:#2980b9;">-</span>
-          </div>
-          <p id="case-instructions" style="margin:0; font-size:12.5px; line-height:1.45; color:var(--text-dark); white-space:pre-line;">Cargando instrucciones...</p>
-          
-          <div class="tab-nav-buttons">
-            <button class="btn-secondary" id="btn-prev-tab" style="padding:8px 14px; font-size:12px;" onclick="window.UyapayPortal.prevTab()">‹ Anterior</button>
-            <button class="btn-primary" id="btn-next-tab" style="width:auto; padding:8px 18px; font-size:12px;" onclick="window.UyapayPortal.nextTab()">Siguiente Caso ›</button>
-            <button class="btn-primary" id="btn-finish-exam" style="display:none; width:auto; padding:8px 18px; font-size:12px; background:var(--success);" onclick="window.UyapayPortal.finishFullExam()">Finalizar y Enviar Evaluación ✓</button>
+      <!-- CONTENEDOR PRINCIPAL DUAL (SITUACIÓN A TODO EL ANCHO + MOCKUP SMARTPHONE) -->
+      <div class="exam-main-container">
+        <!-- PANEL DE PRESENTACIÓN DE LA SITUACIÓN / PROBLEMA COMERCIAL -->
+        <div class="exam-situation-panel">
+          <div class="card exam-situation-card">
+            <!-- Header con identificador de caso e indicador de estado -->
+            <div class="situation-header">
+              <div class="situation-badges">
+                <span id="case-ordinal-badge" class="badge-case-ordinal">Caso 1 de 5</span>
+                <span id="case-module-badge" class="badge-module-pill">Ventas B2C</span>
+              </div>
+              <span id="case-tab-status" class="badge badge-warning">⏳ En curso</span>
+            </div>
+
+            <!-- Título claro y limpio del caso sin códigos ni spoilers -->
+            <h2 id="case-title" class="situation-title">Cargando situación...</h2>
+
+            <!-- Ficha del cliente -->
+            <div id="case-client-box" class="situation-client-card">
+              <div class="client-meta-item">
+                <span class="client-meta-icon">🏢</span>
+                <div>
+                  <span class="client-meta-label">Cliente Asignado</span>
+                  <div id="case-client-name" class="client-meta-val">-</div>
+                </div>
+              </div>
+              <div class="client-meta-item" id="case-address-container">
+                <span class="client-meta-icon">📍</span>
+                <div>
+                  <span class="client-meta-label">Dirección / Zona</span>
+                  <div id="case-client-address" class="client-meta-val">-</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Planteamiento del problema / Situación de campo -->
+            <div class="situation-statement-wrapper">
+              <div class="situation-statement-header">
+                <span class="statement-icon">📋</span>
+                <span class="statement-title">Situación Comercial a Resolver:</span>
+              </div>
+              <p id="case-instructions" class="situation-text">Cargando situación...</p>
+            </div>
+
+            <!-- Instrucción y Botonera -->
+            <div class="situation-action-bar">
+              <div class="situation-guidance">
+                💡 <b>Instrucción para el Asesor:</b> Resuelve la atención comercial directamente en el simulador móvil de la derecha. El sistema evaluará automáticamente tu desempeño, decisiones y flujo de visita.
+              </div>
+
+              <div class="tab-nav-buttons">
+                <button class="btn-secondary" id="btn-prev-tab" onclick="window.UyapayPortal.prevTab()">‹ Caso Anterior</button>
+                <button class="btn-primary" id="btn-next-tab" onclick="window.UyapayPortal.nextTab()">Siguiente Caso ›</button>
+                <button class="btn-primary" id="btn-finish-exam" style="display:none; background:var(--success);" onclick="window.UyapayPortal.finishFullExam()">Finalizar y Enviar Evaluación ✓</button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- MARCO MÓVIL ENCUADRADO (SMARTPHONE MOCKUP) -->
-      <div class="phone-mockup-wrapper">
-        <div class="mockup-phone">
-          <div class="mockup-notch"></div>
-          <div class="mockup-screen">
-            <iframe id="simulador-frame" src="" title="Simulador Móvil UYAPAY"></iframe>
+        <!-- MARCO MÓVIL ENCUADRADO (SMARTPHONE MOCKUP) -->
+        <div class="phone-mockup-wrapper">
+          <div class="mockup-phone">
+            <div class="mockup-notch"></div>
+            <div class="mockup-screen">
+              <iframe id="simulador-frame" src="" title="Simulador Móvil UYAPAY"></iframe>
+            </div>
           </div>
         </div>
       </div>

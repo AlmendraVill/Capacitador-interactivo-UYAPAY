@@ -234,7 +234,8 @@ window.UyapayData.CASES = [
   "promoDiscount": true,
   "promoType": "gift",
   "promoLabel": "🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)",
-  "instructions": "1. Visitas: Inicia visita en Ferretería Los Andes S.A.C. (Juan Perez).\n2. Fotos: Registra fotos obligatorias de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 8 baldes Shell Helix HX7 10W/40 con la promo de regalo activada.\n5. Resumen: Verifica el 5% de descuento al contado (USD 167.20) y confirma la orden.",
+  "publicTitle": "Venta de Lubricantes al Contado con Bonificación",
+  "instructions": "Te encuentras en ruta para atender a Ferretería Los Andes S.A.C. El encargado de tienda (Juan Pérez) te solicita una compra de 8 baldes de Shell Helix HX7 10W/40 con pago al contado, requiriendo expresamente la entrega de la bonificación de regalo vigente por volumen en este producto. Realiza la visita completa y gestiona la orden de compra conforme a las condiciones comerciales de la empresa.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -320,7 +321,8 @@ window.UyapayData.CASES = [
   "promoType": "discount",
   "promoDiscountAmount": 10,
   "promoLabel": "🎁 Descuento por Volumen (3+ cajas: -$10.00 USD)",
-  "instructions": "1. Inicia visita en Distribuidora Kanchis EIRL.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 3 cajas Energy XM2+ y activa el descuento por volumen de $10 USD.\n5. Resumen: Verifica el cálculo (USD 150.35) y confirma la orden.",
+  "publicTitle": "Venta de Neumáticos a Crédito con Descuento",
+  "instructions": "Durante tu jornada visitas a Distribuidora Kanchis EIRL. El cliente requiere reponer 3 cajas de neumáticos Michelin Energy XM2+ 195/60 R15, solicitando condición de Crédito a 30 días bajo su Lista habitual Oficina (OF) y exigiendo la aplicación del descuento por escala de $10.00 USD pactado para dicho volumen. Atiende al cliente y emite el pedido en el aplicativo.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -404,7 +406,8 @@ window.UyapayData.CASES = [
   "promoDiscount": false,
   "promoType": "none",
   "promoLabel": "Sin promoción aplicable",
-  "instructions": "1. Inicia visita en Transportes del Sur SAC.\n2. Registra fotos obligatorias.\n3. Pedidos: Crea pedido a Crédito 60 días con Lista EC, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 1 cilindro Shell Retinax HD2 sin promoción.\n5. Resumen: Verifica el 1% de crédito ($3.20) para un total de USD 316.80 y confirma.",
+  "publicTitle": "Atención a Cliente Corporativo B2B",
+  "instructions": "Visitas la sede de Transportes del Sur SAC en la Variante de Uchumayo. El jefe de operaciones solicita 1 cilindro de Shell Retinax HD2 (55 Gal) bajo su condición corporativa de Crédito a 60 días en Lista Especial Corporativa (EC). Registra la atención y tramita su orden corporativa.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -487,7 +490,8 @@ window.UyapayData.CASES = [
   "expectedQty": 2,
   "promoDiscount": false,
   "promoType": "none",
-  "instructions": "1. Inicia visita en Ferretería Los Andes S.A.C.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 2 baldes Helix HX7 y confirma el pedido evitando dejar campos obligatorios en blanco.",
+  "publicTitle": "Venta Habitual y Registro Comercial en Local",
+  "instructions": "Te encuentras en Ferretería Los Andes S.A.C. para realizar tu visita habitual de ruta. El cliente solicita adquirir 2 baldes de Shell Helix HX7 10W/40 al contado en Lista 1. Procesa la atención completa en el establecimiento asegurando el correcto registro de todos los datos comerciales mandatorios.",
   "isTrap": true,
   "active": true,
   "scoring": {
@@ -571,7 +575,8 @@ window.UyapayData.CASES = [
   "expectedQty": 2,
   "promoDiscount": false,
   "promoType": "none",
-  "instructions": "1. Inicia visita en Comercial Vega Hnos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 2 baldes Helix HX5 y confirma la orden completando el flujo formal.",
+  "publicTitle": "Venta al Contado en Distribuidor",
+  "instructions": "Acudes al punto de venta de Comercial Vega Hnos. El propietario solicita abastecerse con 2 baldes de Shell Helix HX5 15W/40 con pago al contado en Lista 1. Procesa la visita y emite la orden de compra completando todas las etapas obligatorias del proceso comercial.",
   "isTrap": true,
   "active": true,
   "scoring": {
@@ -655,7 +660,8 @@ window.UyapayData.CASES = [
   "expectedQty": 1,
   "promoDiscount": false,
   "promoType": "none",
-  "instructions": "1. Inicia visita en Comercial Vega Hnos.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 1 balde Rimula R4 X y confirma la orden.",
+  "publicTitle": "Atención de Pedido Habitual de Lubricantes",
+  "instructions": "En Comercial Vega Hnos., el encargado requiere reponer stock urgente de 1 balde de Rimula R4 X 15W/40 con pago al contado en Lista 1. Realiza la visita y formaliza el pedido en el sistema.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -738,7 +744,8 @@ window.UyapayData.CASES = [
   "expectedQty": 2,
   "promoDiscount": false,
   "promoType": "none",
-  "instructions": "1. Inicia visita en Grupo Ferretero Miraflores.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 30 días con Lista OF, línea Neumáticos, marca Michelin.\n4. Agrega 2 cajas Energy XM2+ y confirma la orden.",
+  "publicTitle": "Reposición de Neumáticos a Crédito",
+  "instructions": "Visitas a Grupo Ferretero Miraflores. El cliente solicita un pedido de 2 cajas de neumáticos Michelin Energy XM2+ 195/60 R15 bajo condición de Crédito a 30 días con Lista OF. Gestiona la visita y registra el pedido requerido.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -821,7 +828,8 @@ window.UyapayData.CASES = [
   "expectedQty": 4,
   "promoDiscount": false,
   "promoType": "none",
-  "instructions": "1. Inicia visita en Autopartes El Rápido.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n4. Agrega 4 botellas Helix Plus y confirma la orden.",
+  "publicTitle": "Compra de Lubricantes en Botella",
+  "instructions": "En tu visita a Autopartes El Rápido, el encargado solicita 4 botellas de Shell Helix Plus 10W-40 (1L) al contado con Lista 1. Atiende el requerimiento y emite la orden comercial correspondiente.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -905,7 +913,8 @@ window.UyapayData.CASES = [
   "promoDiscount": true,
   "promoType": "gift",
   "promoLabel": "🎁 Regalo: 1 caja botellas Shell Helix Plus (108203)",
-  "instructions": "1. Inicia visita en Servicentro El Faro.\n2. Registra las fotos obligatorias.\n3. Pedidos: Crea pedido a Contado con Lista 2, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 5 baldes Shell Helix HX7 activando el regalo de volumen.\n5. Resumen: Verifica el 5% de descuento al contado (USD 118.75) y confirma la orden.",
+  "publicTitle": "Venta por Escala con Promoción de Volumen",
+  "instructions": "Atiendes a Servicentro El Faro. El comprador solicita 5 baldes de Shell Helix HX7 10W/40 con pago al contado en Lista 2, solicitando expresamente la bonificación de regalo en producto aplicable por volumen de compra. Gestiona la visita y emite la orden con las condiciones comerciales pactadas.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -990,7 +999,8 @@ window.UyapayData.CASES = [
   "promoType": "discount",
   "promoDiscountAmount": 40,
   "promoLabel": "🎁 Descuento por Volumen: -$40.00 USD",
-  "instructions": "1. Inicia visita en Minera Andina Contratistas SAC.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 45 días con Lista EC, línea Lubricantes, marca Shell.\n4. Catálogo: Agrega 2 cilindros Retinax HD2 y activa el descuento de $40 USD.\n5. Resumen: Verifica el 2% de crédito ($13.20) para total USD 646.80 y confirma.",
+  "publicTitle": "Despacho Minero a Crédito Extendido",
+  "instructions": "En Minera Andina Contratistas SAC, la gerencia de compras requiere 2 cilindros de Shell Retinax HD2 (55 Gal) con condición de Crédito a 45 días en su Lista Especial Corporativa (EC), solicitando la aplicación del descuento acordado por volumen de $40.00 USD. Registra la visita y tramita la orden corporativa.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1074,7 +1084,8 @@ window.UyapayData.CASES = [
   "promoDiscount": false,
   "promoType": "none",
   "promoLabel": "Sin promoción aplicable",
-  "instructions": "1. Visitas: El cliente es nuevo y no está en ruta. En la parte inferior del plan presiona \"➕ Agregar visita fuera de ruta\".\n2. En el modal selecciona \"Repuestos Central Chincha (Cliente Nuevo)\" y confirma el alta.\n3. Inicia la visita fuera de ruta y toma fotos obligatorias.\n4. Pedidos: Aplica lista Oficina (OF) al Contado, línea Lubricantes, marca Shell.\n5. Agrega 3 botellas Shell Helix Plus 10W-40 (USD 5 c/u) y confirma la orden (USD 14.25 neto).",
+  "publicTitle": "Atención y Alta de Cliente Fuera de Ruta",
+  "instructions": "El cliente Repuestos Central Chincha (Cliente Nuevo) te contacta con urgencia para adquirir 3 botellas de Shell Helix Plus 10W-40 al contado bajo lista Oficina (OF), pero no se encuentra en tu ruta planificada de hoy. Incorpora al cliente a tu jornada y procesa su primera compra.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1161,7 +1172,8 @@ window.UyapayData.CASES = [
   "promoType": "discount",
   "promoDiscountAmount": 15,
   "promoLabel": "🎁 Descuento por Volumen B2B (5+ cajas: -$15.00 USD)",
-  "instructions": "1. Inicia visita en Constructora Vial Perú SAC.\n2. Registra las fotos de visita.\n3. Pedidos: Crea pedido a Crédito 60 días con Lista EC, línea Neumáticos, marca Michelin.\n4. Catálogo: Agrega 6 cajas Michelin Latitude Tour HP y activa el descuento de $15 USD.\n5. Resumen: Verifica el cálculo financiero (USD 270.27) y confirma la orden.",
+  "publicTitle": "Venta Mayorista de Neumáticos de Carga",
+  "instructions": "En Constructora Vial Perú SAC, el área de logística solicita 6 cajas de neumáticos Michelin Latitude Tour HP a Crédito 60 días bajo Lista Especial Corporativa (EC), aplicando el descuento por escala mayorista de $15.00 USD. Registra la visita y emite la orden de compra.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1245,7 +1257,8 @@ window.UyapayData.CASES = [
   "promoDiscount": false,
   "promoType": "none",
   "promoLabel": "Sin promoción (ya entregada en visita previa)",
-  "instructions": "1. Visitas: Selecciona a Bodega y Ferretería Dos Hermanos.\n2. Historial: Antes de iniciar la visita, consulta el historial de visitas anteriores y registra en el recuadro de auditoría la última fecha de visita (14/08/2026).\n3. Inicia visita y registra las fotos obligatorias.\n4. Pedidos: Crea pedido a Contado con Lista 1, línea Lubricantes, marca Shell.\n5. Catálogo: Agrega 4 baldes Shell Helix HX5 a USD 18 c/u SIN activar promoción de regalo (ya entregada).\n6. Resumen: Verifica el total neto (USD 68.40) y confirma la orden.",
+  "publicTitle": "Visita con Auditoría de Antecedentes",
+  "instructions": "Te diriges a atender a Bodega y Ferretería Dos Hermanos. Antes de registrar el pedido solicitado por el cliente (4 baldes de Shell Helix HX5 15W/40 al contado en Lista 1), debes auditar en el sistema la fecha de la última visita realizada para validar si aplican o no promociones de entrega anterior. Gestiona la atención en el aplicativo.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1335,7 +1348,8 @@ window.UyapayData.CASES = [
   "unitPrice": 55,
   "expectedQty": 2,
   "isPhoneVisit": true,
-  "instructions": "1. Visitas: Intenta iniciar visita presencial en Distribuidora Kanchis EIRL.\n2. GPS: Al encontrarse a 250m (>50m de geocerca), el sistema restringe el inicio presencial. Selecciona la modalidad \"Visita Telefónica\" (isPhoneVisit) para continuar legalmente.\n3. Pedidos: Configura Crédito 30 días, Lista OF, Neumáticos Michelin.\n4. Catálogo: Agrega 2 cajas Energy XM2+.\n5. Resumen: Verifica las condiciones comerciales y confirma la orden telefónica.",
+  "publicTitle": "Atención a Cliente Fuera del Rango de Ubicación",
+  "instructions": "El cliente Distribuidora Kanchis EIRL solicita un pedido urgente de 2 cajas de Michelin Energy XM2+ a Crédito 30 días con Lista OF. Sin embargo, tu ubicación actual se encuentra distante del local comercial (fuera de la geocerca permitida). Resuelve la atención en el aplicativo respetando los protocolos operativos de registro de visitas.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1408,7 +1422,8 @@ window.UyapayData.CASES = [
   "module": "Visitas y Tareas",
   "client": "Comercial Vega Hnos.",
   "clientAddress": "CALLE MERCADERES 301",
-  "instructions": "1. Visitas: Inicia visita en Comercial Vega Hnos.\n2. Fotos: Registra fotos obligatorias de fachada y góndola.\n3. Tareas: El cliente no puede realizar compras hoy por descarga de contenedores. Abre \"¿Por qué no completó la tarea?\" en Pedidos (T5) y selecciona \"Cliente muy ocupado\".\n4. Cierre: Finaliza la visita formalmente con la justificación registrada sin abandonar la ruta.",
+  "publicTitle": "Visita sin Venta por Ocupación del Cliente",
+  "instructions": "Llegas al establecimiento de Comercial Vega Hnos. para cumplir con la visita de ruta. El propietario te explica que se encuentra ocupado en la descarga de mercadería pesada y no podrá realizar pedidos en esta ocasión. Concluye la visita en el sistema registrando formalmente el motivo según el protocolo de la empresa.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1482,7 +1497,8 @@ window.UyapayData.CASES = [
   "product": "Michelin Energy XM2+ 195/60 R15",
   "unitPrice": 55,
   "expectedQty": 2,
-  "instructions": "1. Visitas: Inicia visita en Grupo Ferretero Miraflores.\n2. Fotos: Registra fotos obligatorias.\n3. Pedidos: Configura Crédito 30 días, Lista OF, Neumáticos Michelin.\n4. Catálogo: Agrega 2 cajas Energy XM2+.\n5. Resumen: El decisor de compra no está para firmar; presiona \"📄 Guardar como Cotización (Tipo 3)\" para registrar la propuesta formal sin comprometer stock ni línea de crédito de forma prematura.",
+  "publicTitle": "Presentación de Propuesta Comercial",
+  "instructions": "En Grupo Ferretero Miraflores, el administrador muestra interés en 2 cajas de Michelin Energy XM2+ a Crédito 30 días (Lista OF), pero el representante legal no se encuentra para autorizar la compra en firme. Registra formalmente la propuesta comercial en el sistema sin comprometer stock ni línea de crédito de forma definitiva.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1555,7 +1571,8 @@ window.UyapayData.CASES = [
   "module": "Cobranzas",
   "client": "Taller Hyundai Express",
   "clientAddress": "AV. PARRA 314",
-  "instructions": "1. Visitas: Inicia visita en Taller Hyundai Express.\n2. Fotos: Registra fotos de visita.\n3. Cobranza: Ingresa a \"3. Cobranza de facturas / Letras\".\n4. Pagos: Registra USD 200.00 en Efectivo y USD 150.00 en Depósito Bancario con foto de voucher.\n5. Consolidado: Emite y confirma los recibos provisionales de cobranza para validación en créditos.",
+  "publicTitle": "Cobranza de Facturas con Pago Dividido",
+  "instructions": "Visitas a Taller Hyundai Express para gestionar la cobranza de facturas vencidas. El cliente efectúa un pago parcial mixto: entrega USD 200.00 en Efectivo y adjunta una constancia de Depósito Bancario por USD 150.00. Registra ambos abonos en el sistema, valida los comprobantes y asegura que la cobranza quede debidamente consolidada.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1631,7 +1648,8 @@ window.UyapayData.CASES = [
   "expectedQty": 5,
   "promoDiscount": true,
   "promoType": "gift",
-  "instructions": "1. Inicia visita en Servicentro El Faro.\n2. Registra fotos obligatorias.\n3. Configura Contado, Lista 2, Lubricantes Shell.\n4. Catálogo: Agrega 5 baldes Helix HX7 y activa la promoción oficial de regalo sin seleccionar combos excluyentes (Condición 4000).\n5. Resumen: Verifica el total neto y confirma la orden de compra.",
+  "publicTitle": "Aplicación de Políticas y Reglas Promocionales",
+  "instructions": "En Servicentro El Faro, el cliente solicita 5 baldes de Shell Helix HX7 al contado en Lista 2 con bonificación promocional. Procesa el pedido aplicando la política comercial correcta, evitando combinaciones de promociones incompatibles o no acumulables.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1704,7 +1722,8 @@ window.UyapayData.CASES = [
   "module": "Plan de Visitas",
   "client": "Distribuidora Kanchis EIRL",
   "clientAddress": "AV. INDUSTRIAL 104 - SOCABAYA",
-  "instructions": "1. Plan de Visitas: En la barra horizontal de filtros superiores presiona \"Deuda vencida\" para filtrar la cartera morosa del día.\n2. Identifica al cliente moroso crítico: Distribuidora Kanchis EIRL (Deuda vencida: USD 840.00).\n3. Abre las opciones del cliente y presiona \"Consultar perfil / deuda vencida\" para auditar su estado de cuenta corriente.",
+  "publicTitle": "Gestión de Cartera Morosa en Ruta",
+  "instructions": "Al iniciar tu jornada, debes revisar tu cartera del día para identificar a los clientes que presentan deuda vencida crítica antes de proceder con despachos de mercadería. Localiza al cliente con mayor riesgo de mora y audita su estado de cuenta corriente en el sistema.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1763,7 +1782,8 @@ window.UyapayData.CASES = [
   "product": "Shell Helix Plus 10W-40",
   "unitPrice": 5,
   "expectedQty": 4,
-  "instructions": "1. Visitas: En la parte inferior del plan presiona \"➕ Agregar visita fuera de ruta\".\n2. En el modal selecciona a \"Autopartes El Rápido\" con dirección \"JR. PIEROLA 540\" y confirma el alta.\n3. Inicia la visita fuera de ruta y toma las fotos obligatorias.\n4. Pedidos: Configura Contado, Lista 1, Lubricantes Shell y agrega 4 botellas Helix Plus.\n5. Confirma la orden fuera de ruta.",
+  "publicTitle": "Atención Fuera de Ruta por Emergencia de Taller",
+  "instructions": "El taller Autopartes El Rápido te contacta requiriendo con urgencia 4 botellas de Shell Helix Plus 10W-40 al contado (Lista 1), pero el cliente no figuraba en tu plan programado del día. Incorpora la visita en tu aplicativo y gestiona el pedido requerido.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -1835,7 +1855,8 @@ window.UyapayData.CASES = [
   "title": "Caso 23: [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada",
   "module": "Liquidación de Ventas",
   "client": "Liquidación General de Ruta",
-  "instructions": "1. Visitas: En el menú principal de visitas presiona \"📊 Liquidación de cobranza diaria\".\n2. Revisa el arqueo consolidado: total recaudado en efectivo (Soles y Dólares), depósitos bancarios y cero recibos pendientes de envío.\n3. Presiona \"Generar Consolidado de Cobranzas y Finalizar\" para validar cobranzas y cerrar jornada.",
+  "publicTitle": "Cierre y Liquidación de Jornada",
+  "instructions": "Has finalizado tus visitas en campo. Debes realizar el arqueo y balance de todas las cobranzas recaudadas durante el día (efectivo y depósitos bancarios), verificando que no existan recibos pendientes de envío y generando el consolidado oficial de liquidación de cobranza de la jornada.",
   "active": true,
   "scoring": {
     "maxScore": 20,

@@ -527,10 +527,11 @@
            </td>`
         : '';
 
+      const displayTitle = isAdminTable ? item.caseTitle : getCleanCaseTitle({ title: item.caseTitle });
       return `
         <tr>
           <td><b>${escapeHtml(item.advisorName || item.username)}</b></td>
-          <td>${escapeHtml(item.caseTitle)}</td>
+          <td>${escapeHtml(displayTitle)}</td>
           <td><span class="badge ${badgeClass}">${item.score}</span></td>
           <td>${item.errors} errores</td>
           <td><span class="badge ${badgeClass}">${item.status}</span></td>
@@ -754,6 +755,16 @@
     loadCaseInTab(0);
   }
 
+  function getCleanCaseTitle(c) {
+    if (!c) return 'Situación Comercial';
+    if (c.publicTitle) return c.publicTitle;
+    let t = c.title || '';
+    t = t.replace(/^Caso\s*\d+\s*:\s*/i, '');
+    t = t.replace(/\[.*?\]\s*/g, '');
+    t = t.replace(/B2C-\d+\s*[:-]?\s*/gi, '');
+    return t.trim() || 'Atención Comercial';
+  }
+
   function renderEvaluationTabs() {
     const tabsBar = document.getElementById('eval-tabs-bar');
     if (!tabsBar) return;
@@ -774,7 +785,7 @@
       return `
         <button class="${classes}" id="tab-btn-${index}" onclick="window.UyapayPortal.switchCaseTab(${index})">
           <span class="tab-pill-num">${index + 1}</span>
-          <span>${c.code}</span>
+          <span>Caso ${index + 1}</span>
           <span id="tab-status-icon-${index}">${statusIcon}</span>
         </button>
       `;
@@ -795,24 +806,30 @@
       Storage.sendLiveEvent({
         advisor: user.name || user.username,
         step: `Tab ${tabIndex + 1}: ${activeCase.code}`,
-        detail: `Cargó instrucciones para ${activeCase.client}`,
+        detail: `Cargó situación para ${activeCase.client}`,
         type: 'INFO',
         errors: Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().totalErrors : 0
       });
     }
 
-    // Actualizar encabezados y panel izquierdo
+    // Actualizar encabezados y panel de situación (sin revelar códigos internos ni trampas)
+    const caseOrdinalBadgeEl = document.getElementById('case-ordinal-badge');
     const caseCodeEl = document.getElementById('case-code');
     const moduleBadgeEl = document.getElementById('case-module-badge');
     const tabStatusEl = document.getElementById('case-tab-status');
     const titleEl = document.getElementById('case-title');
     const clientNameEl = document.getElementById('case-client-name');
+    const clientAddressEl = document.getElementById('case-client-address');
+    const addressContainer = document.getElementById('case-address-container');
     const instructionsEl = document.getElementById('case-instructions');
 
-    if (caseCodeEl) caseCodeEl.textContent = `Caso ${tabIndex + 1} de 5 • ${activeCase.code}`;
+    if (caseOrdinalBadgeEl) caseOrdinalBadgeEl.textContent = `Caso ${tabIndex + 1} de 5`;
+    if (caseCodeEl) caseCodeEl.textContent = `Caso ${tabIndex + 1} de 5`;
     if (moduleBadgeEl) moduleBadgeEl.textContent = activeCase.module || 'Ventas B2C';
-    if (titleEl) titleEl.textContent = activeCase.title;
+    if (titleEl) titleEl.textContent = getCleanCaseTitle(activeCase);
     if (clientNameEl) clientNameEl.textContent = activeCase.client || 'Cliente en ruta';
+    if (clientAddressEl) clientAddressEl.textContent = activeCase.clientAddress || 'En ruta asignada';
+    if (addressContainer) addressContainer.style.display = activeCase.clientAddress ? 'flex' : 'none';
     if (instructionsEl) instructionsEl.textContent = activeCase.instructions;
 
     if (tabStatusEl) {
@@ -1092,7 +1109,7 @@
           return `
             <div class="case-result-row ${rowClass}">
               <div>
-                <b>Caso ${idx + 1} (${cs.caseCode || 'B2C'}):</b> ${escapeHtml(cs.client || cs.caseTitle || '')}
+                <b>Caso ${idx + 1}:</b> ${escapeHtml(cs.client ? `${cs.client} — ${getCleanCaseTitle({ title: cs.caseTitle })}` : getCleanCaseTitle({ title: cs.caseTitle }))}
                 <div style="font-size:11px; color:var(--text-muted);">${errText}</div>
               </div>
               <div style="text-align:right;">
