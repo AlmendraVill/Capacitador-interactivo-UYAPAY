@@ -12,6 +12,8 @@
     currentCaseId: 'case-1',
     currentTabIndex: 0,
     selectedClient: '',
+    visitInProgress: false,
+    activeVisitClient: null,
     photos: { 1: false, 2: false },
     isPhoneVisit: false,
     orderConfig: {
@@ -271,6 +273,12 @@
       goToVisitTask(2);
       return;
     }
+    if (screenId === 's-visitas') {
+      renderClientListCards();
+    }
+    if (screenId === 's-nuevo-pedido') {
+      renderOrderCartInNuevoPedido();
+    }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
     if (target) target.classList.add('active');
@@ -282,6 +290,8 @@
     if (!currentCase) return;
 
     state.selectedClient = currentCase.client;
+    state.visitInProgress = false;
+    state.activeVisitClient = null;
     state.cart = {
       productId: '',
       product: '',
@@ -387,71 +397,6 @@
     const cliLista = document.getElementById('cli-lista-header');
     if (cliLista && currentCase.priceList) cliLista.textContent = `Lista ${currentCase.priceList}`;
 
-    // Renderizar lista de clientes en la ruta oficial (s-visitas - plan de visitas 1.png)
-    const listContainer = document.getElementById('client-list-cards');
-    if (listContainer) {
-      const isOutRouteCase = (state.currentCaseId === 'case-11' || state.currentCaseId === 'case-22');
-      const targetClient = currentCase.client;
-      const targetAddr = currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100';
-
-      const mockDistractors = [
-        { name: 'Ferretería Los Andes S.A.C.', address: 'AV. TOMAS TUYRUTUPAC 412' },
-        { name: 'Distribuidora Kanchis EIRL', address: 'AV. INDUSTRIAL 104' },
-        { name: 'Comercial Vega Hnos.', address: 'CALLE MERCADERES 301' },
-        { name: 'Transportes del Sur SAC', address: 'KM 12 VARIANTE UCHUMAYO' },
-        { name: 'Grupo Ferretero Miraflores', address: 'AV. SAN JERONIMO 210' },
-        { name: 'Autopartes El Rápido', address: 'JR. PIEROLA 540' },
-        { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' },
-        { name: 'Taller Hyundai Express', address: 'AV. PARRA 314' }
-      ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
-
-      let html = '';
-      if (!isOutRouteCase) {
-        html += `
-          <div class="client-card-official is-in-progress" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
-            <div class="client-card-pin-circle">
-              <span>📍</span>
-            </div>
-            <div class="client-card-content">
-              <div class="client-card-title-row">
-                <span class="client-card-name">${targetClient.toUpperCase()}</span>
-                <span class="client-card-chevron">∨</span>
-              </div>
-              <div class="client-card-address">${targetAddr}</div>
-              <div class="client-card-status-row">
-                <span class="client-drag-handle">⋮⋮</span>
-                <span class="status-badge-in-course">EN CURSO</span>
-                <span class="client-card-time">🕒 11:31</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      mockDistractors.slice(0, isOutRouteCase ? 4 : 3).forEach(d => {
-        html += `
-          <div class="client-card-official" onclick="window.UyapaySimulator.openOptions('${d.name}')">
-            <div class="client-card-pin-circle">
-              <span>📍</span>
-            </div>
-            <div class="client-card-content">
-              <div class="client-card-title-row">
-                <span class="client-card-name">${d.name.toUpperCase()}</span>
-                <span class="client-card-chevron">∨</span>
-              </div>
-              <div class="client-card-address">${d.address}</div>
-              <div class="client-card-status-row">
-                <span class="client-drag-handle">⋮⋮</span>
-                <span class="status-badge-pending">PENDIENTE</span>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      listContainer.innerHTML = html;
-    }
-
     // Configurar acción del botón principal en datos del cliente según tipo de visita
     const btnAction = document.getElementById('btn-cliente-main-action');
     if (btnAction) {
@@ -464,8 +409,89 @@
       }
     }
 
+    renderClientListCards();
     renderOrderCartInNuevoPedido();
     renderCobranzaTaskView();
+  }
+
+  function renderClientListCards() {
+    const listContainer = document.getElementById('client-list-cards');
+    if (!listContainer) return;
+
+    const currentCase = getCaseData();
+    if (!currentCase) return;
+
+    const isOutRouteCase = (state.currentCaseId === 'case-11' || state.currentCaseId === 'case-22');
+    const targetClient = currentCase.client;
+    const targetAddr = currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100';
+
+    const mockDistractors = [
+      { name: 'Ferretería Los Andes S.A.C.', address: 'AV. TOMAS TUYRUTUPAC 412' },
+      { name: 'Distribuidora Kanchis EIRL', address: 'AV. INDUSTRIAL 104' },
+      { name: 'Comercial Vega Hnos.', address: 'CALLE MERCADERES 301' },
+      { name: 'Transportes del Sur SAC', address: 'KM 12 VARIANTE UCHUMAYO' },
+      { name: 'Grupo Ferretero Miraflores', address: 'AV. SAN JERONIMO 210' },
+      { name: 'Autopartes El Rápido', address: 'JR. PIEROLA 540' },
+      { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' },
+      { name: 'Taller Hyundai Express', address: 'AV. PARRA 314' }
+    ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
+
+    let html = '';
+    if (!isOutRouteCase) {
+      const isTargetInProgress = Boolean(state.visitInProgress && state.activeVisitClient === targetClient);
+      html += `
+        <div class="client-card-official ${isTargetInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
+          <div class="client-card-left-col">
+            <div class="client-card-pin-circle">
+              <span>📍</span>
+            </div>
+            <span class="client-drag-handle">⋮⋮</span>
+          </div>
+          <div class="client-card-content">
+            <div class="client-card-title-row">
+              <span class="client-card-name">${targetClient.toUpperCase()}</span>
+              <span class="client-card-chevron">∨</span>
+            </div>
+            <div class="client-card-address">${targetAddr}</div>
+            ${isTargetInProgress ? `
+              <div class="client-card-status-row" style="margin-top:4px;">
+                <span class="status-badge-in-course">EN CURSO</span>
+                <span class="client-card-time">🕒 11:31</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    mockDistractors.slice(0, isOutRouteCase ? 4 : 3).forEach(d => {
+      const isDistractorInProgress = Boolean(state.visitInProgress && state.activeVisitClient === d.name);
+      html += `
+        <div class="client-card-official ${isDistractorInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.openOptions('${d.name}')">
+          <div class="client-card-left-col">
+            <div class="client-card-pin-circle">
+              <span>📍</span>
+            </div>
+            <span class="client-drag-handle">⋮⋮</span>
+          </div>
+          <div class="client-card-content">
+            <div class="client-card-title-row">
+              <span class="client-card-name">${d.name.toUpperCase()}</span>
+              <span class="client-card-chevron">∨</span>
+            </div>
+            <div class="client-card-address">${d.address}</div>
+            ${isDistractorInProgress ? `
+              <div class="client-card-status-row" style="margin-top:4px;">
+                <span class="status-badge-in-course">EN CURSO</span>
+                <span class="client-card-time">🕒 11:31</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    listContainer.innerHTML = html;
   }
 
   // 2. Login dentro del smartphone
@@ -959,7 +985,7 @@
       `;
       showHint('Filtro aplicado: Clientes con deuda vencida.', false);
     } else if (filterKey === 'todos') {
-      initializeCaseEnvironment();
+      renderClientListCards();
     }
   }
 
@@ -1001,6 +1027,10 @@
     }
 
     if (actionKey === 'iniciar') {
+      state.visitInProgress = true;
+      state.activeVisitClient = state.selectedClient;
+      renderClientListCards();
+
       if (state.currentCaseId === 'case-11' || state.currentCaseId === 'case-22') {
         emitSimulatorEvent('SELECT_ACTION', { action: actionKey, clientName: state.selectedClient });
       } else if (state.currentCaseId === 'case-15') {
@@ -1070,6 +1100,10 @@
       isPhoneVisit: isPhone
     });
     if (isPhone) {
+      state.visitInProgress = true;
+      state.activeVisitClient = state.selectedClient;
+      renderClientListCards();
+      setupVisitInProgressView(state.selectedClient);
       showHint('Visita Telefónica activada (bypass geocerca 50m autorizado).', false);
       const cliHeader = document.getElementById('cli-nombre-header');
       if (cliHeader) cliHeader.textContent = state.selectedClient + ' (Telefónica)';
@@ -1718,10 +1752,14 @@
 
     const listContainer = document.getElementById('client-list-cards');
     if (listContainer) {
+      const isCardInProgress = Boolean(state.visitInProgress && state.activeVisitClient === clientName);
       const newCard = `
-        <div class="client-card-official is-in-progress" onclick="window.UyapaySimulator.openOptions('${clientName}')">
-          <div class="client-card-pin-circle">
-            <span>📍</span>
+        <div class="client-card-official ${isCardInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.openOptions('${clientName}')">
+          <div class="client-card-left-col">
+            <div class="client-card-pin-circle">
+              <span>📍</span>
+            </div>
+            <span class="client-drag-handle">⋮⋮</span>
           </div>
           <div class="client-card-content">
             <div class="client-card-title-row">
@@ -1729,11 +1767,12 @@
               <span class="client-card-chevron">∨</span>
             </div>
             <div class="client-card-address">${address}</div>
-            <div class="client-card-status-row">
-              <span class="client-drag-handle">⋮⋮</span>
-              <span class="status-badge-in-course">EN CURSO</span>
-              <span class="client-card-time">🕒 Ahora</span>
-            </div>
+            ${isCardInProgress ? `
+              <div class="client-card-status-row" style="margin-top:4px;">
+                <span class="status-badge-in-course">EN CURSO</span>
+                <span class="client-card-time">🕒 Ahora</span>
+              </div>
+            ` : ''}
           </div>
         </div>
       `;
@@ -2879,6 +2918,7 @@
     onAddProductClick: onAddProductClick,
     onCompletarPedido: onCompletarPedido,
     renderOrderCartInNuevoPedido: renderOrderCartInNuevoPedido,
+    renderClientCards: renderClientListCards,
     removeProductFromCart: removeProductFromCart,
     editCartProduct: editCartProduct,
     renderConfirmationOrderSummary: renderConfirmationOrderSummary,

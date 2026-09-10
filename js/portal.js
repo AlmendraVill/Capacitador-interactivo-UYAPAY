@@ -864,7 +864,7 @@
     // Cargar o conmutar simulador móvil sin recargar iframe para eliminar parpadeo blanco
     const frame = document.getElementById('simulador-frame');
     if (frame && user) {
-      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1`;
+      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1&v=2.3`;
       const isAlreadyLoaded = frame.dataset.loaded === 'true' && frame.contentWindow;
 
       if (isAlreadyLoaded) {

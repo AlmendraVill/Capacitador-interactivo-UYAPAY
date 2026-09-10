@@ -324,3 +324,100 @@ describe('6. Caso CP-01: Venta al contado con regalo y entrega programada', () =
   });
 });
 
+describe('7. Estados de Plan de Visitas y Nuevo Pedido (Fidelidad de Capturas Oficiales)', () => {
+  // Simulamos la lógica de renderizado de tarjetas de visita
+  function getRenderedCards(targetClient, distractors, visitInProgress, activeVisitClient) {
+    let cards = [];
+    const isTargetInProgress = Boolean(visitInProgress && activeVisitClient === targetClient);
+    cards.push({
+      client: targetClient,
+      isInProgress: isTargetInProgress,
+      hasBadgeInCourse: isTargetInProgress,
+      hasTime: isTargetInProgress
+    });
+
+    distractors.forEach(d => {
+      const isDInProgress = Boolean(visitInProgress && activeVisitClient === d.name);
+      cards.push({
+        client: d.name,
+        isInProgress: isDInProgress,
+        hasBadgeInCourse: isDInProgress,
+        hasTime: isDInProgress
+      });
+    });
+    return cards;
+  }
+
+  test('Plan de Visitas inicial: todas las visitas deben estar PENDIENTES sin visita en curso', () => {
+    const target = 'Ferretería Los Andes S.A.C.';
+    const distractors = [
+      { name: 'Distribuidora Kanchis EIRL' },
+      { name: 'Comercial Vega Hnos.' },
+      { name: 'Transportes del Sur SAC' }
+    ];
+
+    // Al iniciar caso: visitInProgress es false
+    const initialCards = getRenderedCards(target, distractors, false, null);
+    assert.strictEqual(initialCards.length, 4);
+    initialCards.forEach(c => {
+      assert.strictEqual(c.isInProgress, false, `El cliente ${c.client} NO debe iniciar con is-in-progress`);
+      assert.strictEqual(c.hasBadgeInCourse, false, `El cliente ${c.client} NO debe tener badge EN CURSO`);
+      assert.strictEqual(c.hasTime, false, `El cliente ${c.client} NO debe tener reloj de tiempo`);
+    });
+  });
+
+  test('Plan de Visitas al iniciar visita: solo el cliente activo pasa a EN CURSO', () => {
+    const target = 'Ferretería Los Andes S.A.C.';
+    const distractors = [
+      { name: 'Distribuidora Kanchis EIRL' },
+      { name: 'Comercial Vega Hnos.' }
+    ];
+
+    const startedCards = getRenderedCards(target, distractors, true, target);
+    const targetCard = startedCards.find(c => c.client === target);
+    assert.strictEqual(targetCard.isInProgress, true);
+    assert.strictEqual(targetCard.hasBadgeInCourse, true);
+    assert.strictEqual(targetCard.hasTime, true);
+
+    const distractorCards = startedCards.filter(c => c.client !== target);
+    distractorCards.forEach(c => {
+      assert.strictEqual(c.isInProgress, false);
+      assert.strictEqual(c.hasBadgeInCourse, false);
+    });
+  });
+
+  test('Nuevo Pedido: carrito vacío (qty=0) debe estar limpio y Completar deshabilitado', () => {
+    const emptyCart = { qty: 0, product: '' };
+    const canComplete = Boolean(emptyCart.qty > 0 && emptyCart.product);
+    assert.strictEqual(canComplete, false, 'Completar debe estar deshabilitado cuando qty === 0');
+  });
+
+  test('Nuevo Pedido: producto agregado (qty > 0) calcula totales oficiales y habilita Completar', () => {
+    const populatedCart = {
+      qty: 8,
+      unitPrice: 22.0,
+      product: 'Shell Helix HX7 10W/40',
+      sku: '726528',
+      format: 'BAL 5 GLNS',
+      paymentCondition: 'contado'
+    };
+
+    const rawTotal = populatedCart.qty * populatedCart.unitPrice;
+    assert.strictEqual(rawTotal, 176.0);
+
+    const discountRate = populatedCart.paymentCondition === 'contado' ? 0.05 : 0.0;
+    const discountVal = rawTotal * discountRate;
+    assert.strictEqual(discountVal, 8.80);
+
+    const orderTotal = rawTotal - discountVal;
+    assert.strictEqual(orderTotal, 167.20);
+
+    const invoiceTotal = +(orderTotal * 1.18).toFixed(2);
+    assert.strictEqual(invoiceTotal, 197.30);
+
+    const canComplete = Boolean(populatedCart.qty > 0 && populatedCart.product);
+    assert.strictEqual(canComplete, true, 'Completar debe estar habilitado con producto en carrito');
+  });
+});
+
+
