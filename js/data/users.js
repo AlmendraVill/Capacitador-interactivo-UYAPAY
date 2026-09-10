@@ -1,5 +1,5 @@
 /**
- * Catálogo oficial de usuarios para la capacitación de 12 asesores B2C - UYAPAY
+ * Catálogo oficial de usuarios para la capacitación de 14 asesores comerciales B2C - UYAPAY
  */
 if (typeof window === 'undefined') {
   global.window = {};
@@ -7,10 +7,10 @@ if (typeof window === 'undefined') {
 window.UyapayData = window.UyapayData || {};
 
 window.UyapayData.INITIAL_USERS = [
-  // Administradores / Capacitadores
+  // Administrador
   { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: '123' },
   
-  // 12 Asesores Comerciales
+  // 14 Asesores Comerciales Oficiales
   { id: 'usr-alvaro', username: 'alvaro', name: 'Álvaro Rodríguez', role: 'asesor', password: '123' },
   { id: 'usr-lruiz', username: 'lruiz', name: 'Leonardo Ruíz', role: 'asesor', password: '123' },
   { id: 'usr-percy', username: 'percy', name: 'Percy Chambilla', role: 'asesor', password: '123' },

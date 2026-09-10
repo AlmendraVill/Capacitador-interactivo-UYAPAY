@@ -161,13 +161,12 @@ if (!podiumRow) {
   db.prepare("INSERT INTO settings (key, value) VALUES ('podium_visible', '0')").run();
 }
 
-// Catálogo oficial de administradores y 12 asesores oficiales UYAPAY
+// Catálogo oficial de 1 administrador y 14 asesores comerciales oficiales UYAPAY
 const INITIAL_USERS = [
-  // Administradores / Capacitadores
+  // Administrador
   { id: 'usr-admin', username: 'admin', name: 'Administrador UYAPAY', role: 'admin', password: '123' },
-  
 
-  // 12 Asesores Comerciales Oficiales
+  // 14 Asesores Comerciales Oficiales
   { id: 'usr-edward', username: 'edward', name: 'Edward Velásquez', role: 'asesor', password: '123' },
   { id: 'usr-henry', username: 'henry', name: 'Henry Macedo', role: 'asesor', password: '123' },
   { id: 'usr-alvaro', username: 'alvaro', name: 'Álvaro Rodríguez', role: 'asesor', password: '123' },

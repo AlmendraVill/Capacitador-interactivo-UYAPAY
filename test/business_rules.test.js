@@ -43,11 +43,19 @@ describe('1. Catálogo Oficial de Casos y Productos UYAPAY', () => {
     assert.strictEqual(hx7.hasPromo, true, 'HX7 debe tener promoción configurada');
   });
 
-  test('La nómina de usuarios oficiales incluye al Administrador y los 12 asesores comerciales', () => {
-    assert.ok(INITIAL_USERS.length >= 13, 'Debe haber al menos 13 usuarios (1 admin + 12 asesores)');
+  test('La nómina de usuarios oficiales incluye al Administrador y los 14 asesores comerciales', () => {
+    assert.strictEqual(INITIAL_USERS.length, 15, 'Debe haber exactamente 15 usuarios (1 admin + 14 asesores)');
     const admin = INITIAL_USERS.find(u => u.username === 'admin');
     assert.ok(admin, 'Usuario admin no encontrado');
     assert.strictEqual(admin.role, 'admin');
+
+    const edward = INITIAL_USERS.find(u => u.username === 'edward');
+    assert.ok(edward, 'Asesor edward no encontrado');
+    assert.strictEqual(edward.role, 'asesor', 'Edward debe tener rol de asesor comercial');
+
+    const henry = INITIAL_USERS.find(u => u.username === 'henry');
+    assert.ok(henry, 'Asesor henry no encontrado');
+    assert.strictEqual(henry.role, 'asesor', 'Henry debe tener rol de asesor comercial');
 
     const alvaro = INITIAL_USERS.find(u => u.username === 'alvaro');
     assert.ok(alvaro, 'Asesor alvaro no encontrado');
@@ -124,7 +132,7 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
   // Implementación fiel de la lógica de portal.js
   function selectFiveEvaluationCases(catalog, usedCodes = []) {
     const strata = [
-      ['B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'], // 1: Ventas básicas
+      ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'], // 1: Ventas básicas
       ['B2C-02', 'B2C-05', 'B2C-17', 'B2C-18'],           // 2: Condiciones comerciales
       ['B2C-03', 'B2C-07', 'B2C-14', 'B2C-19'],           // 3: Promociones
       ['B2C-08', 'B2C-09', 'B2C-10', 'B2C-22'],           // 4: Ruta y visitas
@@ -135,10 +143,10 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
     const chosenCodes = new Set();
 
     strata.forEach(groupCodes => {
-      const availableInStrata = catalog.filter(c => groupCodes.includes(c.code) && !chosenCodes.has(c.code));
+      const availableInStrata = catalog.filter(c => (groupCodes.includes(c.code) || (c.aliases && c.aliases.some(a => groupCodes.includes(a)))) && !chosenCodes.has(c.code));
       if (availableInStrata.length === 0) return;
 
-      const nonRepeated = availableInStrata.filter(c => !usedCodes.includes(c.code));
+      const nonRepeated = availableInStrata.filter(c => !usedCodes.includes(c.code) && !(c.aliases && c.aliases.some(a => usedCodes.includes(a))));
       const pool = nonRepeated.length > 0 ? nonRepeated : availableInStrata;
       const pick = pool[Math.floor(Math.random() * pool.length)];
 
@@ -160,7 +168,7 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
 
   test('La selección cubre los 5 estratos pedagógicos requeridos', () => {
     const strata = [
-      ['B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'],
+      ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'],
       ['B2C-02', 'B2C-05', 'B2C-17', 'B2C-18'],
       ['B2C-03', 'B2C-07', 'B2C-14', 'B2C-19'],
       ['B2C-08', 'B2C-09', 'B2C-10', 'B2C-22'],
@@ -169,16 +177,16 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
 
     const selected = selectFiveEvaluationCases(CASES, []);
     strata.forEach((group, stratumIndex) => {
-      const hasMatch = selected.some(c => group.includes(c.code));
+      const hasMatch = selected.some(c => group.includes(c.code) || (c.aliases && c.aliases.some(a => group.includes(a))));
       assert.ok(hasMatch, `El estrato pedagógico ${stratumIndex + 1} no tuvo representación en la selección`);
     });
   });
 
   test('El filtro anti-repetición prioriza casos no evaluados previamente', () => {
-    // Si el usuario ya vio B2C-01, B2C-04, B2C-06, B2C-15 del Estrato 1, debe escoger B2C-20
-    const usedCodes = ['B2C-01', 'B2C-04', 'B2C-06', 'B2C-15'];
+    // Si el usuario ya vio CP-01/B2C-01, B2C-04, B2C-06, B2C-15 del Estrato 1, debe escoger B2C-20
+    const usedCodes = ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15'];
     const selected = selectFiveEvaluationCases(CASES, usedCodes);
-    const stratum1Pick = selected.find(c => ['B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'].includes(c.code));
+    const stratum1Pick = selected.find(c => ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'].includes(c.code));
     assert.strictEqual(stratum1Pick.code, 'B2C-20', 'Debe seleccionar el único caso no repetido del estrato 1');
   });
 });
@@ -227,3 +235,92 @@ describe('5. Seguridad, Criptografía PBKDF2 y Tokens de Sesión', () => {
     assert.strictEqual(verifyPassword('wrong', '123'), false, 'Debe rechazar texto plano incorrecto');
   });
 });
+
+describe('6. Caso CP-01: Venta al contado con regalo y entrega programada', () => {
+  const cp01 = CASES.find(c => c.code === 'CP-01' || c.id === 'case-1');
+
+  test('CP-01 está configurado con código CP-01 y exactamente 7 reglas secuenciales', () => {
+    assert.ok(cp01, 'Caso CP-01 debe existir en el catálogo');
+    assert.strictEqual(cp01.code, 'CP-01');
+    assert.strictEqual(cp01.priceList, '3');
+    assert.strictEqual(cp01.rules.length, 7, 'CP-01 debe tener 7 reglas de evaluación');
+  });
+
+  test('Reglas 0 y 1: Selección de cliente Ferretería Los Andes e inicio de visita', () => {
+    const rule0 = cp01.rules[0];
+    assert.strictEqual(rule0.eventName, 'SELECT_CLIENT');
+    assert.strictEqual(rule0.validate({ clientName: 'Ferretería Los Andes S.A.C.' }), true);
+    assert.strictEqual(rule0.validate({ clientName: 'Distribuidora Kanchis EIRL' }), false);
+
+    const rule1 = cp01.rules[1];
+    assert.strictEqual(rule1.eventName, 'SELECT_ACTION');
+    assert.strictEqual(rule1.validate({ action: 'iniciar' }), true);
+    assert.strictEqual(rule1.validate({ action: 'ver_deuda' }), false);
+  });
+
+  test('Regla 2: Fotos obligatorias inicial y final', () => {
+    const rule2 = cp01.rules[2];
+    assert.strictEqual(rule2.eventName, 'SAVE_PHOTOS');
+    assert.strictEqual(rule2.validate({ initialPhoto: true, finalPhoto: true }), true);
+    assert.strictEqual(rule2.validate({ initialPhoto: true, finalPhoto: false }), false);
+    assert.strictEqual(rule2.validate({ initialPhoto: false, finalPhoto: true }), false);
+  });
+
+  test('Regla 3: Motivo de no registro de precios (Punto crítico)', () => {
+    const rule3 = cp01.rules[3];
+    assert.strictEqual(rule3.eventName, 'SAVE_PRICE_TRACKING_MOTIVO');
+    assert.strictEqual(rule3.validate({ motivo: 'sin_tiempo' }), true);
+    assert.strictEqual(rule3.validate({ motivo: 'no_autoriza' }), true);
+    assert.strictEqual(rule3.validate({ motivo: '' }), false, 'Debe fallar si no se selecciona motivo');
+    assert.strictEqual(rule3.validate({ motivo: null }), false);
+  });
+
+  test('Regla 4: Configuración comercial con cambio obligatorio a Lista 3', () => {
+    const rule4 = cp01.rules[4];
+    assert.strictEqual(rule4.eventName, 'CREATE_ORDER_CONFIG');
+    // Éxito: Contado, Lista 3, lubricantes, shell
+    assert.strictEqual(rule4.validate({ paymentCondition: 'contado', priceList: '3', line: 'lubricantes', brand: 'shell' }), true);
+    // Error crítico: Dejar la Lista 1 por defecto
+    assert.strictEqual(rule4.validate({ paymentCondition: 'contado', priceList: '1', line: 'lubricantes', brand: 'shell' }), false);
+    // Error: Condición incorrecta (crédito)
+    assert.strictEqual(rule4.validate({ paymentCondition: 'credito_30', priceList: '3', line: 'lubricantes', brand: 'shell' }), false);
+  });
+
+  test('Regla 5: Producto 8 baldes HX7 y promoción de regalo activa', () => {
+    const rule5 = cp01.rules[5];
+    assert.strictEqual(rule5.eventName, 'ADD_PRODUCT');
+    // Éxito
+    assert.strictEqual(rule5.validate({ product: 'Shell Helix HX7 10W/40', quantity: 8, promoDiscount: true }), true);
+    // Error: Cantidad incorrecta
+    assert.strictEqual(rule5.validate({ product: 'Shell Helix HX7 10W/40', quantity: 6, promoDiscount: true }), false);
+    // Error: Sin promoción de regalo
+    assert.strictEqual(rule5.validate({ product: 'Shell Helix HX7 10W/40', quantity: 8, promoDiscount: false }), false);
+  });
+
+  test('Regla 6: Confirmación de orden con dirección en almacén y fecha 16 de septiembre', () => {
+    const rule6 = cp01.rules[6];
+    assert.strictEqual(rule6.eventName, 'SUBMIT_ORDER');
+    // Éxito
+    assert.strictEqual(rule6.validate({
+      confirmed: true,
+      deliveryAddress: 'almacen',
+      deliveryAddressText: 'ALMACÉN (a 600m de punto de venta)',
+      estimatedDeliveryDate: '2026-09-16'
+    }), true);
+    // Error: Dejar dirección por defecto de visita (principal)
+    assert.strictEqual(rule6.validate({
+      confirmed: true,
+      deliveryAddress: 'principal',
+      deliveryAddressText: 'AV. TOMAS TUYRUTUPAC 412 (Punto de venta / Visita)',
+      estimatedDeliveryDate: '2026-09-16'
+    }), false);
+    // Error: Fecha no es 16 de septiembre
+    assert.strictEqual(rule6.validate({
+      confirmed: true,
+      deliveryAddress: 'almacen',
+      deliveryAddressText: 'ALMACÉN (a 600m de punto de venta)',
+      estimatedDeliveryDate: '2026-09-12'
+    }), false);
+  });
+});
+

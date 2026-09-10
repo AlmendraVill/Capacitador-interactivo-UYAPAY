@@ -218,14 +218,18 @@ window.UyapayData.PRODUCTS = [
 window.UyapayData.CASES = [
 {
   "id": "case-1",
-  "code": "B2C-01",
-  "title": "Caso 1: Venta simple contado con regalo por volumen",
+  "code": "CP-01",
+  "aliases": ["B2C-01"],
+  "title": "CP-01: Venta al contado con regalo y entrega programada",
   "module": "Ventas B2C",
   "client": "Ferretería Los Andes S.A.C.",
   "clientAddress": "AV. TOMAS TUYRUTUPAC 412",
+  "deliveryAddress": "almacen",
+  "deliveryAddressText": "ALMACÉN (a 600m de punto de venta)",
+  "deliveryDate": "16 de septiembre",
   "paymentCondition": "contado",
-  "paymentConditionLabel": "Contado (5% desc.)",
-  "priceList": "1",
+  "paymentConditionLabel": "Contado [5%]",
+  "priceList": "3",
   "line": "lubricantes",
   "brand": "shell",
   "product": "Shell Helix HX7 10W/40",
@@ -234,8 +238,8 @@ window.UyapayData.CASES = [
   "promoDiscount": true,
   "promoType": "gift",
   "promoLabel": "🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)",
-  "publicTitle": "Venta de Lubricantes al Contado con Bonificación",
-  "instructions": "Te encuentras en ruta para atender a Ferretería Los Andes S.A.C. El encargado de tienda (Juan Pérez) te solicita una compra de 8 baldes de Shell Helix HX7 10W/40 con pago al contado, requiriendo expresamente la entrega de la bonificación de regalo vigente por volumen en este producto. Realiza la visita completa y gestiona la orden de compra conforme a las condiciones comerciales de la empresa.",
+  "publicTitle": "Venta al Contado con Regalo y Entrega Programada",
+  "instructions": "Cliente: Ferretería Los Andes S.A.C.\n\nSituación: Genera una venta al contado de 8 baldes de Shell Helix HX7 10W/40, aplicando el beneficio promocional de 2 botellas de Shell Helix Plus de regalo. El cliente solicita que el pedido sea entregado el 16 de septiembre en su almacén (dirección de entrega) a 600 metros de su punto de venta (dirección de visita).\n\nTipo de Atención: Presencial normal.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -244,18 +248,21 @@ window.UyapayData.CASES = [
     "scale": "vigesimal"
   },
   "solutionFlow": {
-    "objetivo": "Ejecutar una venta directa al contado en línea Lubricantes con bonificación en especie por escala.",
+    "objetivo": "Generar una venta al contado en Lista 3 con bonificación de regalo en especie y entrega programada en almacén.",
     "pasoAPaso": [
-      "1. En el Plan de Visitas ubicar y pulsar sobre \"Ferretería Los Andes S.A.C.\". En la hoja de opciones seleccionar \"Iniciar visita\".",
-      "2. En la tarea INICIO del carrusel, verificar el Scoring (Venta C, Cobranza 1) y Perfil comercial. Presionar el botón \"CONTINUAR\".",
-      "3. En la tarea FOTOS pulsar \"+\" en Presentación inicial y \"+\" en Presentación final. Presionar el botón \"GUARDAR\" (avanza automáticamente a PEDIDOS).",
-      "4. En la tarea PEDIDOS pulsar \"➕ CREAR PEDIDO O COTIZACIÓN\". Configurar: Condición = Contado (5% desc.), Lista de Precios = 1, Línea = Lubricantes, Marca = Shell.",
-      "5. Pulsar \"＋ Agregar producto\". En Selección de producto tocar \"Shell Helix HX7 10W/40\". En Detalle del producto ajustar cantidad a 8 baldes con el stepper [＋], verificar bonificación en especie y pulsar \"Agregar producto\".",
-      "6. En la pantalla Nuevo pedido verificar el item cargado y presionar \"Completar\". En Confirmación verificar: Subtotal bruto USD 176.00, Descuento Contado 5% (-USD 8.80), Total a facturar USD 167.20. Presionar \"Actualizar Orden de Compra y Enviar\"."
+      "1. En Plan de visitas, sin visitas iniciadas, seleccionar Ferretería Los Andes S.A.C.",
+      "2. En la hoja de opciones seleccionar 'Iniciar visita'.",
+      "3. En la tarea INICIO del carrusel, verificar el perfil comercial y presionar el botón 'CONTINUAR'.",
+      "4. En la tarea FOTOS pulsar '+' en Presentación inicial y '+' en Presentación final. Presionar el botón 'GUARDAR' (avanza a la tarea PRECIOS).",
+      "5. En la tarea PRECIOS seleccionar un motivo válido para no registrar precios de la competencia y presionar el botón 'CONTINUAR' (avanza a la tarea PEDIDOS).",
+      "6. En la tarea PEDIDOS pulsar '➕ CREAR PEDIDO O COTIZACIÓN'. Configurar: Condición = Contado [5%], Lista de Precios = Lista 3 (cambiar de la Lista 1 por defecto a Lista 3), Línea = Lubricantes Shell, Marca = Shell.",
+      "7. Pulsar '＋ Agregar producto'. En Selección de producto tocar 'Shell Helix HX7 10W/40'. En Detalle del producto ajustar cantidad a 8 baldes con el stepper [＋], verificar que el beneficio promocional (2 botellas Shell Helix Plus de regalo) esté activado y pulsar 'Agregar producto'.",
+      "8. En la pantalla Nuevo pedido verificar el item cargado y presionar 'Completar'.",
+      "9. En Confirmación de pedido: seleccionar la dirección de entrega correspondiente al almacén del cliente (diferente a la de visita), seleccionar la fecha de entrega del 16 de septiembre, verificar los cálculos financieros y presionar 'Actualizar Orden de Compra y Enviar'."
     ],
-    "reglaNegocio": "En condición Contado aplica descuento financiero del 5%. Los regalos promocionales (bonificaciones) no reducen el monto facturado pero deben registrarse vinculados al SKU padre.",
-    "decisionClave": "Activar el toggle de regalo dentro del detalle del producto antes de agregarlo al carrito.",
-    "resultadoEsperado": "Orden emitida en estado ENVIADO con total neto de USD 167.20 y 2 botellas bonificadas."
+    "reglaNegocio": "En condición Contado aplica 5% de descuento financiero sobre Lista 3. La bonificación de regalo (2 botellas Shell Helix Plus) no descuenta dinero pero debe registrarse ligada a la compra de los 8 baldes. La entrega se debe programar para el 16 de septiembre en la dirección del almacén.",
+    "decisionClave": "Cambiar la lista de precios a Lista 3, registrar motivo de precios antes de continuar, verificar el toggle de regalo y cambiar la dirección de entrega al almacén y fecha al 16 de septiembre.",
+    "resultadoEsperado": "Orden emitida y confirmada en estado ENVIADO con entrega el 16 de septiembre en almacén."
   },
   "rules": [
     {
@@ -263,42 +270,56 @@ window.UyapayData.CASES = [
       "eventName": "SELECT_CLIENT",
       "description": "Seleccionar Ferretería Los Andes",
       "validate": (p) => (p.clientName || '').toLowerCase().includes('andes'),
-      "errorMessage": "Selecciona a Ferretería Los Andes S.A.C."
+      "errorMessage": "Debes seleccionar a Ferretería Los Andes S.A.C."
     },
     {
       "stepIndex": 1,
       "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
+      "description": "Iniciar visita presencial",
       "validate": (p) => p.action === 'iniciar',
       "errorMessage": "Debes presionar \"Iniciar visita\"."
     },
     {
       "stepIndex": 2,
       "eventName": "SAVE_PHOTOS",
-      "description": "Fotos obligatorias",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Debes registrar ambas fotos obligatorias (fachada y góndola)."
+      "description": "Fotos obligatorias inicial y final",
+      "validate": (p) => Boolean(p.initialPhoto) && Boolean(p.finalPhoto),
+      "errorMessage": "Error crítico (-20 pts): Debes registrar ambas fotos obligatorias (Presentación inicial y final)."
     },
     {
       "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configurar pedido Contado Lista 1",
-      "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '1' && p.line === 'lubricantes' && p.brand === 'shell',
-      "errorMessage": "Configura: Contado, Lista 1, Lubricantes Shell."
+      "eventName": "SAVE_PRICE_TRACKING_MOTIVO",
+      "description": "Motivo de no registro de precios",
+      "validate": (p) => Boolean(p.motivo && p.motivo !== '' && p.motivo !== 'ninguno'),
+      "errorMessage": "Error crítico (-15 pts): Debes seleccionar un motivo válido para no registrar precios de la competencia antes de continuar a Pedidos."
     },
     {
       "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar 8 baldes HX7 con regalo",
-      "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 8 && Boolean(p.promoDiscount),
-      "errorMessage": "Agrega 8 baldes Shell Helix HX7 con la promoción de regalo activada."
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar pedido Contado Lista 3",
+      "validate": (p) => p.paymentCondition === 'contado' && String(p.priceList) === '3' && p.line === 'lubricantes' && p.brand === 'shell',
+      "errorMessage": "Error crítico (-25 pts): Configuración incorrecta. Debes configurar: Condición Contado [5%], cambiar de Lista 1 a Lista 3, Línea Lubricantes Shell y Marca Shell."
     },
     {
       "stepIndex": 5,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 8 baldes HX7 con regalo",
+      "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 8 && Boolean(p.promoDiscount),
+      "errorMessage": "Error crítico (-20 pts): Debes agregar 8 baldes Shell Helix HX7 con la promoción de regalo activada (2 botellas Shell Helix Plus)."
+    },
+    {
+      "stepIndex": 6,
       "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden de compra."
+      "description": "Confirmar orden con entrega en almacén el 16 de septiembre",
+      "validate": (p) => {
+        const isConfirmed = Boolean(p.confirmed);
+        const isAlmacen = (p.deliveryAddress && p.deliveryAddress !== 'principal') ||
+                          (p.deliveryAddressText && p.deliveryAddressText.toLowerCase().includes('almacén'));
+        const isSept16 = (p.estimatedDeliveryDate || '').includes('-09-16') ||
+                         (p.estimatedDeliveryDate || '').includes('16');
+        return isConfirmed && isAlmacen && isSept16;
+      },
+      "errorMessage": "Error crítico (-10 a -20 pts): Debes confirmar la orden seleccionando el almacén como dirección de entrega y programando la fecha para el 16 de septiembre."
     }
   ]
 },

@@ -30,16 +30,17 @@
     catalogSelectedTab: 'combo',
     cart: {
       productId: '',
-      product: 'Shell Helix HX7 10W/40',
-      sku: 'B-734807',
-      line: 'lubricantes',
-      brand: 'shell',
-      unitPrice: 22.0,
-      qty: 8,
-      promoDiscount: true,
-      promoType: 'gift',
+      product: '',
+      sku: '',
+      line: '',
+      brand: '',
+      format: '',
+      unitPrice: 0,
+      qty: 0,
+      promoDiscount: false,
+      promoType: 'none',
       promoDiscountAmount: 0.0,
-      promoLabel: '🎁 Regalo: 2 botellas Shell Helix Plus 10W-40 (108203)'
+      promoLabel: ''
     },
     cobranza: {
       deudaVencida: 490.98,
@@ -189,7 +190,30 @@
     }
   }
 
+  function onPreciosMotivoChange(val) {
+    const sel = document.getElementById('sel-precios-motivo');
+    const label = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : val;
+    state.preciosMotivo = val;
+    state.preciosMotivoLabel = label;
+  }
+
   function onPreciosContinue() {
+    const sel = document.getElementById('sel-precios-motivo');
+    const motivo = sel ? (sel.value || '') : (state.preciosMotivo || '');
+    const motivoLabel = (sel && sel.selectedIndex >= 0 && sel.value) ? sel.options[sel.selectedIndex].text : (state.preciosMotivoLabel || '');
+
+    emitSimulatorEvent('SAVE_PRICE_TRACKING_MOTIVO', {
+      motivo: motivo,
+      motivoLabel: motivoLabel,
+      skippedRegistration: Boolean(motivo)
+    });
+
+    if (!motivo) {
+      showHint('Atención: No seleccionaste motivo de no registro de precios.', true);
+    } else {
+      showHint(`Motivo registrado: ${motivoLabel}. Avanzando a Pedidos...`, false);
+    }
+
     goToVisitTask(3); // Avanza a PEDIDOS
   }
 
@@ -260,16 +284,17 @@
     state.selectedClient = currentCase.client;
     state.cart = {
       productId: '',
-      product: currentCase.product || 'Shell Helix HX7 10W/40',
+      product: '',
       sku: '',
-      line: currentCase.line || 'lubricantes',
-      brand: currentCase.brand || 'shell',
-      unitPrice: currentCase.unitPrice || 22.0,
-      qty: currentCase.expectedQty || 1,
-      promoDiscount: currentCase.promoDiscount !== false,
-      promoType: currentCase.promoType || (currentCase.promoDiscount ? 'gift' : 'none'),
-      promoDiscountAmount: currentCase.promoDiscountAmount || 0.0,
-      promoLabel: currentCase.promoLabel || 'Promoción oficial'
+      line: '',
+      brand: '',
+      format: '',
+      unitPrice: 0,
+      qty: 0,
+      promoDiscount: false,
+      promoType: 'none',
+      promoDiscountAmount: 0.0,
+      promoLabel: ''
     };
 
     state.cobranza = {
@@ -311,16 +336,29 @@
     }
     if (lblCli) lblCli.textContent = state.selectedClient.toUpperCase();
 
+    // Resetear motivo de precios
+    const selPreciosMotivo = document.getElementById('sel-precios-motivo');
+    if (selPreciosMotivo) {
+      selPreciosMotivo.value = '';
+    }
+    state.preciosMotivo = '';
+    state.preciosMotivoLabel = '';
+
     if (selCond && currentCase.paymentCondition) {
       selCond.value = currentCase.paymentCondition;
       if (lblCond && selCond.selectedIndex >= 0) {
         lblCond.textContent = selCond.options[selCond.selectedIndex].text;
       }
     }
-    if (selList && currentCase.priceList) {
-      selList.value = currentCase.priceList;
-      if (lblList && selList.selectedIndex >= 0) {
-        lblList.textContent = selList.options[selList.selectedIndex].text;
+    if (selList) {
+      if (state.currentCaseId === 'case-1' || currentCase.code === 'CP-01') {
+        selList.value = '1';
+        if (lblList) lblList.textContent = 'LISTA 1';
+      } else if (currentCase.priceList) {
+        selList.value = currentCase.priceList;
+        if (lblList && selList.selectedIndex >= 0) {
+          lblList.textContent = selList.options[selList.selectedIndex].text;
+        }
       }
     }
     if (selLine && currentCase.line) {
@@ -1763,8 +1801,8 @@
       finalPhoto: true
     });
 
-    showHint('Fotos de exhibición guardadas. Avanzando a Pedidos...', false);
-    goToVisitTask(3); // Avanza a la tarea PEDIDOS del carrusel
+    showHint('Fotos de exhibición guardadas. Avanzando a Precios...', false);
+    goToVisitTask(2); // Avanza a la tarea PRECIOS del carrusel oficial
   }
 
   // 10.1 Gestión de Visita en Progreso, Temporizador y Perfil Oficial
@@ -2041,51 +2079,59 @@
       const orderTotal = Math.max(0, rawTotal - discountVal);
       const invoiceTotal = orderTotal * 1.18;
 
+      let prodThumb = 'images/balde_shell.png';
+      if (state.cart.line === 'neumaticos') prodThumb = 'images/wheelpng.png';
+      else if (state.cart.line === 'repuestos') prodThumb = 'images/car_batterypng.png';
+
+      const prodFormat = state.cart.format || (state.cart.line === 'lubricantes' ? 'BAL 5 GLNS' : 'COMBO');
+
       list.innerHTML = `
-        <div class="cart-product-rich-card">
-          <div class="cart-product-header">
-            <div>
-              <div class="cart-product-name">${state.cart.product}</div>
-              <div class="cart-product-meta">SKU: ${state.cart.sku || '550041216'} | Formato: ${state.cart.line ? state.cart.line.toUpperCase() : 'B2C'}</div>
+        <!-- Tarjeta del Producto Agregado (fiel a visitas pedidos-producto agregado1.png) -->
+        <div class="product-item-card-official">
+          <div class="product-item-card-top">
+            <div class="product-item-thumb-box">
+              <img src="${prodThumb}" alt="prod" class="product-item-thumb-img" onerror="this.src='images/oil_industrypng.png'" />
             </div>
-            <div class="cart-product-thumb">
-              <img src="images/logo_solar_sin_fondo.png" onerror="this.src='images/solar.png'" alt="prod" style="max-height:40px;" />
+            <div class="product-item-info">
+              <div class="product-item-sku">SKU: ${state.cart.sku || '726528'}</div>
+              <div class="product-item-name">${state.cart.product.toUpperCase()}</div>
+              <div class="product-item-format">${prodFormat.toUpperCase()}</div>
             </div>
           </div>
           
-          <div class="cart-product-price-row">
-            <span class="cart-product-price">Precio: $${state.cart.unitPrice.toFixed(2)}</span>
-            <span class="cart-product-qty">Cantidad: <b>${state.cart.qty}</b></span>
+          <div class="product-item-price-qty-row">
+            <div class="product-item-price">$${state.cart.unitPrice.toFixed(2)}</div>
+            <div class="product-item-qty">Cantidad: ${state.cart.qty}</div>
           </div>
 
-          <div class="cart-product-actions-bar">
-            <span class="cart-action-btn" onclick="window.UyapaySimulator.editCartProduct()">EDITAR</span>
-            <span class="cart-action-btn delete" onclick="window.UyapaySimulator.removeProductFromCart()">ELIMINAR</span>
+          <div class="product-item-actions-row">
+            <span class="product-action-text-btn" onclick="window.UyapaySimulator.editCartProduct()">EDITAR</span>
+            <span class="product-action-text-btn" onclick="window.UyapaySimulator.removeProductFromCart()">ELIMINAR</span>
           </div>
         </div>
 
-        <!-- Botón + Agregar producto secundario -->
-        <div class="add-product-btn-card" style="margin-top:10px;" onclick="window.UyapaySimulator.onAddProductClick()">
-          <span style="font-weight:bold; margin-right:4px;">＋</span> Agregar producto
+        <!-- Botón + Agregar producto secundario (fiel a visitas pedidos-producto agregado2.png) -->
+        <div class="add-product-btn-card" style="margin-top:10px; margin-bottom:14px;" onclick="window.UyapaySimulator.onAddProductClick()">
+          + Agregar producto
         </div>
 
-        <!-- Tarjeta de Totales Financieros Oficiales -->
-        <div class="order-totals-summary-card">
-          <div class="order-total-row">
-            <span>Sub total</span>
-            <b>$${rawTotal.toFixed(2)}</b>
+        <!-- Tarjeta de Totales Financieros Oficiales (fiel a visitas pedidos-producto agregado2.png) -->
+        <div class="order-totals-official-list">
+          <div class="order-totals-row">
+            <span class="order-totals-label">Sub total</span>
+            <span class="order-totals-val">$${rawTotal.toFixed(2)}</span>
           </div>
-          <div class="order-total-row discount">
-            <span>Descuento</span>
-            <b>-$${discountVal.toFixed(2)}</b>
+          <div class="order-totals-row">
+            <span class="order-totals-label"><span style="display:inline-block; font-size:11px; margin-right:4px;">∨</span> Descuento</span>
+            <span class="order-totals-val">-$${discountVal.toFixed(2)}</span>
           </div>
-          <div class="order-total-row">
-            <span>Total pedido</span>
-            <b>$${orderTotal.toFixed(2)}</b>
+          <div class="order-totals-row">
+            <span class="order-totals-label">Total pedido</span>
+            <span class="order-totals-val">$${orderTotal.toFixed(2)}</span>
           </div>
-          <div class="order-total-row final">
-            <span>Total factura</span>
-            <b style="color:var(--text-dark);">$${invoiceTotal.toFixed(2)}</b>
+          <div class="order-totals-row" style="border-bottom:none;">
+            <span class="order-totals-label">Total factura</span>
+            <span class="order-totals-val">$${invoiceTotal.toFixed(2)}</span>
           </div>
         </div>
       `;
@@ -2097,10 +2143,7 @@
     } else {
       list.innerHTML = `
         <div class="add-product-btn-card" onclick="window.UyapaySimulator.onAddProductClick()">
-          <span style="font-weight:bold; margin-right:4px;">＋</span> Agregar producto
-        </div>
-        <div style="text-align:center; padding:20px; color:var(--text-light); font-size:12px;">
-          No hay productos añadidos al pedido.
+          + Agregar producto
         </div>
       `;
       if (btnComp) {
@@ -2414,6 +2457,7 @@
       sku: prod.sku,
       line: prod.line,
       brand: prod.brand,
+      format: prod.format || (prod.line === 'lubricantes' ? 'BAL 5 GLNS' : 'COMBO'),
       unitPrice: prod.unitPrice,
       qty: state.detailQty,
       promoDiscount: state.detailPromoChecked,
@@ -2545,13 +2589,13 @@
       dateInput.value = tomorrow.toISOString().split('T')[0];
     }
 
-    // Pre-llenar selector de dirección
+    // Pre-llenar selector de dirección (preservando selección si ya tiene opciones)
     const addrSelect = document.getElementById('confirm-address-select');
-    if (addrSelect && currentCase) {
-      const addr = currentCase.clientAddress || 'AV. TOMAS TUYRUTUPAC 412';
+    if (addrSelect && (!addrSelect.options || addrSelect.options.length === 0)) {
+      const addr = currentCase ? (currentCase.clientAddress || 'AV. TOMAS TUYRUTUPAC 412') : 'AV. TOMAS TUYRUTUPAC 412';
       addrSelect.innerHTML = `
-        <option value="principal" selected>${addr} (Principal)</option>
-        <option value="almacen">ALMACÉN AUXILIAR NRO. 2</option>
+        <option value="principal" selected>${addr} (Punto de venta / Visita)</option>
+        <option value="almacen">ALMACÉN (a 600m de punto de venta)</option>
       `;
     }
 
@@ -2562,6 +2606,9 @@
   function submitFinalOrder(docType = 'orden') {
     const isCotizacion = docType === 'cotizacion';
     const deliveryDate = document.getElementById('confirm-delivery-date')?.value || '';
+    const addrSelect = document.getElementById('confirm-address-select');
+    const deliveryAddress = addrSelect?.value || 'principal';
+    const deliveryAddressText = addrSelect && addrSelect.selectedIndex >= 0 ? addrSelect.options[addrSelect.selectedIndex].text : '';
     const isSecureSale = Boolean(document.getElementById('confirm-secure-sale')?.checked);
     const isGuarantee = Boolean(document.getElementById('confirm-guarantee')?.checked);
     const purchaseRequest = document.getElementById('confirm-purchase-request')?.value || '';
@@ -2573,6 +2620,11 @@
       product: state.cart.product,
       quantity: state.cart.qty,
       paymentCondition: state.orderConfig.paymentCondition,
+      priceList: state.orderConfig.priceList,
+      line: state.orderConfig.line,
+      brand: state.orderConfig.brand,
+      deliveryAddress: deliveryAddress,
+      deliveryAddressText: deliveryAddressText,
       documentType: isCotizacion ? 'cotizacion' : 'orden',
       documentTypeId: isCotizacion ? 3 : 2,
       estimatedDeliveryDate: deliveryDate,
@@ -2810,6 +2862,7 @@
     openPhotoHistoryModal: openPhotoHistoryModal,
     closePhotoHistoryModal: closePhotoHistoryModal,
     onInicioContinue: onInicioContinue,
+    onPreciosMotivoChange: onPreciosMotivoChange,
     onPreciosContinue: onPreciosContinue,
     onPedidosContinue: onPedidosContinue,
     switchPriceSubtab: switchPriceSubtab,

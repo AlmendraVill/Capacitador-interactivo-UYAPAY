@@ -1368,6 +1368,19 @@
           </div>
         </div>
 
+        <!-- Card de Motivo de no registro de precios -->
+        <div class="task-card" id="precios-motivo-card" style="margin-top:14px; border:1px solid #fed7aa; background:#fffaf0; padding:12px 14px;">
+          <div style="font-size:12px; font-weight:700; color:#c2410c; margin-bottom:6px;">Motivo de no registro de precios:</div>
+          <select id="sel-precios-motivo" class="form-select" onchange="window.UyapaySimulator.onPreciosMotivoChange()">
+            <option value="">-- Seleccionar motivo --</option>
+            <option value="no_comercializa">No comercializa marcas de competencia</option>
+            <option value="precios_no_visibles">Precios de competencia no visibles en exhibición</option>
+            <option value="cliente_no_autoriza">Cliente no autoriza toma de precios</option>
+            <option value="sin_variacion">Sin variación de precios respecto a visita previa</option>
+            <option value="cliente_ocupado">Cliente ocupado para toma de precios</option>
+          </select>
+        </div>
+
         <div class="sticky-footer-btn-container">
           <button class="brand-btn-yellow" onclick="window.UyapaySimulator.onPreciosContinue()">
             CONTINUAR
@@ -1605,13 +1618,8 @@
       <!-- Sección: Productos -->
       <div class="card-title-main" style="margin:18px 0 10px 0;">Productos</div>
 
-      <!-- Botón + Agregar producto -->
-      <div class="add-product-btn-card" onclick="window.UyapaySimulator.onAddProductClick()">
-        <span style="font-weight:bold; margin-right:4px;">＋</span> Agregar producto
-      </div>
-
-      <!-- Lista de productos añadidos al pedido actual -->
-      <div id="nuevo-pedido-cart-list" style="margin-top:12px;"></div>
+      <!-- Contenedor dinámico de productos en nuevo pedido -->
+      <div id="nuevo-pedido-cart-list"></div>
     </div>
 
     <!-- Botón Sticky Completar -->
@@ -1833,8 +1841,8 @@
         <div class="form-field-group">
           <label class="form-field-label">Destino / Dirección de entrega:</label>
           <select id="confirm-address-select" class="form-select">
-            <option value="principal">AV. TOMAS TUYRUTUPAC 412 (Principal)</option>
-            <option value="almacen">ALMACÉN AUXILIAR NRO. 2</option>
+            <option value="principal">AV. TOMAS TUYRUTUPAC 412 (Punto de venta / Visita)</option>
+            <option value="almacen">ALMACÉN (a 600m de punto de venta)</option>
           </select>
         </div>
 
