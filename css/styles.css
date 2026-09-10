@@ -398,14 +398,16 @@ th {
   flex-direction: row;
   align-items: flex-start;
   justify-content: center;
-  gap: 28px;
+  gap: 32px;
   width: 100%;
-  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .exam-situation-panel {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 520px;
+  min-width: 340px;
+  max-width: 850px;
   width: 100%;
 }
 
@@ -562,10 +564,11 @@ th {
 
 /* MARCO MÓVIL (MOCKUP SMARTPHONE) PERFECTAMENTE ENCUADRADO */
 .phone-mockup-wrapper {
+  flex: 0 0 380px;
+  width: 380px;
   display: flex;
   justify-content: center;
-  align-items: center;
-  width: 100%;
+  align-items: flex-start;
 }
 
 .mockup-phone {
@@ -610,140 +613,6 @@ th {
   height: 100%;
   border: none;
   display: block;
-}
-
-/* ================= 7. MEDIA QUERIES (RESPONSIVE) ================= */
-
-/* Tablets y pantallas medianas */
-@media (max-width: 768px) {
-  #top-navbar {
-    padding: 10px 16px;
-    min-height: auto;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .nav-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .nav-links {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-  }
-
-  .nav-item {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-
-  .live-monitor-box {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 14px;
-  }
-
-  .live-monitor-stats {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fff;
-    padding: 12px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    text-align: left !important;
-  }
-/* Responsive para vista Tablet y Móvil de la Evaluación */
-@media (max-width: 991px) {
-  .exam-workspace {
-    padding: 12px 10px;
-    gap: 14px;
-  }
-
-  .exam-main-container {
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
-  }
-
-  .exam-situation-panel {
-    width: 100%;
-  }
-
-  .exam-situation-card {
-    padding: 18px 16px;
-  }
-
-  .situation-title {
-    font-size: 18px;
-  }
-
-  .situation-text {
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .situation-client-card {
-    padding: 12px 14px;
-    gap: 14px;
-  }
-
-  .phone-mockup-wrapper {
-    width: 100%;
-    max-width: 380px;
-  }
-
-  .mockup-phone {
-    width: 100%;
-    max-width: 360px;
-    height: 720px;
-  }
-}
-
-/* Dispositivos móviles (Smartphones) */
-@media (max-width: 480px) {
-  body {
-    font-size: 13px;
-  }
-
-  .container {
-    margin: 14px auto;
-    padding: 0 12px;
-  }
-
-  .card {
-    padding: 16px 14px;
-    border-radius: 8px;
-  }
-
-  .exam-workspace {
-    padding: 10px 8px;
-  }
-
-  /* El simulador en pantalla de smartphone aprovecha el alto y ancho disponible */
-  .mockup-phone {
-    width: 100%;
-    max-width: 350px;
-    height: calc(100vh - 150px);
-    min-height: 520px;
-    border-radius: 24px;
-    padding: 6px;
-    box-shadow: 0 0 0 2px #333, 0 8px 24px rgba(0,0,0,0.18);
-  }
-
-  .mockup-notch {
-    top: 9px;
-    width: 60px;
-    height: 10px;
-  }
-
-  .mockup-screen {
-    border-radius: 18px;
-  }
 }
 
 /* ================= CRONÓMETRO EN VIVO ================= */
@@ -1010,7 +879,7 @@ th {
   height: 100vh;
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(4px);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 9999;
@@ -1018,9 +887,11 @@ th {
   pointer-events: none;
   transition: opacity 0.25s ease;
   padding: 16px;
+  box-sizing: border-box;
 }
 
 .portal-modal-backdrop.active {
+  display: flex;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1207,5 +1078,142 @@ th {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
+/* ================= 9. MEDIA QUERIES (RESPONSIVE) ================= */
 
+/* Tablets grandes y laptops medianas (<= 991px) */
+@media (max-width: 991px) {
+  .exam-workspace {
+    padding: 12px 10px;
+    gap: 14px;
+  }
+
+  .exam-main-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .exam-situation-panel {
+    width: 100%;
+    max-width: 650px;
+    min-width: 0;
+  }
+
+  .exam-situation-card {
+    padding: 18px 16px;
+  }
+
+  .situation-title {
+    font-size: 18px;
+  }
+
+  .situation-text {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .situation-client-card {
+    padding: 12px 14px;
+    gap: 14px;
+  }
+
+  .phone-mockup-wrapper {
+    width: 100%;
+    max-width: 380px;
+    flex: 0 0 auto;
+  }
+
+  .mockup-phone {
+    width: 100%;
+    max-width: 360px;
+    height: 720px;
+  }
+}
+
+/* Tablets y pantallas medianas (<= 768px) */
+@media (max-width: 768px) {
+  #top-navbar {
+    padding: 10px 16px;
+    min-height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .nav-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-links {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .live-monitor-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .live-monitor-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-align: left !important;
+  }
+}
+
+/* Dispositivos móviles (Smartphones <= 480px) */
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+
+  .container {
+    margin: 14px auto;
+    padding: 0 12px;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 8px;
+  }
+
+  .exam-workspace {
+    padding: 10px 8px;
+  }
+
+  /* El simulador en pantalla de smartphone aprovecha el alto y ancho disponible */
+  .mockup-phone {
+    width: 100%;
+    max-width: 350px;
+    height: calc(100vh - 150px);
+    min-height: 520px;
+    border-radius: 24px;
+    padding: 6px;
+    box-shadow: 0 0 0 2px #333, 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .mockup-notch {
+    top: 9px;
+    width: 60px;
+    height: 10px;
+  }
+
+  .mockup-screen {
+    border-radius: 18px;
+  }
+}
 
