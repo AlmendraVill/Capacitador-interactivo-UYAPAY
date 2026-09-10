@@ -84,12 +84,14 @@ window.UyapayData.PRODUCTS = [
     name: 'Michelin Energy XM2+ 195/60 R15',
     line: 'neumaticos',
     brand: 'michelin',
-    format: 'Caja máster',
+    format: 'Unidad',
     unitPrice: 55.0,
     hasPromo: true,
     promoType: 'discount',
-    promoLabel: '🎁 Descuento por Volumen (3+ cajas: -$10.00 USD)',
-    promoDiscountAmount: 10.0
+    promoLabel: '🎁 Descuento por Volumen: USD 10 por cada 5 productos',
+    promoDiscountAmount: 10.0,
+    promoPerQty: 5,
+    promoAmountPerStep: 10.0
   },
   {
     id: 'prod-mich-latitude',
@@ -325,8 +327,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-2",
-  "code": "B2C-02",
-  "title": "Caso 2: Venta a crédito 30 días con descuento en dinero",
+  "code": "CP-02",
+  "aliases": ["B2C-02"],
+  "title": "Caso 2: CP-02 Cotización a crédito con promoción por volumen",
   "module": "Ventas B2C",
   "client": "Distribuidora Kanchis EIRL",
   "clientAddress": "AV. INDUSTRIAL 104",
@@ -336,14 +339,21 @@ window.UyapayData.CASES = [
   "line": "neumaticos",
   "brand": "michelin",
   "product": "Michelin Energy XM2+ 195/60 R15",
+  "sku": "003718",
   "unitPrice": 55,
-  "expectedQty": 3,
+  "expectedQty": 9,
   "promoDiscount": true,
   "promoType": "discount",
+  "promoPerQty": 5,
+  "promoAmountPerStep": 10,
   "promoDiscountAmount": 10,
-  "promoLabel": "🎁 Descuento por Volumen (3+ cajas: -$10.00 USD)",
-  "publicTitle": "Venta de Neumáticos a Crédito con Descuento",
-  "instructions": "Durante tu jornada visitas a Distribuidora Kanchis EIRL. El cliente requiere reponer 3 cajas de neumáticos Michelin Energy XM2+ 195/60 R15, solicitando condición de Crédito a 30 días bajo su Lista habitual Oficina (OF) y exigiendo la aplicación del descuento por escala de $10.00 USD pactado para dicho volumen. Atiende al cliente y emite el pedido en el aplicativo.",
+  "promoLabel": "🎁 Descuento por Volumen: USD 10 por cada 5 productos",
+  "promoToggleDefault": false,
+  "expectedDeliveryDate": "2026-09-20",
+  "documentType": "cotizacion",
+  "documentTypeId": 3,
+  "publicTitle": "Cotización a crédito con promoción por volumen",
+  "instructions": "Genera una cotización de 9 neumáticos Michelin Energy XM2+ 195/60 R15 (003718), aplicando la promoción de USD 10 de descuento por cada 5 productos vendidos. El cliente solicita crédito a 30 días y entrega el 20 de septiembre.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -352,60 +362,90 @@ window.UyapayData.CASES = [
     "scale": "vigesimal"
   },
   "solutionFlow": {
-    "objetivo": "Emitir orden a crédito 30 días con descuento monetario deducido antes del cálculo de la tasa de crédito.",
+    "objetivo": "Generar una cotización a crédito de 9 neumáticos Michelin Energy XM2+ con descuento por escala de volumen ($10 por cada 5 unidades) y entrega programada al 20 de septiembre.",
     "pasoAPaso": [
-      "1. Seleccionar Distribuidora Kanchis EIRL e iniciar visita.",
-      "2. Capturar y guardar ambas fotos de control.",
-      "3. En la tarea PEDIDOS pulsar \"➕ CREAR PEDIDO O COTIZACIÓN\". Configurar: Condición = Crédito 30 días (3% desc.), Lista = OF, Línea = Neumáticos, Marca = Michelin.",
-      "4. Pulsar \"＋ Agregar producto\". En Selección de producto elegir \"Michelin Energy XM2+\". En Detalle del producto ajustar cantidad a 3 unidades con stepper [＋], activar Descuento por Volumen ($10 USD) y pulsar \"Agregar producto\".",
-      "5. En Nuevo pedido verificar item y pulsar \"Completar\". En Confirmación verificar cálculo: 3×$55 = $165.00 bruto - $10.00 promo = $155.00 neto; menos 3% crédito ($4.65) = USD 150.35. Presionar \"Actualizar Orden de Compra y Enviar\"."
+      "1. En Plan de visitas, sin visitas iniciadas, seleccionar Distribuidora Kanchis EIRL y presionar Iniciar visita.",
+      "2. En la tarea INICIO, pulsar Continuar.",
+      "3. En la tarea FOTOS, registrar fotos inicial y final y pulsar Guardar.",
+      "4. En la tarea PRECIOS, seleccionar motivo correspondiente de no registro de precios y pulsar Continuar.",
+      "5. En la tarea PEDIDOS, pulsar Crear pedido.",
+      "6. Cambiar la condición de pago seleccionada por defecto Contado a Crédito 30 días. Mantener/seleccionar Lista Oficina y configurar línea y marca correspondientes a Neumáticos Michelin.",
+      "7. En el catálogo, seleccionar Michelin Energy XM2+ 195/60 R15 (003718) e ingresar 9 unidades, verificando precio unitario de USD 55.00.",
+      "8. Activar toggle de descuento promocional correspondiente a la promoción de USD 10 por cada 5 productos vendidos.",
+      "9. En la vista de pedidos, pulsar Continuar.",
+      "10. En Confirmación / Resumen, verificar condición de pago, productos, cantidades y descuentos.",
+      "11. Seleccionar/configurar fecha de entrega del 20 de septiembre y confirmar dirección de entrega.",
+      "12. Verificar que el descuento promocional se haya aplicado correctamente antes de confirmar la venta.",
+      "13. Pulsar Guardar como cotización y esperar que el voucher diga Cotización."
     ],
-    "reglaNegocio": "El descuento de crédito (3% para 30 días) se aplica sobre el subtotal neto posterior al descuento en dinero por volumen.",
-    "decisionClave": "Activar el toggle de descuento monetario dentro del catálogo del producto.",
-    "resultadoEsperado": "Orden emitida por USD 150.35."
+    "reglaNegocio": "Para 9 unidades a $55.00: Subtotal bruto $495.00. Aplica 1 bloque de 5 unidades con $10.00 de descuento por volumen, resultando subtotal neto de $485.00. El descuento de condición Crédito 30 días (3%) se calcula sobre el subtotal neto ($14.55), totalizando pedido de $470.45 y total factura con 18% IGV de $555.13. Debe registrarse como Cotización (Tipo 3) y entrega el 20 de septiembre.",
+    "decisionClave": "Cambiar la condición por defecto Contado a Crédito 30 días, seleccionar Neumáticos Michelin en Lista OF, ingresar 9 unidades con toggle de descuento por volumen activado, fecha de entrega al 20 de septiembre y guardar como Cotización.",
+    "resultadoEsperado": "Cotización emitida por USD 470.45 (Total Factura USD 555.13) en condición Crédito 30 días y entrega 20 de septiembre."
   },
   "rules": [
     {
       "stepIndex": 0,
       "eventName": "SELECT_CLIENT",
-      "description": "Seleccionar Distribuidora Kanchis",
+      "description": "Seleccionar Distribuidora Kanchis EIRL",
       "validate": (p) => (p.clientName || '').toLowerCase().includes('kanchis'),
-      "errorMessage": "Selecciona Distribuidora Kanchis EIRL."
+      "errorMessage": "Debes seleccionar a Distribuidora Kanchis EIRL."
     },
     {
       "stepIndex": 1,
       "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
+      "description": "Iniciar visita presencial",
       "validate": (p) => p.action === 'iniciar',
-      "errorMessage": "Presiona \"Iniciar visita\"."
+      "errorMessage": "Debes presionar \"Iniciar visita\"."
     },
     {
       "stepIndex": 2,
       "eventName": "SAVE_PHOTOS",
-      "description": "Fotos obligatorias",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Registra ambas fotos de visita."
+      "description": "Fotos obligatorias inicial y final",
+      "validate": (p) => Boolean(p.initialPhoto) && Boolean(p.finalPhoto),
+      "errorMessage": "Error crítico (-20 pts): Debes registrar ambas fotos obligatorias (Presentación inicial y final)."
     },
     {
       "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configurar crédito 30d OF Michelin",
-      "validate": (p) => p.paymentCondition === 'credito_30' && p.priceList === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
-      "errorMessage": "Configura: Crédito 30 días, Lista OF, Neumáticos Michelin."
+      "eventName": "SAVE_PRICE_TRACKING_MOTIVO",
+      "description": "Motivo de no registro de precios",
+      "validate": (p) => Boolean(p.motivo && p.motivo !== '' && p.motivo !== 'ninguno'),
+      "errorMessage": "Error crítico (-15 pts): Debes seleccionar un motivo válido para no registrar precios de la competencia antes de continuar a Pedidos."
     },
     {
       "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar 3 cajas con -$10 USD",
-      "validate": (p) => (p.product || '').toLowerCase().includes('energy') && Number(p.quantity) === 3 && Boolean(p.promoDiscount),
-      "errorMessage": "Agrega 3 cajas Energy XM2+ con el descuento de $10 USD activado."
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Crédito 30 días, Lista OF y Neumáticos Michelin",
+      "validate": (p) => p.paymentCondition === 'credito_30' && String(p.priceList).toUpperCase() === 'OF' && p.line === 'neumaticos' && p.brand === 'michelin',
+      "errorMessage": "Error crítico (-25 pts): Configuración incorrecta. Debes cambiar de Contado a Crédito 30 días, mantener Lista OF, y seleccionar Línea Neumáticos y Marca Michelin."
     },
     {
       "stepIndex": 5,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 9 neumáticos Michelin Energy XM2+ (003718) con descuento por volumen activado",
+      "validate": (p) => {
+        const isProd = (p.sku === '003718') || (p.product || '').toLowerCase().includes('energy') || (p.product || '').toLowerCase().includes('xm2');
+        const isQty9 = Number(p.quantity) === 9;
+        const isPrice55 = Math.abs(Number(p.unitPrice) - 55.0) < 0.01;
+        const isPromoOn = Boolean(p.promoDiscount);
+        const isPromo10 = Math.abs(Number(p.promoDiscountAmount) - 10.0) < 0.01;
+        return isProd && isQty9 && isPrice55 && isPromoOn && isPromo10;
+      },
+      "errorMessage": "Error crítico (-20 pts): Debes agregar exactamente 9 unidades de Michelin Energy XM2+ (003718) a USD 55.00 c/u con el toggle de descuento promocional activado (USD 10 por cada 5 unidades)."
+    },
+    {
+      "stepIndex": 6,
       "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden de compra."
+      "description": "Guardar como Cotización con entrega el 20 de septiembre",
+      "validate": (p) => {
+        const isConfirmed = Boolean(p.confirmed);
+        const isCotizacion = p.documentType === 'cotizacion' || p.documentTypeId === 3;
+        const dStr = p.estimatedDeliveryDate || '';
+        const isSept20 = dStr.includes('-09-20') || dStr.includes('20-09') ||
+                         (dStr.includes('09') && dStr.endsWith('-20')) ||
+                         dStr.toLowerCase().includes('20 sept');
+        return isConfirmed && isCotizacion && isSept20;
+      },
+      "errorMessage": "Error crítico (-20 pts): Debes guardar como Cotización (no como orden de compra) y programar la fecha de entrega para el 20 de septiembre."
     }
   ]
 },

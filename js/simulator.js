@@ -354,43 +354,81 @@
     state.preciosMotivo = '';
     state.preciosMotivoLabel = '';
 
-    if (selCond && currentCase.paymentCondition) {
-      selCond.value = currentCase.paymentCondition;
-      if (lblCond && selCond.selectedIndex >= 0) {
-        lblCond.textContent = selCond.options[selCond.selectedIndex].text;
-      }
+    state.catalogPromos = {};
+    state.catalogQuantities = {};
+
+    const dateInput = document.getElementById('confirm-delivery-date');
+    if (dateInput) {
+      dateInput.value = '';
     }
-    if (selList) {
-      if (state.currentCaseId === 'case-1' || currentCase.code === 'CP-01') {
-        selList.value = '1';
-        if (lblList) lblList.textContent = 'LISTA 1';
-      } else if (currentCase.priceList) {
-        selList.value = currentCase.priceList;
-        if (lblList && selList.selectedIndex >= 0) {
-          lblList.textContent = selList.options[selList.selectedIndex].text;
-        }
-      }
+
+    const addrSelect = document.getElementById('confirm-address-select');
+    if (addrSelect) {
+      const addr = currentCase.clientAddress || 'AV. TOMAS TUYRUTUPAC 412';
+      addrSelect.innerHTML = `
+        <option value="principal" selected>${addr} (Punto de venta / Visita)</option>
+        <option value="almacen">ALMACÉN (a 600m de punto de venta)</option>
+      `;
     }
-    if (selLine && currentCase.line) {
-      selLine.value = currentCase.line;
-      if (lblLine && selLine.selectedIndex >= 0) {
-        lblLine.textContent = selLine.options[selLine.selectedIndex].text;
+
+    if (state.currentCaseId === 'case-2' || currentCase.code === 'CP-02') {
+      // Trampas de inicio para CP-02: Condición inicia en Contado, Línea en Lubricantes Shell
+      if (selCond) {
+        selCond.value = 'contado';
+        if (lblCond && selCond.selectedIndex >= 0) lblCond.textContent = selCond.options[selCond.selectedIndex].text;
       }
-      // Asegurar opciones de marcas válidas
+      if (selList) {
+        selList.value = 'OF';
+        if (lblList && selList.selectedIndex >= 0) lblList.textContent = selList.options[selList.selectedIndex].text;
+      }
+      if (selLine) {
+        selLine.value = 'lubricantes';
+        if (lblLine && selLine.selectedIndex >= 0) lblLine.textContent = selLine.options[selLine.selectedIndex].text;
+      }
       if (selBrand) {
-        if (currentCase.line === 'lubricantes') {
-          selBrand.innerHTML = `<option value="shell">SHELL</option>`;
-        } else if (currentCase.line === 'neumaticos') {
-          selBrand.innerHTML = `<option value="michelin">MICHELIN</option><option value="bfgoodrich">BFGOODRICH</option>`;
-        } else if (currentCase.line === 'repuestos') {
-          selBrand.innerHTML = `<option value="hyundai">HYUNDAI</option>`;
+        selBrand.innerHTML = `<option value="shell" selected>SHELL</option>`;
+        selBrand.value = 'shell';
+        if (lblBrand && selBrand.selectedIndex >= 0) lblBrand.textContent = selBrand.options[selBrand.selectedIndex].text;
+      }
+    } else {
+      if (selCond && currentCase.paymentCondition) {
+        selCond.value = currentCase.paymentCondition;
+        if (lblCond && selCond.selectedIndex >= 0) {
+          lblCond.textContent = selCond.options[selCond.selectedIndex].text;
         }
       }
-    }
-    if (selBrand && currentCase.brand) {
-      selBrand.value = currentCase.brand;
-      if (lblBrand && selBrand.selectedIndex >= 0) {
-        lblBrand.textContent = selBrand.options[selBrand.selectedIndex].text;
+      if (selList) {
+        if (state.currentCaseId === 'case-1' || currentCase.code === 'CP-01') {
+          selList.value = '1';
+          if (lblList) lblList.textContent = 'LISTA 1';
+        } else if (currentCase.priceList) {
+          selList.value = currentCase.priceList;
+          if (lblList && selList.selectedIndex >= 0) {
+            lblList.textContent = selList.options[selList.selectedIndex].text;
+          }
+        }
+      }
+      if (selLine && currentCase.line) {
+        selLine.value = currentCase.line;
+        if (lblLine && selLine.selectedIndex >= 0) {
+          lblLine.textContent = selLine.options[selLine.selectedIndex].text;
+        }
+        // Asegurar opciones de marcas válidas
+        if (selBrand) {
+          if (currentCase.line === 'lubricantes') {
+            selBrand.innerHTML = `<option value="shell">SHELL</option>`;
+          } else if (currentCase.line === 'neumaticos') {
+            selBrand.innerHTML = `<option value="michelin">MICHELIN</option><option value="bfgoodrich">BFGOODRICH</option>`;
+          } else if (currentCase.line === 'repuestos') {
+            selBrand.innerHTML = `<option value="hyundai">HYUNDAI</option>`;
+          }
+        }
+      }
+      if (selBrand && currentCase.brand) {
+        selBrand.value = currentCase.brand;
+        if (lblBrand && selBrand.selectedIndex >= 0) {
+          lblBrand.textContent = selBrand.options[selBrand.selectedIndex].text;
+        }
       }
     }
 
@@ -1865,7 +1903,6 @@
   function setupVisitInProgressView(clientName) {
     startVisitTimer();
     const currentCase = getCaseData();
-    const isKanchis = (clientName || '').toLowerCase().includes('kanchis') || state.currentCaseId === 'case-21';
     const resolvedClient = clientName || (currentCase ? currentCase.client : 'CONDO CCORIMANYA MARINO');
 
     // Cabecera Topbar Amarilla
@@ -1875,19 +1912,24 @@
     // Scoring Oficial (Página 1: INICIO)
     const scoringVenta = document.getElementById('scoring-venta-val');
     const scoringCobranza = document.getElementById('scoring-cobranza-val');
-    if (scoringVenta) scoringVenta.textContent = isKanchis ? 'D' : (currentCase && currentCase.scoringGrade ? currentCase.scoringGrade : 'C');
-    if (scoringCobranza) scoringCobranza.textContent = isKanchis ? '3' : '1';
-
-    // Perfil Personal del Cliente
     const perfilDesc = document.getElementById('cli-perfil-desc');
-    if (perfilDesc) {
-      if (isKanchis) {
-        perfilDesc.textContent = 'Distribuidora Kanchis EIRL presenta facturas morosas con vencimiento superior a 30 días. Requiere regularización de cobranza antes de emitir pedidos.';
-      } else if (resolvedClient.toLowerCase().includes('andes')) {
-        perfilDesc.textContent = 'Ferretería Los Andes S.A.C. es un cliente preferencial A1 con excelente rotación en lubricantes Shell. Prioriza promociones con bonificación en especie.';
-      } else {
-        perfilDesc.textContent = `${resolvedClient} es un cliente que se destaca por su trato amable y receptividad a ofertas comerciales según la línea asignada.`;
-      }
+
+    if (state.currentCaseId === 'case-21') {
+      if (scoringVenta) scoringVenta.textContent = 'D';
+      if (scoringCobranza) scoringCobranza.textContent = '3';
+      if (perfilDesc) perfilDesc.textContent = 'Distribuidora Kanchis EIRL presenta facturas morosas con vencimiento superior a 30 días. Requiere regularización de cobranza antes de emitir pedidos.';
+    } else if (state.currentCaseId === 'case-2' || (currentCase && currentCase.code === 'CP-02')) {
+      if (scoringVenta) scoringVenta.textContent = 'B';
+      if (scoringCobranza) scoringCobranza.textContent = '2';
+      if (perfilDesc) perfilDesc.textContent = 'Distribuidora Kanchis EIRL es un distribuidor en zona industrial que solicita cotizaciones a crédito a 30 días con promociones de descuento por volumen en neumáticos Michelin.';
+    } else if (resolvedClient.toLowerCase().includes('andes')) {
+      if (scoringVenta) scoringVenta.textContent = 'A';
+      if (scoringCobranza) scoringCobranza.textContent = '1';
+      if (perfilDesc) perfilDesc.textContent = 'Ferretería Los Andes S.A.C. es un cliente preferencial A1 con excelente rotación en lubricantes Shell. Prioriza promociones con bonificación en especie.';
+    } else {
+      if (scoringVenta) scoringVenta.textContent = (currentCase && currentCase.scoringGrade) ? currentCase.scoringGrade : 'C';
+      if (scoringCobranza) scoringCobranza.textContent = '1';
+      if (perfilDesc) perfilDesc.textContent = `${resolvedClient} es un cliente que se destaca por su trato amable y receptividad a ofertas comerciales según la línea asignada.`;
     }
 
     // Perfil Comercial Oficial (Página 1: INICIO)
@@ -2107,6 +2149,12 @@
 
     if (state.cart && state.cart.qty > 0 && state.cart.product) {
       const rawTotal = (state.cart.qty * state.cart.unitPrice);
+      let promoDiscount = 0.0;
+      if (state.cart.promoDiscount && state.cart.promoType === 'discount') {
+        promoDiscount = state.cart.promoDiscountAmount || 0.0;
+      }
+      const netSubtotal = Math.max(0, rawTotal - promoDiscount);
+
       const cond = state.orderConfig.paymentCondition || 'contado';
       let rate = 0.05;
       if (cond === 'credito_15') rate = 0.04;
@@ -2114,8 +2162,8 @@
       else if (cond === 'credito_45') rate = 0.02;
       else if (cond === 'credito_60') rate = 0.01;
 
-      const discountVal = rawTotal * rate;
-      const orderTotal = Math.max(0, rawTotal - discountVal);
+      const discountVal = netSubtotal * rate;
+      const orderTotal = Math.max(0, netSubtotal - discountVal);
       const invoiceTotal = orderTotal * 1.18;
 
       let prodThumb = 'images/balde_shell.png';
@@ -2158,7 +2206,7 @@
         <div class="order-totals-official-list">
           <div class="order-totals-row">
             <span class="order-totals-label">Sub total</span>
-            <span class="order-totals-val">$${rawTotal.toFixed(2)}</span>
+            <span class="order-totals-val">$${netSubtotal.toFixed(2)}</span>
           </div>
           <div class="order-totals-row">
             <span class="order-totals-label"><span style="display:inline-block; font-size:11px; margin-right:4px;">∨</span> Descuento</span>
@@ -2358,10 +2406,21 @@
       (currentCase.brand === prod.brand && currentCase.line === prod.line)
     );
 
-    const initialQty = (isTarget && currentCase.expectedQty) ? currentCase.expectedQty : (state.catalogQuantities[prod.id] || 1);
+    let initialQty = state.catalogQuantities[prod.id] || 1;
     state.detailQty = initialQty;
     state.detailDescuentoAprov = 0.0;
-    state.detailPromoChecked = isTarget ? (currentCase.promoDiscount !== false) : (prod.hasPromo || false);
+
+    let promoChecked = false;
+    if (state.catalogPromos[prod.id] !== undefined) {
+      promoChecked = state.catalogPromos[prod.id];
+    } else if (isTarget && currentCase.promoToggleDefault !== undefined) {
+      promoChecked = currentCase.promoToggleDefault;
+    } else if (isTarget && (currentCase.code === 'CP-02' || currentCase.id === 'case-2')) {
+      promoChecked = false;
+    } else {
+      promoChecked = isTarget ? (currentCase.promoDiscount !== false) : (prod.hasPromo || false);
+    }
+    state.detailPromoChecked = promoChecked;
 
     const currSymbol = state.orderCurrency === 'PEN' ? 'S/' : '$';
 
@@ -2448,8 +2507,12 @@
 
     let promoDiscountAmount = 0.0;
     if (state.detailPromoChecked) {
-      if (isTarget && currentCase.promoDiscountAmount) {
+      if (isTarget && currentCase.promoPerQty && currentCase.promoAmountPerStep) {
+        promoDiscountAmount = Math.floor(state.detailQty / currentCase.promoPerQty) * currentCase.promoAmountPerStep;
+      } else if (isTarget && currentCase.promoDiscountAmount) {
         promoDiscountAmount = currentCase.promoDiscountAmount;
+      } else if (prod.promoPerQty && prod.promoAmountPerStep) {
+        promoDiscountAmount = Math.floor(state.detailQty / prod.promoPerQty) * prod.promoAmountPerStep;
       } else if (prod.promoType === 'discount') {
         promoDiscountAmount = prod.promoDiscountAmount || 10.0;
       }
@@ -2482,12 +2545,26 @@
     let promoLabel = prod.promoLabel || '';
     let promoDiscountAmount = 0.0;
 
-    if (isTarget) {
-      promoType = currentCase.promoType || prod.promoType || 'none';
-      promoDiscountAmount = currentCase.promoDiscountAmount || 0.0;
-      promoLabel = currentCase.promoLabel || prod.promoLabel;
-    } else if (prod.promoType === 'discount') {
-      promoDiscountAmount = prod.promoDiscountAmount || 10.0;
+    if (state.detailPromoChecked) {
+      if (isTarget && currentCase.promoPerQty && currentCase.promoAmountPerStep) {
+        promoDiscountAmount = Math.floor(state.detailQty / currentCase.promoPerQty) * currentCase.promoAmountPerStep;
+        promoType = 'discount';
+        promoLabel = currentCase.promoLabel || prod.promoLabel;
+      } else if (isTarget && currentCase.promoDiscountAmount) {
+        promoDiscountAmount = currentCase.promoDiscountAmount;
+        promoType = currentCase.promoType || prod.promoType || 'none';
+        promoLabel = currentCase.promoLabel || prod.promoLabel;
+      } else if (prod.promoPerQty && prod.promoAmountPerStep) {
+        promoDiscountAmount = Math.floor(state.detailQty / prod.promoPerQty) * prod.promoAmountPerStep;
+        promoType = 'discount';
+        promoLabel = prod.promoLabel;
+      } else if (prod.promoType === 'discount') {
+        promoDiscountAmount = prod.promoDiscountAmount || 10.0;
+        promoLabel = prod.promoLabel;
+      } else {
+        promoType = prod.promoType || 'none';
+        promoLabel = prod.promoLabel;
+      }
     }
 
     state.cart = {
@@ -2692,6 +2769,36 @@
     const isCotizacion = docType === 'cotizacion';
     const currentCase = getCaseData();
 
+    const deliveryDate = document.getElementById('confirm-delivery-date')?.value || '';
+    const addrSelect = document.getElementById('confirm-address-select');
+    const deliveryAddress = addrSelect?.value || 'principal';
+    const deliveryAddressText = addrSelect && addrSelect.selectedIndex >= 0 ? addrSelect.options[addrSelect.selectedIndex].text : '';
+    const isSecureSale = Boolean(document.getElementById('confirm-secure-sale')?.checked);
+    const isGuarantee = Boolean(document.getElementById('confirm-guarantee')?.checked);
+    const purchaseRequest = document.getElementById('confirm-purchase-request')?.value || '';
+    const observation = document.getElementById('confirm-observation')?.value || '';
+
+    // Emitir SUBMIT_ORDER para evaluar cotización vs orden, fecha de entrega y dirección
+    emitSimulatorEvent('SUBMIT_ORDER', {
+      confirmed: true,
+      total: state.finalOrderTotal || 0,
+      product: state.cart.product,
+      quantity: state.cart.qty,
+      paymentCondition: state.orderConfig.paymentCondition,
+      priceList: state.orderConfig.priceList,
+      line: state.orderConfig.line,
+      brand: state.orderConfig.brand,
+      deliveryAddress: deliveryAddress,
+      deliveryAddressText: deliveryAddressText,
+      documentType: isCotizacion ? 'cotizacion' : 'orden',
+      documentTypeId: isCotizacion ? 3 : 2,
+      estimatedDeliveryDate: deliveryDate,
+      isSecureSale: isSecureSale,
+      isGuarantee: isGuarantee,
+      purchaseRequest: purchaseRequest,
+      observation: observation
+    });
+
     // Asegurar que los cálculos del pedido estén actualizados
     updateReceiptCalculations();
 
@@ -2714,42 +2821,51 @@
     const clientEl = document.getElementById('voucher-client-name');
     if (clientEl) clientEl.textContent = (state.selectedClient || (currentCase ? currentCase.client : 'CUELLAR INFANTES WILBER ELISBRANDO')).toUpperCase();
 
-    const addrSelect = document.getElementById('confirm-address-select');
-    const addrText = addrSelect && addrSelect.options[addrSelect.selectedIndex] ? addrSelect.options[addrSelect.selectedIndex].text : (currentCase ? currentCase.clientAddress : 'FUTURO MAJES LOTE 16 MZA U');
     const deliveryEl = document.getElementById('voucher-delivery-address');
-    if (deliveryEl) deliveryEl.textContent = addrText;
+    if (deliveryEl) deliveryEl.textContent = deliveryAddressText || (currentCase ? currentCase.clientAddress : 'AV. INDUSTRIAL 104');
 
     const cond = state.orderConfig.paymentCondition || 'contado';
     const termsEl = document.getElementById('voucher-payment-terms');
     if (termsEl) {
-      termsEl.textContent = cond === 'contado' ? 'CONTADO' : cond.replace('_', ' ').toUpperCase();
+      if (cond === 'credito_30') termsEl.textContent = 'CRÉDITO 30D';
+      else if (cond === 'credito_15') termsEl.textContent = 'CRÉDITO 15D';
+      else if (cond === 'credito_45') termsEl.textContent = 'CRÉDITO 45D';
+      else if (cond === 'credito_60') termsEl.textContent = 'CRÉDITO 60D';
+      else termsEl.textContent = 'CONTADO';
     }
 
     // Tabla de Items del comprobante
     const tbody = document.getElementById('voucher-items-tbody');
     if (tbody && state.cart && state.cart.qty > 0) {
       const rawTotal = (state.cart.qty * state.cart.unitPrice);
+      let promoDiscount = 0.0;
+      if (state.cart.promoDiscount && state.cart.promoType === 'discount') {
+        promoDiscount = state.cart.promoDiscountAmount || 0.0;
+      }
+      const netSubtotal = Math.max(0, rawTotal - promoDiscount);
+
       let rate = 0.05;
       if (cond === 'credito_15') rate = 0.04;
       else if (cond === 'credito_30') rate = 0.03;
       else if (cond === 'credito_45') rate = 0.02;
       else if (cond === 'credito_60') rate = 0.01;
 
-      const discountVal = rawTotal * rate;
-      const finalItemTotal = rawTotal - discountVal;
+      const discountVal = netSubtotal * rate;
+      const finalItemTotal = netSubtotal - discountVal;
 
+      const itemSku = state.cart.sku ? `${state.cart.sku}: ` : '';
       tbody.innerHTML = `
         <tr>
-          <td class="text-left"><b>${state.cart.product}</b><br><span style="font-size:9.5px; color:#6b7280;">SKU: ${state.cart.sku || '550041216'}</span></td>
+          <td class="text-left"><b>${itemSku}${state.cart.product}</b><br><span style="font-size:9.5px; color:#6b7280;">${state.cart.format || 'UNIDAD'}</span></td>
           <td>${state.cart.qty}</td>
           <td>$${state.cart.unitPrice.toFixed(2)}</td>
-          <td style="color:var(--error-color);">-$${discountVal.toFixed(2)}</td>
-          <td><b>$${finalItemTotal.toFixed(2)}</b></td>
+          <td style="color:${promoDiscount > 0 ? 'var(--error-color)' : '#6b7280'};">${promoDiscount > 0 ? `-$${promoDiscount.toFixed(2)}` : '-0.00'}</td>
+          <td><b>$${netSubtotal.toFixed(2)}</b></td>
         </tr>
       `;
 
       const subtotalEl = document.getElementById('voucher-subtotal');
-      if (subtotalEl) subtotalEl.textContent = `$${rawTotal.toFixed(2)}`;
+      if (subtotalEl) subtotalEl.textContent = `$${netSubtotal.toFixed(2)}`;
 
       const discountEl = document.getElementById('voucher-discount');
       if (discountEl) discountEl.textContent = `-$${discountVal.toFixed(2)}`;
@@ -2761,18 +2877,27 @@
       if (invoiceTotalEl) invoiceTotalEl.textContent = `$${(finalItemTotal * 1.18).toFixed(2)}`;
     }
 
-    // Fechas de control
+    // Fechas de control en comprobante
     const deliveryDateInput = document.getElementById('confirm-delivery-date');
     const delivDateEl = document.getElementById('voucher-delivery-date');
-    if (delivDateEl && deliveryDateInput && deliveryDateInput.value) {
-      delivDateEl.textContent = deliveryDateInput.value;
-    }
-
     const payDateEl = document.getElementById('voucher-payment-date');
-    if (payDateEl) {
-      const payD = new Date();
-      payD.setDate(payD.getDate() + 30);
-      payDateEl.textContent = payD.toISOString().split('T')[0];
+    if (delivDateEl && deliveryDateInput && deliveryDateInput.value) {
+      const parts = deliveryDateInput.value.split('-');
+      if (parts.length === 3) {
+        delivDateEl.textContent = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        if (payDateEl) {
+          const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          let daysToAdd = 0;
+          if (cond === 'credito_30') daysToAdd = 30;
+          else if (cond === 'credito_15') daysToAdd = 15;
+          else if (cond === 'credito_45') daysToAdd = 45;
+          else if (cond === 'credito_60') daysToAdd = 60;
+          d.setDate(d.getDate() + daysToAdd);
+          payDateEl.textContent = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+        }
+      } else {
+        delivDateEl.textContent = deliveryDateInput.value;
+      }
     }
 
     const updateDateEl = document.getElementById('voucher-update-date');
