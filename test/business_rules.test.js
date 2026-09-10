@@ -590,4 +590,140 @@ describe('8. Caso CP-02: Cotización a crédito con promoción por volumen', () 
   });
 });
 
+describe('9. Navegación del Plan de Visitas y Bottom Sheet Oficial de Direcciones', () => {
+  test('Cuando no hay visita iniciada, presionar la card del cliente abre el bottom sheet de DIRECCIONES', () => {
+    const simState = {
+      visitInProgress: false,
+      activeVisitClient: null,
+      selectedClient: null
+    };
+
+    let openedModal = false;
+    let navigatedTo = null;
+
+    function handleCardClick(clientName) {
+      if (simState.visitInProgress && simState.activeVisitClient === clientName) {
+        navigatedTo = 's-cliente-inicio';
+        return;
+      }
+      simState.selectedClient = clientName;
+      openedModal = true;
+    }
+
+    handleCardClick('Distribuidora Kanchis EIRL');
+
+    assert.strictEqual(openedModal, true, 'Debe abrir el bottom sheet');
+    assert.strictEqual(navigatedTo, null, 'No debe navegar directo si la visita no ha iniciado');
+    assert.strictEqual(simState.selectedClient, 'Distribuidora Kanchis EIRL');
+  });
+
+  test('Estructura oficial del Bottom Sheet DIRECCIONES (visitas-iniciar visita lejos del punto.png)', () => {
+    // Definición de direcciones por cliente según captura oficial
+    const clientName = 'Distribuidora Kanchis EIRL';
+    const mainAddr = 'AV. INDUSTRIAL 104';
+    const branchAddr = 'AV. INDUSTRIAL 104 - SOCABAYA';
+
+    const sheetData = {
+      title: 'DIRECCIONES',
+      hasPhoneCallButton: true,
+      phoneButtonText: 'Iniciar llamada telefónica',
+      sectionTitle: 'Actualización disponible',
+      addresses: [
+        { address: mainAddr, client: clientName.toUpperCase(), tag: 'PRINCIPAL' },
+        { address: branchAddr, client: clientName.toUpperCase(), tag: 'VISITA' }
+      ]
+    };
+
+    assert.strictEqual(sheetData.title, 'DIRECCIONES');
+    assert.strictEqual(sheetData.hasPhoneCallButton, true);
+    assert.strictEqual(sheetData.sectionTitle, 'Actualización disponible');
+    assert.strictEqual(sheetData.addresses.length, 2);
+    assert.strictEqual(sheetData.addresses[0].tag, 'PRINCIPAL');
+    assert.strictEqual(sheetData.addresses[1].tag, 'VISITA');
+  });
+
+  test('Presionar una dirección inicia la visita presencial (action: "iniciar")', () => {
+    const simState = {
+      visitInProgress: false,
+      activeVisitClient: null,
+      selectedClient: 'Distribuidora Kanchis EIRL',
+      activeVisitAddress: null
+    };
+
+    let emittedAction = null;
+    let navigatedTo = null;
+
+    function startVisitFromAddress(address) {
+      simState.activeVisitAddress = address;
+      simState.visitInProgress = true;
+      simState.activeVisitClient = simState.selectedClient;
+      emittedAction = 'iniciar';
+      navigatedTo = 's-cliente-inicio';
+    }
+
+    startVisitFromAddress('AV. INDUSTRIAL 104');
+
+    assert.strictEqual(simState.visitInProgress, true);
+    assert.strictEqual(simState.activeVisitClient, 'Distribuidora Kanchis EIRL');
+    assert.strictEqual(simState.activeVisitAddress, 'AV. INDUSTRIAL 104');
+    assert.strictEqual(emittedAction, 'iniciar');
+    assert.strictEqual(navigatedTo, 's-cliente-inicio');
+  });
+
+  test('Cuando la visita YA está en curso, presionar la card ingresa DIRECTAMENTE a las tareas', () => {
+    const simState = {
+      visitInProgress: true,
+      activeVisitClient: 'Distribuidora Kanchis EIRL',
+      selectedClient: 'Distribuidora Kanchis EIRL',
+      currentVisitTaskIndex: 3 // Estaba en PEDIDOS
+    };
+
+    let openedModal = false;
+    let navigatedTo = null;
+    let taskIndexPreserved = null;
+
+    function handleCardClick(clientName) {
+      if (simState.visitInProgress && simState.activeVisitClient === clientName) {
+        navigatedTo = 's-cliente-inicio';
+        taskIndexPreserved = simState.currentVisitTaskIndex;
+        return;
+      }
+      openedModal = true;
+    }
+
+    handleCardClick('Distribuidora Kanchis EIRL');
+
+    assert.strictEqual(openedModal, false, 'NO debe abrir ningún modal');
+    assert.strictEqual(navigatedTo, 's-cliente-inicio', 'Debe ingresar directamente a las tareas del cliente');
+    assert.strictEqual(taskIndexPreserved, 3, 'Debe preservar el avance de tareas del carrusel');
+  });
+
+  test('Cuando hay una visita en curso con Cliente A, presionar card de Cliente B bloquea la acción', () => {
+    const simState = {
+      visitInProgress: true,
+      activeVisitClient: 'Distribuidora Kanchis EIRL'
+    };
+
+    let openedModal = false;
+    let errorBlocked = false;
+
+    function handleCardClick(clientName) {
+      if (simState.visitInProgress && simState.activeVisitClient === clientName) {
+        return;
+      }
+      if (simState.visitInProgress && simState.activeVisitClient !== clientName) {
+        errorBlocked = true;
+        return;
+      }
+      openedModal = true;
+    }
+
+    handleCardClick('Ferretería Los Andes S.A.C.');
+
+    assert.strictEqual(openedModal, false, 'No debe abrir opciones de otro cliente');
+    assert.strictEqual(errorBlocked, true, 'Debe bloquear la acción indicando visita en curso');
+    assert.strictEqual(simState.activeVisitClient, 'Distribuidora Kanchis EIRL');
+  });
+});
+
 

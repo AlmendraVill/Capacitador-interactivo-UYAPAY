@@ -2176,34 +2176,25 @@
     </div>
   </div>
 
-  <!-- ================= BOTTOM SHEET: MODAL DE ACCIONES DEL CLIENTE ================= -->
+  <!-- ================= BOTTOM SHEET: DIRECCIONES / INICIAR VISITA (visitas-iniciar visita lejos del punto.png) ================= -->
   <div class="modal-overlay" id="optionsModal">
-    <div class="bottom-sheet">
-      <div class="bs-header">
-        OPCIONES DE RUTA
-        <span class="close-btn" onclick="window.UyapaySimulator.closeOptions()">×</span>
+    <div class="bottom-sheet direccion-sheet-container">
+      <div class="direccion-sheet-header">
+        <span class="direccion-sheet-title">DIRECCIONES</span>
+        <span class="direccion-sheet-close" onclick="window.UyapaySimulator.closeOptions()">✕</span>
       </div>
       
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('proyectar')">
-        <div>Proyectar ventas <span class="opcion-desc">Proyecte ventas por familia de productos.</span></div> <span>›</span>
-      </div>
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('ver_deuda')">
-        <div>Consultar perfil / deuda vencida <span class="opcion-desc">Ver saldo moroso y línea de crédito.</span></div> <span>›</span>
-      </div>
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('historial')">
-        <div>Historial de visitas previas <span class="opcion-desc">Consultar auditoría de visitas anteriores.</span></div> <span>›</span>
-      </div>
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('llegar')">
-        <div>Cómo llegar al cliente <span class="opcion-desc">Ver mapa y distancia de ruta.</span></div> <span>›</span>
-      </div>
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('iniciar')">
-        <div>Iniciar visita <span class="opcion-desc">Inicie el proceso de visita al cliente.</span></div> <span>›</span>
-      </div>
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('motivo')">
-        <div>Registrar motivo de no visita <span class="opcion-desc">Registre la razón si no visita.</span></div> <span>›</span>
-      </div>
-      <div class="opcion-row" onclick="window.UyapaySimulator.checkOption('cambiar')">
-        <div>Cambiar dirección de visita <span class="opcion-desc">Seleccione una nueva dirección.</span></div> <span>›</span>
+      <!-- Botón amarillo oficial: Iniciar llamada telefónica -->
+      <button class="btn-llamada-telefonica-official" onclick="window.UyapaySimulator.startPhoneVisit()">
+        <span class="phone-icon-official">📞</span> Iniciar llamada telefónica
+      </button>
+
+      <!-- Subtítulo oficial: Actualización disponible -->
+      <div class="direccion-sheet-section-title">Actualización disponible</div>
+
+      <!-- Lista de Direcciones del Cliente -->
+      <div id="sheet-direcciones-container">
+        <!-- Renderizado dinámico según el cliente seleccionado -->
       </div>
     </div>
   </div>

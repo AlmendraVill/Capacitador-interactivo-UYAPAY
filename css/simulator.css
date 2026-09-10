@@ -502,6 +502,134 @@ html, body {
   margin-top: 1px;
 }
 
+/* ================= BOTTOM SHEET: DIRECCIONES (visitas-iniciar visita lejos del punto.png) ================= */
+.direccion-sheet-container {
+  background: #ffffff;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 16px 20px 24px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+
+.direccion-sheet-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.direccion-sheet-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #111827;
+  text-transform: uppercase;
+}
+
+.direccion-sheet-close {
+  position: absolute;
+  right: 0;
+  top: -2px;
+  font-size: 18px;
+  color: #4b5563;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.btn-llamada-telefonica-official {
+  width: 100%;
+  background: #f5a623;
+  color: #111827;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-llamada-telefonica-official:active {
+  transform: scale(0.98);
+  background: #e09618;
+}
+
+.phone-icon-official {
+  font-size: 15px;
+}
+
+.direccion-sheet-section-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #111827;
+  margin: 18px 0 10px 0;
+  text-align: left;
+}
+
+.direccion-sheet-item-card {
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.direccion-sheet-item-card:last-child {
+  border-bottom: none;
+}
+
+.direccion-sheet-item-card:active {
+  background-color: #f9fafb;
+}
+
+.direccion-sheet-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.direccion-sheet-addr-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.direccion-sheet-chevron-icon {
+  font-size: 16px;
+  color: #9ca3af;
+  font-weight: bold;
+}
+
+.direccion-sheet-row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.direccion-sheet-client-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  text-transform: uppercase;
+}
+
+.direccion-sheet-tag-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 0.5px;
+}
+
 /* ================= 7. TAREAS Y DETALLE DE VISITA ================= */
 .card-task {
   background: #ffffff;

@@ -452,6 +452,17 @@
     renderCobranzaTaskView();
   }
 
+  const mockDistractorsList = [
+    { name: 'Ferretería Los Andes S.A.C.', address: 'AV. TOMAS TUYRUTUPAC 412' },
+    { name: 'Distribuidora Kanchis EIRL', address: 'AV. INDUSTRIAL 104' },
+    { name: 'Comercial Vega Hnos.', address: 'CALLE MERCADERES 301' },
+    { name: 'Transportes del Sur SAC', address: 'KM 12 VARIANTE UCHUMAYO' },
+    { name: 'Grupo Ferretero Miraflores', address: 'AV. SAN JERONIMO 210' },
+    { name: 'Autopartes El Rápido', address: 'JR. PIEROLA 540' },
+    { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' },
+    { name: 'Taller Hyundai Express', address: 'AV. PARRA 314' }
+  ];
+
   function renderClientListCards() {
     const listContainer = document.getElementById('client-list-cards');
     if (!listContainer) return;
@@ -463,22 +474,13 @@
     const targetClient = currentCase.client;
     const targetAddr = currentCase.clientAddress || 'AV. RUTA PRINCIPAL 100';
 
-    const mockDistractors = [
-      { name: 'Ferretería Los Andes S.A.C.', address: 'AV. TOMAS TUYRUTUPAC 412' },
-      { name: 'Distribuidora Kanchis EIRL', address: 'AV. INDUSTRIAL 104' },
-      { name: 'Comercial Vega Hnos.', address: 'CALLE MERCADERES 301' },
-      { name: 'Transportes del Sur SAC', address: 'KM 12 VARIANTE UCHUMAYO' },
-      { name: 'Grupo Ferretero Miraflores', address: 'AV. SAN JERONIMO 210' },
-      { name: 'Autopartes El Rápido', address: 'JR. PIEROLA 540' },
-      { name: 'Servicentro El Faro', address: 'AV. DOLORES 880' },
-      { name: 'Taller Hyundai Express', address: 'AV. PARRA 314' }
-    ].filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
+    const mockDistractors = mockDistractorsList.filter(d => !d.name.toLowerCase().includes(targetClient.toLowerCase().slice(0, 7)));
 
     let html = '';
     if (!isOutRouteCase) {
       const isTargetInProgress = Boolean(state.visitInProgress && state.activeVisitClient === targetClient);
       html += `
-        <div class="client-card-official ${isTargetInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.openOptions('${targetClient}')">
+        <div class="client-card-official ${isTargetInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.onClientCardClick('${targetClient}')">
           <div class="client-card-left-col">
             <div class="client-card-pin-circle">
               <span>📍</span>
@@ -505,7 +507,7 @@
     mockDistractors.slice(0, isOutRouteCase ? 4 : 3).forEach(d => {
       const isDistractorInProgress = Boolean(state.visitInProgress && state.activeVisitClient === d.name);
       html += `
-        <div class="client-card-official ${isDistractorInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.openOptions('${d.name}')">
+        <div class="client-card-official ${isDistractorInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.onClientCardClick('${d.name}')">
           <div class="client-card-left-col">
             <div class="client-card-pin-circle">
               <span>📍</span>
@@ -1013,7 +1015,7 @@
     const listContainer = document.getElementById('client-list-cards');
     if (listContainer && filterKey === 'deuda_vencida') {
       listContainer.innerHTML = `
-        <div class="client-card" style="border-left: 4px solid #e74c3c;" onclick="window.UyapaySimulator.openOptions('Distribuidora Kanchis EIRL')">
+        <div class="client-card" style="border-left: 4px solid #e74c3c;" onclick="window.UyapaySimulator.onClientCardClick('Distribuidora Kanchis EIRL')">
           <div class="pin" style="color:#e74c3c;">⚠️</div>
           <div>
             <div class="client-name">DISTRIBUIDORA KANCHIS EIRL <span style="background:#e74c3c; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">DEUDA VENCIDA</span></div>
@@ -1027,9 +1029,97 @@
     }
   }
 
-  // 4. Visitas y Opciones del Cliente
+  // 4. Visitas y Opciones del Cliente (DIRECCIONES - visitas-iniciar visita lejos del punto.png)
+  function renderClientOptionsSheet(clientName) {
+    const container = document.getElementById('sheet-direcciones-container');
+    if (!container) return;
+
+    const currentCase = getCaseData();
+    const isTarget = currentCase && currentCase.client && (
+      currentCase.client.toLowerCase() === clientName.toLowerCase() ||
+      clientName.toLowerCase().includes(currentCase.client.toLowerCase().slice(0, 7)) ||
+      currentCase.client.toLowerCase().includes(clientName.toLowerCase().slice(0, 7))
+    );
+
+    let addresses = [];
+    if (isTarget) {
+      const mainAddr = currentCase.clientAddress || 'AV. TOMAS TUYRUTUPAC 412';
+      addresses.push({
+        address: mainAddr,
+        client: currentCase.client.toUpperCase(),
+        tag: 'PRINCIPAL'
+      });
+
+      if (currentCase.deliveryAddress && currentCase.deliveryAddress !== mainAddr) {
+        addresses.push({
+          address: currentCase.deliveryAddress,
+          client: currentCase.client.toUpperCase(),
+          tag: 'VISITA'
+        });
+      } else if (currentCase.code === 'CP-01') {
+        addresses.push({
+          address: 'ALMACÉN CENTRAL - AV. LOS CIPRECES 780 (A 600M DE TIENDA)',
+          client: currentCase.client.toUpperCase(),
+          tag: 'VISITA'
+        });
+      } else if (currentCase.code === 'CP-02') {
+        addresses.push({
+          address: 'AV. INDUSTRIAL 104 - SOCABAYA',
+          client: currentCase.client.toUpperCase(),
+          tag: 'VISITA'
+        });
+      }
+    } else {
+      const dist = mockDistractorsList.find(d => d.name.toLowerCase() === clientName.toLowerCase()) ||
+                   mockDistractorsList.find(d => clientName.toLowerCase().includes(d.name.toLowerCase().slice(0, 7)));
+      const baseAddr = dist ? dist.address : 'AV. COMERCIAL 500';
+      addresses.push({
+        address: baseAddr,
+        client: clientName.toUpperCase(),
+        tag: 'PRINCIPAL'
+      });
+      addresses.push({
+        address: baseAddr + ' (SUCURSAL)',
+        client: clientName.toUpperCase(),
+        tag: 'VISITA'
+      });
+    }
+
+    container.innerHTML = addresses.map((item) => `
+      <div class="direccion-sheet-item-card" onclick="window.UyapaySimulator.startVisitFromAddress('${item.address.replace(/'/g, "\\'")}')">
+        <div class="direccion-sheet-row-top">
+          <div class="direccion-sheet-addr-text">${item.address}</div>
+          <div class="direccion-sheet-chevron-icon">›</div>
+        </div>
+        <div class="direccion-sheet-row-bottom">
+          <div class="direccion-sheet-client-text">${item.client}</div>
+          <div class="direccion-sheet-tag-text">${item.tag}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function onClientCardClick(clientName) {
+    if (state.visitInProgress && state.activeVisitClient === clientName) {
+      setupVisitInProgressView(clientName, false);
+      navigateTo('s-cliente-inicio');
+      return;
+    }
+    if (state.visitInProgress && state.activeVisitClient !== clientName) {
+      showHint(`Ya tienes una visita en curso con ${state.activeVisitClient}. Debes finalizarla antes de iniciar otra.`, true);
+      return;
+    }
+    openClientOptions(clientName);
+  }
+
   function openClientOptions(clientName) {
+    if (state.visitInProgress && state.activeVisitClient === clientName) {
+      setupVisitInProgressView(clientName, false);
+      navigateTo('s-cliente-inicio');
+      return;
+    }
     state.selectedClient = clientName;
+    renderClientOptionsSheet(clientName);
     const modal = document.getElementById('optionsModal');
     if (modal) modal.classList.add('active');
 
@@ -1039,6 +1129,31 @@
   function closeClientOptions() {
     const modal = document.getElementById('optionsModal');
     if (modal) modal.classList.remove('active');
+  }
+
+  function startVisitFromAddress(address) {
+    if (address) {
+      state.activeVisitAddress = address;
+    }
+    selectOption('iniciar');
+  }
+
+  function startPhoneVisit() {
+    closeClientOptions();
+    state.isPhoneVisit = true;
+    state.visitInProgress = true;
+    state.activeVisitClient = state.selectedClient;
+    renderClientListCards();
+
+    emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
+    emitSimulatorEvent('SELECT_ACTION', { action: 'iniciar', isPhone: true, clientName: state.selectedClient });
+    emitSimulatorEvent('SELECT_VISIT_TYPE', { visitType: 'telefonica', isPhoneVisit: true });
+
+    setupVisitInProgressView(state.selectedClient, true);
+    showHint(`Llamada telefónica iniciada con ${state.selectedClient}. Visita remota en curso.`, false);
+    const cliHeader = document.getElementById('cli-nombre-header');
+    if (cliHeader) cliHeader.textContent = state.selectedClient + ' (Telefónica)';
+    navigateTo('s-cliente-inicio');
   }
 
   function selectOption(actionKey) {
@@ -1082,7 +1197,7 @@
         openGpsModal();
         return;
       }
-      setupVisitInProgressView(state.selectedClient);
+      setupVisitInProgressView(state.selectedClient, true);
       navigateTo('s-cliente-inicio');
       return;
     }
@@ -1792,7 +1907,7 @@
     if (listContainer) {
       const isCardInProgress = Boolean(state.visitInProgress && state.activeVisitClient === clientName);
       const newCard = `
-        <div class="client-card-official ${isCardInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.openOptions('${clientName}')">
+        <div class="client-card-official ${isCardInProgress ? 'is-in-progress' : ''}" onclick="window.UyapaySimulator.onClientCardClick('${clientName}')">
           <div class="client-card-left-col">
             <div class="client-card-pin-circle">
               <span>📍</span>
@@ -1900,10 +2015,10 @@
     }, 1000);
   }
 
-  function setupVisitInProgressView(clientName) {
-    startVisitTimer();
+  function setupVisitInProgressView(clientName, isNewVisit = true) {
     const currentCase = getCaseData();
     const resolvedClient = clientName || (currentCase ? currentCase.client : 'CONDO CCORIMANYA MARINO');
+    const isKanchis = resolvedClient.toLowerCase().includes('kanchis') || (currentCase && currentCase.client && currentCase.client.toLowerCase().includes('kanchis'));
 
     // Cabecera Topbar Amarilla
     const cliHeader = document.getElementById('cli-nombre-header');
@@ -1970,32 +2085,41 @@
       if (creditBar) creditBar.style.width = '0%';
     }
 
-    // Resetear fotos en Página 2: FOTOS
-    state.photos = { 1: false, 2: false, 3: false };
-    [1, 2, 3].forEach(id => {
-      const box = document.getElementById(`thumb-box-${id}`);
-      const icon = document.getElementById(`icon-photo-${id}`);
-      if (box) box.style.display = 'none';
-      if (icon) {
-        icon.textContent = '+';
-        icon.style.color = '#6b7280';
+    if (isNewVisit) {
+      startVisitTimer();
+
+      // Resetear fotos en Página 2: FOTOS
+      state.photos = { 1: false, 2: false, 3: false };
+      [1, 2, 3].forEach(id => {
+        const box = document.getElementById(`thumb-box-${id}`);
+        const icon = document.getElementById(`icon-photo-${id}`);
+        if (box) box.style.display = 'none';
+        if (icon) {
+          icon.textContent = '+';
+          icon.style.color = '#6b7280';
+        }
+      });
+
+      // Resetear pedidos emitidos en Página 4: PEDIDOS
+      const ordersList = document.getElementById('visit-orders-list');
+      if (ordersList) {
+        ordersList.innerHTML = `
+          <div id="visit-orders-empty-state" style="text-align:center; padding:30px 10px; color:var(--text-light);">
+            <div style="font-size:36px; margin-bottom:8px;">📦</div>
+            <div style="font-size:13px; font-weight:600; color:var(--text-medium);">No hay pedidos emitidos</div>
+            <div style="font-size:11px; margin-top:2px;">Presiona el botón de arriba para iniciar un pedido o cotización.</div>
+          </div>
+        `;
       }
-    });
 
-    // Resetear pedidos emitidos en Página 4: PEDIDOS
-    const ordersList = document.getElementById('visit-orders-list');
-    if (ordersList) {
-      ordersList.innerHTML = `
-        <div id="visit-orders-empty-state" style="text-align:center; padding:30px 10px; color:var(--text-light);">
-          <div style="font-size:36px; margin-bottom:8px;">📦</div>
-          <div style="font-size:13px; font-weight:600; color:var(--text-medium);">No hay pedidos emitidos</div>
-          <div style="font-size:11px; margin-top:2px;">Presiona el botón de arriba para iniciar un pedido o cotización.</div>
-        </div>
-      `;
+      // Ubicar el carrusel en la Tarea 1: INICIO
+      goToVisitTask(0);
+    } else {
+      if (!visitTimerInterval) {
+        startVisitTimer();
+      }
+      goToVisitTask(currentVisitTaskIndex);
     }
-
-    // Ubicar el carrusel en la Tarea 1: INICIO
-    goToVisitTask(0);
   }
 
   // Modales Fase 3: Comparar Precios, Docs y Contacto
@@ -2963,8 +3087,12 @@
     selectAnalysisTab: selectAnalysisTab,
     selectVisitTab: selectVisitTab,
     selectFilter: selectFilter,
-    openOptions: openClientOptions,
+    onClientCardClick: onClientCardClick,
+    openOptions: onClientCardClick,
+    openClientOptions: openClientOptions,
     closeOptions: closeClientOptions,
+    startVisitFromAddress: startVisitFromAddress,
+    startPhoneVisit: startPhoneVisit,
     checkOption: selectOption,
     openHistoryModal: openHistoryModal,
     closeHistoryModal: closeHistoryModal,
