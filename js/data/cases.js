@@ -619,110 +619,17 @@ window.UyapayData.CASES = [
     }
   ]
 },
+// ================= 5 CASOS OFICIALES DE EVALUACIÓN (CP-05 a CP-09) =================
 {
-  "id": "case-5",
-  "code": "B2C-05",
-  "title": "Caso 5: [TRAMPA] Cobranza sin consolidado al cierre",
-  "module": "Cobranzas",
-  "client": "Comercial Vega Hnos.",
-  "clientAddress": "CALLE MERCADERES 301",
-  "paymentCondition": "contado",
-  "paymentConditionLabel": "Contado (5% desc.)",
-  "priceList": "1",
-  "line": "lubricantes",
-  "brand": "shell",
-  "product": "Shell Helix HX5 15W/40",
-  "unitPrice": 20,
-  "expectedQty": 2,
-  "promoDiscount": false,
-  "promoType": "none",
-  "publicTitle": "Venta al Contado en Distribuidor",
-  "instructions": "Acudes al punto de venta de Comercial Vega Hnos. El propietario solicita abastecerse con 2 baldes de Shell Helix HX5 15W/40 con pago al contado en Lista 1. Procesa la visita y emite la orden de compra completando todas las etapas obligatorias del proceso comercial.",
-  "isTrap": true,
-  "active": true,
-  "scoring": {
-    "maxScore": 20,
-    "penaltyPerError": 5,
-    "maxErrorsAllowed": 1,
-    "scale": "vigesimal"
-  },
-  "solutionFlow": {
-    "objetivo": "Evitar el error común de cerrar una visita con cobros en estado \"Reciente\" sin generar el documento de consolidado formal.",
-    "pasoAPaso": [
-      "1. Iniciar visita en Comercial Vega Hnos.",
-      "2. Tomar y registrar fotos inicial y final.",
-      "3. Configurar pedido a Contado, Lista 1, Lubricantes Shell.",
-      "4. Agregar 2 baldes Shell Helix HX5 15W/40.",
-      "5. Confirmar y enviar la orden consolidada."
-    ],
-    "reglaNegocio": "Los recibos electrónicos que no son consolidados en el cierre de visita quedan como borradores y no impactan la cuenta corriente en SOLAR.",
-    "decisionClave": "Completar y confirmar la transacción hasta obtener el estado \"Enviado\".",
-    "resultadoEsperado": "Transacción consolidada y enviada a servidor."
-  },
-  "rules": [
-    {
-      "stepIndex": 0,
-      "eventName": "SELECT_CLIENT",
-      "description": "Seleccionar Comercial Vega Hnos.",
-      "validate": (p) => (p.clientName || '').toLowerCase().includes('vega'),
-      "errorMessage": "Busca a Comercial Vega Hnos."
-    },
-    {
-      "stepIndex": 1,
-      "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
-      "validate": (p) => p.action === 'iniciar',
-      "errorMessage": "Inicia la visita."
-    },
-    {
-      "stepIndex": 2,
-      "eventName": "SAVE_PHOTOS",
-      "description": "Fotos de visita",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Registra ambas fotos requeridas."
-    },
-    {
-      "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configurar pedido",
-      "validate": (p) => Boolean(p.paymentCondition),
-      "errorMessage": "Selecciona condición de pago."
-    },
-    {
-      "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar producto",
-      "validate": (p) => Number(p.quantity) >= 1,
-      "errorMessage": "Agrega al menos 1 producto."
-    },
-    {
-      "stepIndex": 5,
-      "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden."
-    }
-  ]
-},
-{
-  "id": "case-6",
-  "code": "B2C-06",
-  "title": "Caso 6: Consulta de nota de crédito histórica",
-  "module": "Documentos Electrónicos",
-  "client": "Comercial Vega Hnos.",
-  "clientAddress": "CALLE MERCADERES 301",
-  "paymentCondition": "contado",
-  "paymentConditionLabel": "Contado (5% desc.)",
-  "priceList": "1",
-  "line": "lubricantes",
-  "brand": "shell",
-  "product": "Shell Rimula R4 X 15W-40",
-  "unitPrice": 28,
-  "expectedQty": 1,
-  "promoDiscount": false,
-  "promoType": "none",
-  "publicTitle": "Atención de Pedido Habitual de Lubricantes",
-  "instructions": "En Comercial Vega Hnos., el encargado requiere reponer stock urgente de 1 balde de Rimula R4 X 15W/40 con pago al contado en Lista 1. Realiza la visita y formaliza el pedido en el sistema.",
+  "id": "case-cp05",
+  "code": "CP-05",
+  "aliases": ["case-5", "B2C-05"],
+  "title": "CP-05: Consulta de documentos electrónicos y estado de cuenta",
+  "module": "Clientes & Créditos",
+  "client": "Constructora Vial Perú SAC",
+  "clientAddress": "AV. EJÉRCITO 1024, YANAHUARA",
+  "publicTitle": "Consulta de Documentos Electrónicos y Estado de Cuenta",
+  "instructions": "Cliente: Constructora Vial Perú SAC.\n\nSituación: El área de créditos indica que existe riesgo de incumplimiento de una deuda de USD 1,500. Consulta el estado de cuenta del cliente, identifica una deuda adicional de USD 586.90 que vence en un mes y verifica la información de su factura y si cuenta con un recibo de cobranza emitido. Registra en el simulador el número de factura y, si corresponde, el número del recibo de cobranza.\n\nTipo de Atención: No aplica.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -731,82 +638,145 @@ window.UyapayData.CASES = [
     "scale": "vigesimal"
   },
   "solutionFlow": {
-    "objetivo": "Auditar la existencia de saldos a favor por Notas de Crédito previas antes de cerrar una nueva venta.",
+    "objetivo": "Consultar estado de cuenta en Mis Clientes, identificar la factura F001-55048 ($586.90) y verificar el recibo de cobranza RE020-021740 en Documentos Electrónicos.",
     "pasoAPaso": [
-      "1. Seleccionar Comercial Vega Hnos. e iniciar visita.",
-      "2. Registrar fotos de exhibición.",
-      "3. Configurar pedido a Contado con Lista 1, Lubricantes Shell.",
-      "4. Agregar 1 balde Rimula R4 X 15W-40.",
-      "5. Confirmar y enviar la orden de compra."
+      "1. Ingresar al menú secundario Mis clientes.",
+      "2. Buscar Constructora Vial Perú SAC e ingresar a la tarjeta del cliente.",
+      "3. Seleccionar la pestaña Deudas pendientes.",
+      "4. Pulsar Estado de cuenta y localizar la deuda de USD 586.90.",
+      "5. Registrar el número de factura correspondiente en el recuadro indicado (F001-55048).",
+      "6. Regresar al menú secundario e ingresar a Documentos Electrónicos.",
+      "7. En la pestaña Facturas, buscar la factura identificada y seleccionarla.",
+      "8. Pulsar Ver documento.",
+      "9. Deslizar hacia abajo para consultar la información del documento.",
+      "10. Identificar el número del recibo de cobranza (RC) y registrarlo en el recuadro correspondiente (RE020-021740).",
+      "11. Finalizar el caso."
     ],
-    "reglaNegocio": "Las notas de crédito emitidas figuran en el módulo de documentos electrónicos y reducen la deuda exigible.",
-    "decisionClave": "Configurar adecuadamente la lista de precios 1 autorizada para el cliente.",
-    "resultadoEsperado": "Orden emitida por USD 26.60 neto."
+    "reglaNegocio": "El estado de cuenta muestra todas las deudas vigentes y vencidas. Los documentos electrónicos reflejan el historial y movimientos vinculados (facturas y recibos de cobranza aplicados).",
+    "decisionClave": "Identificar con exactitud la factura F001-55048 en el estado de cuenta y el recibo RE020-021740 en el detalle de movimientos.",
+    "resultadoEsperado": "Factura F001-55048 y RC RE020-021740 registrados correctamente."
   },
   "rules": [
     {
       "stepIndex": 0,
-      "eventName": "SELECT_CLIENT",
-      "description": "Seleccionar Comercial Vega Hnos.",
-      "validate": (p) => (p.clientName || '').toLowerCase().includes('vega'),
-      "errorMessage": "Selecciona a Comercial Vega Hnos."
+      "eventName": "OPEN_CUSTOMER_PROFILE",
+      "description": "Ingresar a perfil de Constructora Vial Perú SAC",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('vial'),
+      "errorMessage": "Debes buscar e ingresar al perfil de Constructora Vial Perú SAC en Mis Clientes."
     },
     {
       "stepIndex": 1,
-      "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
-      "validate": (p) => p.action === 'iniciar',
-      "errorMessage": "Presiona \"Iniciar visita\"."
+      "eventName": "VIEW_ACCOUNT_STATUS",
+      "description": "Consultar estado de cuenta",
+      "validate": (p) => p.viewed === true,
+      "errorMessage": "Debes abrir el Estado de Cuenta del cliente desde la pestaña Deudas pendientes."
     },
     {
       "stepIndex": 2,
-      "eventName": "SAVE_PHOTOS",
-      "description": "Fotos de visita",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Registra las fotos de visita."
+      "eventName": "SUBMIT_INVOICE_AUDIT",
+      "description": "Registrar número de factura F001-55048",
+      "validate": (p) => {
+        const val = (p.invoiceNumber || '').toUpperCase().replace(/[-0\\s]/g, '');
+        return val.includes('F155048') || (p.invoiceNumber || '').includes('55048');
+      },
+      "errorMessage": "Factura incorrecta. Debes identificar y registrar la factura F001-55048."
     },
     {
       "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configuración comercial",
-      "validate": (p) => Boolean(p.paymentCondition),
-      "errorMessage": "Configura la condición comercial."
+      "eventName": "OPEN_ELECTRONIC_DOCS",
+      "description": "Ingresar a Documentos Electrónicos",
+      "validate": (p) => p.opened === true,
+      "errorMessage": "Debes ingresar al módulo de Documentos Electrónicos desde el menú."
     },
     {
       "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar producto",
-      "validate": (p) => Number(p.quantity) >= 1,
-      "errorMessage": "Selecciona el producto."
+      "eventName": "VIEW_INVOICE_DETAIL",
+      "description": "Ver documento de la factura F001-00055048",
+      "validate": (p) => (p.invoiceNumber || '').includes('55048'),
+      "errorMessage": "Debes seleccionar la factura F001-00055048 y pulsar \"Ver documento\"."
     },
     {
       "stepIndex": 5,
-      "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden."
+      "eventName": "SUBMIT_RC_AUDIT",
+      "description": "Registrar recibo de cobranza RE020-021740",
+      "validate": (p) => {
+        const val = (p.rcNumber || '').toUpperCase().replace(/[-0\\s]/g, '');
+        return val.includes('RE221740') || (p.rcNumber || '').includes('021740') || (p.rcNumber || '').includes('21740');
+      },
+      "errorMessage": "Recibo de cobranza incorrecto. Debes identificar y registrar RE020-021740."
     }
   ]
 },
 {
-  "id": "case-7",
-  "code": "B2C-07",
-  "title": "Caso 7: Ver y compartir estado de cuenta",
-  "module": "Mis Clientes",
-  "client": "Grupo Ferretero Miraflores",
-  "clientAddress": "AV. SAN JERONIMO 210",
+  "id": "case-cp06",
+  "code": "CP-06",
+  "aliases": ["case-6", "B2C-06"],
+  "title": "CP-06: Consulta de historial de visitas antes de venta",
+  "module": "Gestión de Visitas",
+  "client": "Bodega y Ferretería Dos Hermanos",
+  "clientAddress": "JR. TACNA 340",
+  "publicTitle": "Consulta de Historial de Visitas Previas",
+  "instructions": "Cliente: Bodega y Ferretería Dos Hermanos.\n\nSituación: Antes de continuar con la gestión comercial, consulta el historial del cliente e identifica la fecha de su visita más reciente. Registra dicha fecha en el simulador.\n\nTipo de Atención: Presencial normal.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Consultar la información o historial de visitas de Bodega y Ferretería Dos Hermanos e identificar la visita más reciente (14/08/2026).",
+    "pasoAPaso": [
+      "1. Ingresar al caso con la visita ya iniciada y ubicado en la tarea PEDIDOS.",
+      "2. Ingresar al menú Mis clientes o Historial de visitas.",
+      "3. Buscar Bodega y Ferretería Dos Hermanos.",
+      "4. En la vista del cliente, consultar la información disponible e identificar la visita más reciente.",
+      "5. Registrar la fecha identificada (14/08/2026) en el recuadro correspondiente del simulador.",
+      "6. Finalizar el caso."
+    ],
+    "reglaNegocio": "El historial de visitas registra la fecha, asesor, productos y bonificaciones de las interacciones previas con el cliente.",
+    "decisionClave": "Consultar el registro cronológico e identificar con exactitud la fecha de la visita más reciente (14/08/2026).",
+    "resultadoEsperado": "Fecha 14/08/2026 registrada correctamente en el simulador."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "OPEN_CUSTOMER_PROFILE",
+      "description": "Consultar ficha o historial de Bodega y Ferretería Dos Hermanos",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('hermanos') || p.consulted === true,
+      "errorMessage": "Debes consultar la información de Bodega y Ferretería Dos Hermanos en Mis Clientes o Historial."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SUBMIT_HISTORY_DATE",
+      "description": "Registrar fecha de visita más reciente 14/08/2026",
+      "validate": (p) => {
+        const d = (p.date || p.answer || '').trim();
+        return d.includes('14/08') || d.includes('14-08') || d.includes('14/08/2026') || d.includes('14-08-2026');
+      },
+      "errorMessage": "Fecha incorrecta. La visita más reciente fue realizada el 14/08/2026."
+    }
+  ]
+},
+{
+  "id": "case-cp07",
+  "code": "CP-07",
+  "aliases": ["case-7", "B2C-07"],
+  "title": "CP-07: Gestión de visita fuera de geocerca mediante visita telefónica",
+  "module": "Gestión de Visitas & Ventas",
+  "client": "Distribuidora Lubrimotor EIRL",
+  "clientAddress": "AV. INDUSTRIAL 104, SOCABAYA",
   "paymentCondition": "credito_30",
-  "paymentConditionLabel": "Crédito 30 días (3% desc.)",
-  "priceList": "OF",
+  "paymentConditionLabel": "Crédito 30 días",
+  "priceList": "3",
   "line": "neumaticos",
   "brand": "michelin",
-  "product": "Michelin Energy XM2+ 195/60 R15",
+  "product": "Michelin Energy XM2+",
   "unitPrice": 55,
   "expectedQty": 2,
-  "promoDiscount": false,
-  "promoType": "none",
-  "publicTitle": "Reposición de Neumáticos a Crédito",
-  "instructions": "Visitas a Grupo Ferretero Miraflores. El cliente solicita un pedido de 2 cajas de neumáticos Michelin Energy XM2+ 195/60 R15 bajo condición de Crédito a 30 días con Lista OF. Gestiona la visita y registra el pedido requerido.",
+  "isPhoneVisit": true,
+  "publicTitle": "Gestión Fuera de Geocerca con Visita Telefónica",
+  "instructions": "Cliente: Distribuidora Lubrimotor EIRL — Av. Industrial 104, Socabaya.\n\nSituación: El cliente se encuentra a 250 metros del punto actual. Intentas iniciar una visita presencial, pero la geocerca permite un máximo de 50 metros. Debes gestionar correctamente la atención mediante una visita telefónica y registrar el pedido solicitado por el cliente.\n\nTipo de Atención: Llamada telefónica (Bypass GPS).\n\nParámetros Comerciales:\n- Condición de pago: Crédito 30 días\n- Lista de precios: Lista 3\n- Línea y Marca: Neumáticos | Michelin\n- Producto(s) y Cantidad: 2 cajas de Michelin Energy XM2+",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -815,82 +785,70 @@ window.UyapayData.CASES = [
     "scale": "vigesimal"
   },
   "solutionFlow": {
-    "objetivo": "Revisar la posición financiera del cliente en Mis Clientes y registrar un pedido al crédito autorizado.",
+    "objetivo": "Gestionar visita a cliente fuera de geocerca (250m) mediante 'Iniciar llamada telefónica' y registrar 2 cajas Michelin Energy XM2+ a Crédito 30 días en Lista 3.",
     "pasoAPaso": [
-      "1. Localizar Grupo Ferretero Miraflores en visitas e iniciar atención.",
-      "2. Tomar y guardar fotos de visita.",
-      "3. Configurar pedido: Crédito 30 días, Lista OF, Neumáticos Michelin.",
-      "4. Agregar 2 cajas Energy XM2+.",
-      "5. Verificar el 3% de crédito ($3.30) para total USD 106.70 y confirmar."
+      "1. Seleccionar Distribuidora Lubrimotor EIRL.",
+      "2. Identificar que la ubicación actual está a 250m (fuera del máximo de 50m).",
+      "3. En la hoja de DIRECCIONES, presionar el botón 'Iniciar llamada telefónica'.",
+      "4. En la tarea PEDIDOS, pulsar 'Crear pedido'.",
+      "5. Seleccionar Crédito 30 días.",
+      "6. Seleccionar Lista 3 y configurar Neumáticos Michelin.",
+      "7. Seleccionar Michelin Energy XM2+ e ingresar 2 unidades.",
+      "8. Verificar resumen y confirmar el pedido.",
+      "9. Finalizar el caso."
     ],
-    "reglaNegocio": "Compartir el estado de cuenta por WhatsApp formaliza la comunicación de deuda vencida y por vencer.",
-    "decisionClave": "Comprobar que el cliente cuenta con línea disponible antes de emitir a crédito.",
-    "resultadoEsperado": "Orden transmitida por USD 106.70."
+    "reglaNegocio": "Cuando la distancia al cliente supera 50 metros, el protocolo UYAPAY prohíbe iniciar visita presencial; se debe utilizar la modalidad de Visita Telefónica para trazabilidad remota.",
+    "decisionClave": "Pulsar 'Iniciar llamada telefónica' en lugar de intentar forzar la visita presencial a 250m, y configurar Crédito 30 días con Lista 3.",
+    "resultadoEsperado": "Pedido de 2 cajas Michelin Energy XM2+ confirmado bajo modalidad de visita telefónica."
   },
   "rules": [
     {
       "stepIndex": 0,
       "eventName": "SELECT_CLIENT",
-      "description": "Seleccionar Grupo Ferretero Miraflores",
-      "validate": (p) => (p.clientName || '').toLowerCase().includes('miraflores'),
-      "errorMessage": "Selecciona Grupo Ferretero Miraflores."
+      "description": "Seleccionar Distribuidora Lubrimotor EIRL",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('lubrimotor'),
+      "errorMessage": "Debes seleccionar a Distribuidora Lubrimotor EIRL."
     },
     {
       "stepIndex": 1,
       "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
-      "validate": (p) => p.action === 'iniciar',
-      "errorMessage": "Inicia la visita."
+      "description": "Iniciar llamada telefónica (atención remota)",
+      "validate": (p) => p.action === 'iniciar' && (p.isPhone === true || p.visitType === 'telefonica'),
+      "errorMessage": "Error crítico (-20 pts): Te encuentras a 250m del local. Debes pulsar \"Iniciar llamada telefónica\" en lugar de forzar visita presencial."
     },
     {
       "stepIndex": 2,
-      "eventName": "SAVE_PHOTOS",
-      "description": "Fotos de visita",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Registra ambas fotos."
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Crédito 30 días, Lista 3, Neumáticos Michelin",
+      "validate": (p) => (p.paymentCondition || '').includes('30') && String(p.priceList) === '3' && (p.line || '').includes('neum') && (p.brand || '').includes('michelin'),
+      "errorMessage": "Error comercial (-20 pts): Debes configurar Condición Crédito 30 días, Lista 3, Línea Neumáticos y Marca Michelin."
     },
     {
       "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configurar pedido crédito 30 días",
-      "validate": (p) => p.paymentCondition === 'credito_30',
-      "errorMessage": "Selecciona Crédito 30 días."
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 2 cajas de Michelin Energy XM2+",
+      "validate": (p) => (p.product || '').toLowerCase().includes('michelin') && Number(p.quantity) === 2,
+      "errorMessage": "Error de producto (-20 pts): Debes agregar 2 cajas de Michelin Energy XM2+."
     },
     {
       "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar producto",
-      "validate": (p) => Number(p.quantity) >= 1,
-      "errorMessage": "Agrega el producto."
-    },
-    {
-      "stepIndex": 5,
       "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden."
+      "description": "Confirmar pedido con trazabilidad telefónica",
+      "validate": (p) => Boolean(p.confirmed),
+      "errorMessage": "Debes confirmar el pedido en el resumen final."
     }
   ]
 },
 {
-  "id": "case-8",
-  "code": "B2C-08",
-  "title": "Caso 8: Seguimiento de pedido emitido",
-  "module": "Pedidos",
-  "client": "Autopartes El Rápido",
-  "clientAddress": "JR. PIEROLA 540",
-  "paymentCondition": "contado",
-  "paymentConditionLabel": "Contado (5% desc.)",
-  "priceList": "1",
-  "line": "lubricantes",
-  "brand": "shell",
-  "product": "Shell Helix Plus 10W-40",
-  "unitPrice": 5,
-  "expectedQty": 4,
-  "promoDiscount": false,
-  "promoType": "none",
-  "publicTitle": "Compra de Lubricantes en Botella",
-  "instructions": "En tu visita a Autopartes El Rápido, el encargado solicita 4 botellas de Shell Helix Plus 10W-40 (1L) al contado con Lista 1. Atiende el requerimiento y emite la orden comercial correspondiente.",
+  "id": "case-cp08",
+  "code": "CP-08",
+  "aliases": ["case-8", "B2C-08"],
+  "title": "CP-08: Registro de precio de competencia",
+  "module": "Inteligencia Comercial",
+  "client": "Transportes Pepito SRL",
+  "clientAddress": "AV. PARRA 450",
+  "publicTitle": "Registro de Precio de Competencia y Justificación",
+  "instructions": "Cliente: Transportes Pepito SRL.\n\nSituación: Durante la visita, el cliente comenta que el producto de la competencia Castrol Mineral 20W50 tiene un mejor precio y muestra una cotización. Registra correctamente el precio de la competencia y completa la tarea. Al no concretarse una venta, finaliza la visita justificando el motivo de no emisión de pedido.\n\nTipo de Atención: Presencial normal.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -899,83 +857,69 @@ window.UyapayData.CASES = [
     "scale": "vigesimal"
   },
   "solutionFlow": {
-    "objetivo": "Emitir pedido y realizar la verificación de trazabilidad logística en el módulo Pedidos.",
+    "objetivo": "Registrar numéricamente el precio de competencia de Castrol Mineral 20W50, adjuntar foto de cotización, completar la tarea de tracking y finalizar la visita con motivo justificado de no pedido.",
     "pasoAPaso": [
-      "1. Seleccionar Autopartes El Rápido e iniciar visita.",
-      "2. Completar fotos obligatorias.",
-      "3. Configurar Contado, Lista 1, Lubricantes Shell.",
-      "4. Agregar 4 botellas de Shell Helix Plus 10W-40 a USD 5.00 c/u.",
-      "5. Confirmar pedido con total neto de USD 19.00."
+      "1. Ingresar al caso con la visita iniciada y tareas INICIO y FOTOS completadas.",
+      "2. Ingresar a la tarea PRECIOS (Tracking de precios).",
+      "3. Registrar numéricamente el precio de Castrol Mineral 20W50 en la casilla correspondiente.",
+      "4. Adjuntar la fotografía de la cotización proporcionada por el cliente.",
+      "5. Pulsar CONTINUAR para completar la tarea de tracking.",
+      "6. Intentar finalizar la visita sin ingresar pedido.",
+      "7. Cuando el sistema solicite el motivo de no emisión de pedido, seleccionar uno de los motivos disponibles (ej: 'Cliente solo cotiza').",
+      "8. Confirmar y finalizar la visita."
     ],
-    "reglaNegocio": "El estado del pedido pasa secuencialmente por BORRADOR -> ENVIADO -> EN RUTA -> ENTREGADO.",
-    "decisionClave": "Configurar el pedido al contado con descuento del 5% sin agregar promociones no aplicables.",
-    "resultadoEsperado": "Orden registrada por USD 19.00."
+    "reglaNegocio": "El levantamiento de precios de competencia requiere obligatoriamente valor numérico y fotografía de respaldo. Todo cierre de visita sin pedido exige registrar el motivo correspondiente.",
+    "decisionClave": "Registrar el precio numérico además de la foto de cotización, y justificar el cierre sin pedido con un motivo oficial.",
+    "resultadoEsperado": "Precio de Castrol registrado con foto y visita cerrada con motivo justificado."
   },
   "rules": [
     {
       "stepIndex": 0,
-      "eventName": "SELECT_CLIENT",
-      "description": "Seleccionar Autopartes El Rápido",
-      "validate": (p) => (p.clientName || '').toLowerCase().includes('rapido') || (p.clientName || '').toLowerCase().includes('rápido'),
-      "errorMessage": "Selecciona Autopartes El Rápido."
+      "eventName": "SUBMIT_PRICE_TRACKING",
+      "description": "Registrar precio de competencia Castrol con fotografía",
+      "validate": (p) => Number(p.price) > 0 && Boolean(p.hasPhoto),
+      "errorMessage": "Error crítico (-20 pts): Debes ingresar el precio numérico observado de Castrol Mineral 20W50 y adjuntar la fotografía de la cotización."
     },
     {
       "stepIndex": 1,
-      "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
-      "validate": (p) => p.action === 'iniciar',
-      "errorMessage": "Inicia la visita."
+      "eventName": "SELECT_NO_ORDER_REASON",
+      "description": "Registrar motivo de no emisión de pedido",
+      "validate": (p) => Boolean(p.reason && p.reason.length > 0),
+      "errorMessage": "Error de procedimiento (-15 pts): Al finalizar sin pedido debes seleccionar obligatoriamente un motivo de no emisión."
     },
     {
       "stepIndex": 2,
-      "eventName": "SAVE_PHOTOS",
-      "description": "Fotos de visita",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Registra las fotos de visita."
-    },
-    {
-      "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configurar Contado Lista 1",
-      "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '1' && p.line === 'lubricantes' && p.brand === 'shell',
-      "errorMessage": "Configura: Contado, Lista 1, Lubricantes Shell."
-    },
-    {
-      "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar 4 botellas Helix Plus",
-      "validate": (p) => (p.product || '').toLowerCase().includes('plus') && Number(p.quantity) === 4,
-      "errorMessage": "Agrega 4 botellas Shell Helix Plus."
-    },
-    {
-      "stepIndex": 5,
-      "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden."
+      "eventName": "FINISH_VISIT",
+      "description": "Finalizar visita formalmente",
+      "validate": (p) => p.completed === true || Boolean(p.reason),
+      "errorMessage": "Debes finalizar la visita para concluir el caso."
     }
   ]
 },
 {
-  "id": "case-9",
-  "code": "B2C-09",
-  "title": "Caso 9: Venta con regalo por volumen (Lubricantes Shell)",
-  "module": "Ventas B2C",
-  "client": "Servicentro El Faro",
-  "clientAddress": "AV. DOLORES 880",
+  "id": "case-cp09",
+  "code": "CP-09",
+  "aliases": ["case-9", "B2C-09"],
+  "title": "CP-09: Visita fuera de ruta con pedido y cobranza",
+  "module": "Ventas & Cobranzas Fuera de Ruta",
+  "client": "Comercial Vega Hnos.",
+  "clientAddress": "CALLE MERCADERES 301",
+  "deliveryAddress": "CALLE SANTA MARTA 205",
+  "deliveryAddressText": "Calle Santa Marta 205",
+  "deliveryDate": "14 de septiembre",
   "paymentCondition": "contado",
-  "paymentConditionLabel": "Contado (5% desc.)",
-  "priceList": "2",
+  "paymentConditionLabel": "Contado",
+  "priceList": "3",
   "line": "lubricantes",
   "brand": "shell",
   "product": "Shell Helix HX7 10W/40",
   "unitPrice": 25,
-  "expectedQty": 5,
+  "expectedQty": 15,
   "promoDiscount": true,
   "promoType": "gift",
-  "promoLabel": "🎁 Regalo: 1 caja botellas Shell Helix Plus (108203)",
-  "publicTitle": "Venta por Escala con Promoción de Volumen",
-  "instructions": "Atiendes a Servicentro El Faro. El comprador solicita 5 baldes de Shell Helix HX7 10W/40 con pago al contado en Lista 2, solicitando expresamente la bonificación de regalo en producto aplicable por volumen de compra. Gestiona la visita y emite la orden con las condiciones comerciales pactadas.",
+  "promoLabel": "🎁 Regalo: 1 gorro por cada 5 baldes (3 gorros)",
+  "publicTitle": "Visita Fuera de Ruta: Pedido con Promoción y Cobranza Mixta",
+  "instructions": "Cliente: Comercial Vega Hnos.\nDirección de visita: Calle Mercaderes 301. Dirección de entrega: Calle Santa Marta 205.\n\nSituación: Un cliente que no se encuentra en tu plan de visitas solicita una visita para realizar un pedido al contado de 15 baldes Shell Helix HX7 a USD 25 cada uno, con una promoción de 1 gorro por cada 5 baldes, para entrega el 14 de septiembre. Adicionalmente, el cliente desea pagar una deuda vencida de USD 380: USD 80 en efectivo soles (PEN 276 con TC 3.45) y el saldo de USD 300 mediante depósito bancario al BCP. Registra la visita, pedido y cobranza.\n\nTipo de Atención: Visita fuera de ruta.",
   "active": true,
   "scoring": {
     "maxScore": 20,
@@ -984,60 +928,89 @@ window.UyapayData.CASES = [
     "scale": "vigesimal"
   },
   "solutionFlow": {
-    "objetivo": "Aplicar promoción oficial de regalo por volumen en línea Lubricantes respetando la regla mono-línea.",
+    "objetivo": "Agregar cliente fuera de ruta con tareas Pedido y Cobranza, emitir pedido de 15 baldes Shell HX7 con 3 gorros para el 14 de septiembre en Calle Santa Marta 205, y cobrar USD 380 (Efectivo PEN 276 + Depósito BCP USD 300) con consolidado formal.",
     "pasoAPaso": [
-      "1. Seleccionar Servicentro El Faro en la ruta e iniciar visita.",
-      "2. Capturar y guardar fotos de fachada y exhibidor.",
-      "3. Configurar Contado, Lista 2, Línea Lubricantes, Marca Shell.",
-      "4. Agregar 5 baldes Shell Helix HX7 a $25 c/u activando la promoción de regalo.",
-      "5. Verificar total neto USD 118.75 (5×$25 = $125 - 5% = $118.75) y confirmar orden."
+      "1. En Plan de visitas, seleccionar '+ Agregar cliente fuera de ruta'.",
+      "2. Seleccionar Comercial Vega Hnos. y marcar las tareas de PEDIDO y COBRANZA.",
+      "3. Seleccionar al cliente agregado y pulsar Iniciar visita.",
+      "4. En la tarea PEDIDOS, pulsar Crear pedido.",
+      "5. Mantener condición Contado, seleccionar Lista 3, Lubricantes Shell.",
+      "6. Seleccionar Shell Helix HX7, ingresar 15 unidades a USD 25.00 c/u.",
+      "7. Activar toggle de producto promocional (1 gorro por cada 5 baldes) y agregar.",
+      "8. En Resumen: fijar fecha de entrega 14 de septiembre y dirección Calle Santa Marta 205.",
+      "9. Confirmar pedido.",
+      "10. En la tarea COBRANZAS, consultar deuda de USD 380.00 y pulsar Pagar.",
+      "11. Registrar Pago 1: Efectivo, Soles PEN 276.00 (TC 3.45 = USD 80.00) con foto del recibo.",
+      "12. Registrar Pago 2: Depósito bancario BCP, USD 300.00 con fecha, voucher y foto.",
+      "13. Verificar voucher consolidado de cobranzas con ambos pagos (USD 380.00) y confirmar.",
+      "14. Finalizar visita."
     ],
-    "reglaNegocio": "Cada pedido en UYAPAY corresponde a una sola línea de negocio.",
-    "decisionClave": "Mantener el pedido exclusivamente en la línea Lubricantes y activar el regalo correspondiente.",
-    "resultadoEsperado": "Orden emitida por USD 118.75 con regalo de botellas registrado."
+    "reglaNegocio": "El cliente fuera de ruta debe registrarse con las tareas autorizadas. La cobranza mixta amortiza la deuda completa consolidando recibos provisionales y depósitos bancarios.",
+    "decisionClave": "Activar tareas Pedido y Cobranza al agregar fuera de ruta, configurar entrega en Santa Marta el 14 de septiembre con 3 gorros, y liquidar los USD 380 con Efectivo PEN 276 + Depósito BCP USD 300.",
+    "resultadoEsperado": "Visita completada al 100%, orden emitida y cobranza de USD 380.00 consolidada."
   },
   "rules": [
     {
       "stepIndex": 0,
-      "eventName": "SELECT_CLIENT",
-      "description": "Seleccionar Servicentro El Faro",
-      "validate": (p) => (p.clientName || '').toLowerCase().includes('faro'),
-      "errorMessage": "Selecciona a Servicentro El Faro."
+      "eventName": "ADD_OUT_OF_ROUTE_CLIENT",
+      "description": "Agregar Comercial Vega Hnos. fuera de ruta con Pedido y Cobranza",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('vega') && Boolean(p.tasks?.pedidos) && Boolean(p.tasks?.cobranza),
+      "errorMessage": "Debes agregar a Comercial Vega Hnos. fuera de ruta marcando las tareas de PEDIDO y COBRANZA."
     },
     {
       "stepIndex": 1,
       "eventName": "SELECT_ACTION",
-      "description": "Iniciar visita",
+      "description": "Iniciar visita presencial",
       "validate": (p) => p.action === 'iniciar',
-      "errorMessage": "Inicia la visita."
+      "errorMessage": "Debes iniciar la visita con Comercial Vega Hnos."
     },
     {
       "stepIndex": 2,
-      "eventName": "SAVE_PHOTOS",
-      "description": "Fotos de visita",
-      "validate": (p) => p.initialPhoto && p.finalPhoto,
-      "errorMessage": "Registra las fotos de visita."
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Contado, Lista 3, Lubricantes Shell",
+      "validate": (p) => p.paymentCondition === 'contado' && String(p.priceList) === '3' && (p.line || '').includes('lubric') && (p.brand || '').includes('shell'),
+      "errorMessage": "Configura: Condición Contado, Lista 3, Línea Lubricantes y Marca Shell."
     },
     {
       "stepIndex": 3,
-      "eventName": "CREATE_ORDER_CONFIG",
-      "description": "Configurar Contado Lista 2 Shell",
-      "validate": (p) => p.paymentCondition === 'contado' && p.priceList === '2' && p.line === 'lubricantes' && p.brand === 'shell',
-      "errorMessage": "Configura: Contado, Lista 2, Lubricantes Shell."
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 15 baldes Shell HX7 con gorro promocional",
+      "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 15 && Boolean(p.promoDiscount),
+      "errorMessage": "Debes agregar 15 baldes Shell Helix HX7 con la promoción de regalo (1 gorro por cada 5 baldes)."
     },
     {
       "stepIndex": 4,
-      "eventName": "ADD_PRODUCT",
-      "description": "Agregar 5 baldes con regalo",
-      "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && Number(p.quantity) === 5 && Boolean(p.promoDiscount),
-      "errorMessage": "Agrega 5 baldes Helix HX7 con la promoción de regalo activada."
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar pedido con entrega el 14 de septiembre en Calle Santa Marta 205",
+      "validate": (p) => {
+        const isConf = Boolean(p.confirmed);
+        const dStr = p.estimatedDeliveryDate || '';
+        const isSept14 = dStr.includes('-09-14') || dStr.includes('14-09') || dStr.toLowerCase().includes('14 de sep');
+        const isSantaMarta = (p.deliveryAddressText || '').toLowerCase().includes('marta') || (p.deliveryAddress || '').toLowerCase().includes('marta');
+        return isConf && isSept14 && isSantaMarta;
+      },
+      "errorMessage": "Debes confirmar el pedido programando la entrega para el 14 de septiembre en Calle Santa Marta 205."
     },
     {
       "stepIndex": 5,
-      "eventName": "SUBMIT_ORDER",
-      "description": "Confirmar orden",
-      "validate": (p) => p.confirmed === true,
-      "errorMessage": "Confirma la orden."
+      "eventName": "SUBMIT_PAYMENT_1_CASH",
+      "description": "Registrar Pago 1: Efectivo Soles PEN 276.00 (USD 80.00)",
+      "validate": (p) => p.method === 'efectivo' && (p.currency === 'PEN' || p.currency === 'PEN_SOLES') && (Number(p.amount) === 276 || Number(p.amountUSD) === 80),
+      "errorMessage": "Debes registrar el primer pago de USD 80.00 en efectivo soles (PEN 276.00 con TC 3.45) con foto de recibo."
+    },
+    {
+      "stepIndex": 6,
+      "eventName": "SUBMIT_PAYMENT_2_DEPOSIT",
+      "description": "Registrar Pago 2: Depósito BCP USD 300.00",
+      "validate": (p) => p.method === 'deposito' && (p.bank || '').toUpperCase().includes('BCP') && Number(p.amount) === 300,
+      "errorMessage": "Debes registrar el segundo pago de USD 300.00 mediante depósito bancario al BCP con voucher."
+    },
+    {
+      "stepIndex": 7,
+      "eventName": "SUBMIT_CONSOLIDATED_COBRANZA",
+      "description": "Generar consolidado de cobranzas por USD 380.00 y finalizar",
+      "validate": (p) => Number(p.totalAmount) === 380 && Number(p.paymentCount) === 2,
+      "errorMessage": "Debes generar y confirmar el voucher consolidado con ambos pagos (USD 380.00 total) y finalizar la visita."
     }
   ]
 },

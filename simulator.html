@@ -684,10 +684,303 @@
             <div class="client-drawer-actions-row">
               <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
               <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación...')"><span>📍</span><span>Ubicación</span></div>
-              <div class="client-action-btn" onclick="window.UyapaySimulator.openOptions('SALCEDO HUAMANI ROSA')"><span>📄</span><span>Perfil</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openCustomerProfile('SALCEDO HUAMANI ROSA')"><span>📄</span><span>Perfil</span></div>
             </div>
           </div>
         </div>
+
+        <!-- Card 7: Constructora Vial Perú SAC (CP-05) -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c7')">
+            <div>
+              <div class="client-drawer-title">CONSTRUCTORA VIAL PERÚ S.A.C.</div>
+              <div class="client-drawer-ruc">RUC: 20498321098 (Padre)</div>
+              <div class="client-drawer-zone">Zona: AREQUIPA INDUSTRIAL</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c7">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c7" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">vie, 31-jul-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">jue, 27-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$1,500.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación en mapa...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openCustomerProfile('CONSTRUCTORA VIAL PERÚ S.A.C.')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 8: Bodega y Ferretería Dos Hermanos (CP-06) -->
+        <div class="client-drawer-card">
+          <div class="client-drawer-header-row" onclick="window.UyapaySimulator.toggleDrawerClientAccordion('c8')">
+            <div>
+              <div class="client-drawer-title">BODEGA Y FERRETERÍA DOS HERMANOS</div>
+              <div class="client-drawer-ruc">RUC: 20123456789 (Padre)</div>
+              <div class="client-drawer-zone">Zona: RUTA URBANA 1</div>
+            </div>
+            <span class="client-drawer-chevron" id="acc-arrow-c8">∨</span>
+          </div>
+          <div class="client-drawer-details" id="acc-body-c8" style="display:none;">
+            <div class="client-detail-row"><span>Última venta</span><b style="color:#111827;">vie, 14-ago-2026</b></div>
+            <div class="client-detail-row"><span>Última visita</span><b style="color:#111827;">vie, 14-ago-2026</b></div>
+            <div class="client-detail-row"><span>Deuda vencida</span><b style="color:#ef4444;">$0.00</b></div>
+            <div class="client-drawer-actions-row">
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Iniciando llamada...')"><span>📞</span><span>Llamar</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.hint('Ubicación en mapa...')"><span>📍</span><span>Ubicación</span></div>
+              <div class="client-action-btn" onclick="window.UyapaySimulator.openCustomerProfile('BODEGA Y FERRETERÍA DOS HERMANOS')"><span>📄</span><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.6.1 PANTALLA OFICIAL: DETALLE DEL CLIENTE / PERFIL (mis clientes-detalle del cliente.png) ================= -->
+  <div class="screen" id="s-cliente-detalle" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-mis-clientes')">‹</span>
+      <span class="visit-header-title" id="client-profile-header-title">CONSTRUCTORA VIAL PERÚ S.A.C.</span>
+    </div>
+
+    <!-- 2 Pestañas Oficiales: Perfil vs Deudas pendientes -->
+    <div class="profile-tabs-header">
+      <div class="profile-tab-btn active" id="btn-tab-perfil" onclick="window.UyapaySimulator.switchProfileTab('perfil')">
+        Perfil
+      </div>
+      <div class="profile-tab-btn" id="btn-tab-deudas" onclick="window.UyapaySimulator.switchProfileTab('deudas')">
+        Deudas pendientes
+      </div>
+    </div>
+
+    <!-- Contenido Scrollable -->
+    <div style="flex:1; overflow-y:auto; padding:12px 14px 60px;">
+      <!-- Dropdown Selector Hijo/Padre -->
+      <div class="profile-customer-dropdown-row">
+        <div class="profile-avatar-icon">👤</div>
+        <div class="profile-customer-select-wrap">
+          <select id="sel-profile-child" class="form-select-clean">
+            <option value="todos" selected>[TODOS]</option>
+            <option value="padre">CONSTRUCTORA VIAL PERÚ S.A.C. (Padre)</option>
+          </select>
+          <span class="select-arrow-down">∨</span>
+        </div>
+      </div>
+
+      <!-- CONTENIDO TAB 1: PERFIL -->
+      <div id="tab-content-perfil">
+        <!-- Badges de Scoring Comercial -->
+        <div class="profile-scoring-row">
+          <div class="profile-score-card">
+            <div class="score-letter">C</div>
+            <div class="score-label">Venta</div>
+            <div class="score-line"></div>
+          </div>
+          <div class="profile-score-card">
+            <div class="score-letter">3</div>
+            <div class="score-label">Cobranza</div>
+            <div class="score-line"></div>
+          </div>
+        </div>
+
+        <!-- Bloque Perfil -->
+        <div class="profile-info-card">
+          <div class="profile-info-header">
+            <span>Perfil</span>
+            <span class="profile-edit-link" onclick="window.UyapaySimulator.hint('Edición de datos del perfil comercial')">Editar</span>
+          </div>
+          <div class="profile-info-item"><span>Titular:</span><b>-</b></div>
+          <div class="profile-info-item"><span>Edad:</span><b>48</b></div>
+          <div class="profile-info-item"><span>Email:</span><b>contacto@constructoravial.pe</b></div>
+          <div class="profile-info-item" style="flex-direction:column; align-items:flex-start;">
+            <span>Descripción:</span>
+            <p style="font-size:12px; color:#4b5563; margin-top:3px; line-height:1.4;">
+              Empresa líder en obras de infraestructura vial y movimientos de tierra en el sur del país. Alto consumo de lubricantes pesados y neumáticos industriales.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bloque Historial de Visitas Previas (CP-06) -->
+        <div class="profile-info-card" id="profile-visitas-historial-card">
+          <div class="profile-info-header">
+            <span>Historial de visitas</span>
+          </div>
+          <div style="background:#f8fafc; border-radius:8px; padding:10px; border:1px solid #e2e8f0; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:11px; font-weight:700; color:#1e40af; text-transform:uppercase;">Visita más reciente</span>
+              <b style="font-size:12px; color:#111827;" id="historial-last-visit-date">14/08/2026</b>
+            </div>
+            <div style="font-size:11px; color:#64748b;">Asesor: Álvaro Rodríguez | Pedido: 8 baldes Shell Helix HX7</div>
+            <div style="font-size:10.5px; color:#059669; margin-top:2px;">🎁 Bonificación: 2 botellas Shell Helix Plus entregadas</div>
+          </div>
+          <div style="background:#f8fafc; border-radius:8px; padding:10px; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">Visita anterior</span>
+              <b style="font-size:12px; color:#111827;">18/07/2026</b>
+            </div>
+            <div style="font-size:11px; color:#64748b;">Asesor: Henry Quispe | Pedido: 4 baldes Shell Rimula R4 X</div>
+          </div>
+
+          <!-- Recuadro de Auditoría para CP-06 -->
+          <div class="audit-verification-card" id="cp06-audit-box" style="margin-top:12px;">
+            <div style="font-size:12px; font-weight:800; color:#1e40af; margin-bottom:4px;">📋 Auditoría CP-06: Identifica la visita más reciente</div>
+            <p style="font-size:11px; color:#4b5563; margin-bottom:8px;">Registra en el simulador la fecha de la visita más reciente identificada (DD/MM/AAAA):</p>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="cp06-fecha-input" class="form-input" placeholder="DD/MM/AAAA" value="14/08/2026" style="flex:1; padding:7px 10px; font-size:13px;" />
+              <button class="brand-btn-yellow" style="padding:7px 14px; font-size:12px; white-space:nowrap;" onclick="window.UyapaySimulator.submitCp06Date()">
+                Registrar Fecha
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloque Perfil Comercial -->
+        <div class="profile-info-card">
+          <div class="profile-info-header"><span>Perfil comercial</span></div>
+          <div class="profile-info-item"><span>Razón social:</span><b id="prof-comm-rs">CONSTRUCTORA VIAL PERÚ S.A.C.</b></div>
+          <div class="profile-info-item"><span>RUC:</span><b id="prof-comm-ruc">20498321098</b></div>
+          <div class="profile-info-item"><span>Dirección:</span><b id="prof-comm-dir">AV. EJÉRCITO 1024, YANAHUARA</b></div>
+        </div>
+      </div>
+
+      <!-- CONTENIDO TAB 2: DEUDAS PENDIENTES (CP-05) -->
+      <div id="tab-content-deudas" style="display:none;">
+        <!-- Línea de Crédito -->
+        <div class="credit-line-card">
+          <div class="credit-line-title">Línea de crédito</div>
+          <div class="credit-line-total">Total: $2,500.00</div>
+          <div class="credit-line-breakdown">
+            <span>Consumida: <b>$2,086.90</b></span>
+            <span style="color:#ef4444;">Disponible: <b>-$388.86</b></span>
+          </div>
+        </div>
+
+        <!-- Botón Oficial: Estado de cuenta -->
+        <button class="btn-estado-cuenta-official" onclick="window.UyapaySimulator.openAccountStatus()">
+          Estado de cuenta
+        </button>
+
+        <!-- Gráfico Deuda vencida vs deuda por vencer -->
+        <div class="debt-chart-card">
+          <div class="debt-chart-title">Deuda vencida vs deuda por vencer (en $)</div>
+          <div class="pie-chart-wrap">
+            <div class="pie-chart-circle" style="background: conic-gradient(#f59e0b 0% 72%, #e5e7eb 72% 100%);">
+              <div class="pie-chart-slice-label label-vencida">1,500.00</div>
+              <div class="pie-chart-slice-label label-por-vencer">586.90</div>
+            </div>
+          </div>
+          <div class="pie-chart-legend">
+            <div class="legend-item"><span class="legend-dot dot-yellow"></span> 72% de deuda vencida ($1,500.00)</div>
+            <div class="legend-item"><span class="legend-dot dot-grey"></span> 28% de deuda por vencer ($586.90)</div>
+          </div>
+        </div>
+
+        <!-- Lista de Pagos Pendientes -->
+        <div class="pending-debts-list-wrap">
+          <div class="pending-debts-header">Pagos pendientes</div>
+          <div class="pending-debt-item">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; color:#111827; font-size:13px;">F001-00055048</span>
+              <span style="font-weight:800; color:#ef4444; font-size:13.5px;">$586.90</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:11px; color:#6b7280;">
+              <span>Emitido: 31-jul-2026</span>
+              <span style="color:#b45309; font-weight:600;">Vence el 10-oct-2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.6.2 PANTALLA OFICIAL: ESTADO DE CUENTA (mis clientes-detalle del cliente-estado de cuenta.png) ================= -->
+  <div class="screen" id="s-estado-cuenta" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-cliente-detalle')">‹</span>
+      <span class="visit-header-title">Estado de cuenta</span>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding:12px 14px 70px;">
+      <!-- Hoja Oficial de Estado de Cuenta UYAPAY -->
+      <div class="account-status-paper-card">
+        <div class="account-status-logo-header">
+          <img src="images/logo_solar_sin_fondo.png" alt="UYAPAY Logo" style="height:26px;" />
+        </div>
+        <div class="account-status-main-title">ESTADO DE CUENTA</div>
+
+        <div class="account-status-field-row">
+          <span class="as-lbl">Cliente</span>
+          <span class="as-val">[TODOS]</span>
+        </div>
+        <div class="account-status-divider"></div>
+
+        <div class="account-status-field-row">
+          <span class="as-lbl">Fecha de emisión</span>
+          <span class="as-val">10-sept-26</span>
+        </div>
+        <div class="account-status-divider"></div>
+
+        <div class="account-status-field-row">
+          <span class="as-lbl" style="color:#f59e0b; font-weight:700;">Total deuda vencida</span>
+          <span class="as-val" style="color:#f59e0b; font-weight:800;">$1,500.00</span>
+        </div>
+        <div style="text-align:right; font-size:11px; color:#f59e0b; margin-top:-4px; margin-bottom:6px;">S/0.00</div>
+        <div class="account-status-divider"></div>
+
+        <div class="account-status-field-row">
+          <span class="as-lbl">Total deuda por vencer</span>
+          <span class="as-val" style="font-weight:700;">$586.90</span>
+        </div>
+        <div style="text-align:right; font-size:11px; color:#6b7280; margin-top:-4px; margin-bottom:6px;">$0.00</div>
+        <div class="account-status-divider"></div>
+
+        <div class="account-status-field-row">
+          <span class="as-lbl">Línea de crédito disponible</span>
+          <span class="as-val" style="font-weight:700; color:#ef4444;">-$388.86</span>
+        </div>
+        <div class="account-status-divider" style="border-width:2px;"></div>
+
+        <!-- Documento en Mora / Vencimiento -->
+        <div style="padding:8px 0;">
+          <div style="font-size:12.5px; font-weight:700; color:#111827;">
+            F001-00055048 <span style="font-size:11.5px; font-weight:500; color:#6b7280;">(Vence el 10-oct-26)</span>
+          </div>
+          <div style="font-size:11px; color:#4b5563; margin-top:2px;">CONSTRUCTORA VIAL PERÚ S.A.C.</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:11.5px;">
+            <span style="color:#6b7280;">F001-00055048<br>Emitido el 31-jul-26</span>
+            <span style="font-size:13px; font-weight:700;">$586.90</span>
+          </div>
+          <div style="text-align:right; margin-top:6px;">
+            <span style="font-size:12px; color:#b45309; font-weight:600;">Saldo: </span>
+            <span style="font-size:14px; font-weight:800; color:#b45309;">$586.90</span>
+          </div>
+        </div>
+
+        <!-- Recuadro de Auditoría para CP-05 -->
+        <div class="audit-verification-card" style="margin-top:14px;">
+          <div style="font-size:12px; font-weight:800; color:#1e40af; margin-bottom:4px;">📋 Auditoría CP-05: Identifica la factura de USD 586.90</div>
+          <p style="font-size:11px; color:#4b5563; margin-bottom:8px;">Registra en el recuadro el número de factura que presenta la deuda de USD 586.90:</p>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="cp05-factura-input" class="form-input" placeholder="Ej: F001-55048" value="F001-55048" style="flex:1; padding:7px 10px; font-size:13px;" />
+            <button class="brand-btn-yellow" style="padding:7px 14px; font-size:12px; white-space:nowrap;" onclick="window.UyapaySimulator.submitCp05Factura()">
+              Registrar Factura
+            </button>
+          </div>
+        </div>
+
+        <!-- Selector PDF / Imagen -->
+        <div class="account-status-toggle-row">
+          <span style="font-size:12px; color:#6b7280;">PDF</span>
+          <div class="toggle-pill-round">
+            <span class="toggle-dot-active"></span>
+          </div>
+          <span style="font-size:12px; font-weight:700; color:#111827;">Imagen</span>
+        </div>
+
+        <!-- Botón Compartir -->
+        <button class="btn-share-account-status" onclick="window.UyapaySimulator.hint('Compartiendo estado de cuenta en formato imagen...')">
+          Compartir estado de cuenta
+        </button>
       </div>
     </div>
   </div>
@@ -726,6 +1019,25 @@
 
     <!-- Lista de Documentos -->
     <div style="flex:1; overflow-y:auto; padding-bottom:70px;" id="drawer-docs-list">
+      <!-- Doc CP-05: F001-00055048 Constructora Vial Perú SAC -->
+      <div class="doc-item-card" onclick="window.UyapaySimulator.openDocOptions('F001-00055048')">
+        <div class="doc-icon-circle">F</div>
+        <div class="doc-item-body">
+          <div class="doc-item-top-row">
+            <span class="doc-item-client">CONSTRUCTORA VIAL PERÚ S.A.C.</span>
+            <span class="doc-item-amount">$1,343.98</span>
+          </div>
+          <div class="doc-item-mid-row">
+            <span>F001-00055048</span>
+            <span style="color:#22c55e;">●</span>
+          </div>
+          <div class="doc-item-bot-row">
+            <span class="doc-emit-date">Emitido el 31-08-2026</span>
+            <span class="doc-due-date" style="color:#ef4444;">Venció el 31-08-2026</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Doc 1 -->
       <div class="doc-item-card" onclick="window.UyapaySimulator.hint('Detalle de comprobante F001-00055172')">
         <div class="doc-icon-circle">F</div>
@@ -819,6 +1131,152 @@
             <span class="doc-due-date">Venció el 07-09-2026</span>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 2.1.7.1 PANTALLA OFICIAL: DETALLE DE FACTURA (documentos electrónicos-facturas-ver documento1.png y 2.png) ================= -->
+  <div class="screen" id="s-factura-detalle" style="position:relative; overflow:hidden;">
+    <div class="topbar-app brand-yellow-bar">
+      <span class="menu-icon" onclick="window.UyapaySimulator.go('s-documentos-electronicos')">‹</span>
+      <span class="visit-header-title">Factura</span>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding:14px 14px 75px;">
+      <!-- Tarjeta Principal de Cabecera -->
+      <div class="invoice-detail-card">
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Nro. de documento</span>
+          <span class="inv-val" id="inv-det-doc-num">F001-00055048</span>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Estado</span>
+          <span class="inv-val" style="color:#22c55e; font-weight:700;">Aprobado</span>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Emitido el</span>
+          <div style="text-align:right;">
+            <div class="inv-val">31 de agosto de 2026</div>
+            <div style="font-size:10.5px; color:#6b7280;">10 días transcurridos</div>
+          </div>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Venció el</span>
+          <div style="text-align:right;">
+            <div class="inv-val">31 de agosto de 2026</div>
+            <div style="font-size:10.5px; color:#6b7280;">10 días transcurridos</div>
+          </div>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Condición de pago</span>
+          <span class="inv-val">Contado</span>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Nro. de pedido</span>
+          <span class="inv-val">001-005307</span>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Monto</span>
+          <span class="inv-val" style="font-weight:700;">$1,343.98</span>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Pago</span>
+          <span class="inv-val">$1,140.00</span>
+        </div>
+        <div class="invoice-divider"></div>
+
+        <div class="invoice-field-row">
+          <span class="inv-lbl">Deuda</span>
+          <span class="inv-val" style="font-weight:700; color:#ef4444;">$203.98</span>
+        </div>
+      </div>
+
+      <!-- Sección Detalle de Productos -->
+      <div class="invoice-section-title">Detalle</div>
+      <div class="invoice-products-card">
+        <div class="inv-prod-header-row">
+          <span>Cantidad</span>
+          <span>Producto</span>
+        </div>
+        <div style="font-size:11px; font-weight:700; color:#16a34a; margin:4px 0 2px;">Entregados</div>
+        
+        <div class="inv-prod-row">
+          <div class="inv-prod-qty">✓ 8</div>
+          <div class="inv-prod-desc">723328 : SPIRAX S2 A 80W/90 (BAL 5 GLNS)</div>
+        </div>
+        <div class="invoice-divider" style="margin:4px 0;"></div>
+
+        <div class="inv-prod-row">
+          <div class="inv-prod-qty">✓ 4</div>
+          <div class="inv-prod-desc">723428 : SPIRAX S2 A 85W/140 (BAL 5 GLNS)</div>
+        </div>
+      </div>
+
+      <!-- Sección Movimientos (RC RE020-021740) -->
+      <div class="invoice-section-title">Movimientos</div>
+      <div class="invoice-movimientos-wrap">
+        <!-- Movimiento 1: Factura -->
+        <div class="mov-card">
+          <div class="doc-icon-circle">F</div>
+          <div class="mov-body">
+            <div class="mov-top-row">
+              <span class="mov-code">F001-00055048 <span style="color:#22c55e;">●</span></span>
+              <span class="mov-amount">$1,343.98</span>
+            </div>
+            <div class="mov-bot-row">
+              <span>Emitido el 31-08-2026</span>
+              <span style="color:#15803d; font-weight:600;">Aprobado</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Movimiento 2: Recibo de Cobranza (RC) -->
+        <div class="mov-card">
+          <div class="doc-icon-circle rc-circle">RC</div>
+          <div class="mov-body">
+            <div class="mov-top-row">
+              <span class="mov-code">RE020-021740 <span style="color:#22c55e;">●</span></span>
+              <span class="mov-amount">$1,140.00</span>
+            </div>
+            <div class="mov-bot-row">
+              <span>Emitido el 31-08-2026</span>
+              <span style="color:#15803d; font-weight:600;">Aprobado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recuadro de Auditoría para CP-05 -->
+      <div class="audit-verification-card" style="margin-top:16px;">
+        <div style="font-size:12px; font-weight:800; color:#1e40af; margin-bottom:4px;">📋 Auditoría CP-05: Identifica el Recibo de Cobranza (RC)</div>
+        <p style="font-size:11px; color:#4b5563; margin-bottom:8px;">Identifica en la sección de movimientos el número del recibo de cobranza emitido y regístralo:</p>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="cp05-rc-input" class="form-input" placeholder="Ej: RE020-021740" value="RE020-021740" style="flex:1; padding:7px 10px; font-size:13px;" />
+          <button class="brand-btn-yellow" style="padding:7px 14px; font-size:12px; white-space:nowrap;" onclick="window.UyapaySimulator.submitCp05RC()">
+            Registrar RC y Finalizar Caso
+          </button>
+        </div>
+      </div>
+
+      <!-- Botón Avalar Deuda -->
+      <div style="margin-top:16px;">
+        <button class="brand-btn-yellow" onclick="window.UyapaySimulator.hint('Opción: Avalar deuda por asesor comercial')">
+          Avalar deuda
+        </button>
       </div>
     </div>
   </div>
@@ -972,23 +1430,25 @@
         <!-- Dropdown Cliente -->
         <div class="form-select-card" style="margin-bottom:10px;">
           <select id="sel-outroute-client" class="form-select-card-native" onchange="window.UyapaySimulator.onOutRouteClientChange(this.value)">
-            <option value="Repuestos Central Chincha" selected>REPUESTOS CENTRAL CHINCHA (20601928415)</option>
+            <option value="Comercial Vega Hnos." selected>COMERCIAL VEGA HNOS. (20451298412)</option>
+            <option value="Repuestos Central Chincha">REPUESTOS CENTRAL CHINCHA (20601928415)</option>
             <option value="Autopartes El Rápido">AUTOPARTES EL RÁPIDO (20551928410)</option>
             <option value="Servicentro San Jerónimo">SERVICENTRO SAN JERÓNIMO</option>
             <option value="Lubricantes del Sur">LUBRICANTES DEL SUR</option>
           </select>
-          <span class="form-select-card-val" id="lbl-outroute-client">REPUESTOS CENTRAL CHINCHA (20601928415)</span>
+          <span class="form-select-card-val" id="lbl-outroute-client">COMERCIAL VEGA HNOS. (20451298412)</span>
           <span class="form-select-card-chevron">∨</span>
         </div>
 
         <!-- Dropdown Dirección -->
         <div class="form-select-card" style="margin-bottom:4px;">
           <select id="sel-outroute-address" class="form-select-card-native" onchange="window.UyapaySimulator.onOutRouteAddressChange(this.value)">
-            <option value="CALLE COMERCIO 120 - CHINCHA" selected>CALLE COMERCIO 120 - CHINCHA</option>
+            <option value="CALLE MERCADERES 301" selected>CALLE MERCADERES 301</option>
+            <option value="CALLE COMERCIO 120 - CHINCHA">CALLE COMERCIO 120 - CHINCHA</option>
             <option value="JR. PIEROLA 540">JR. PIEROLA 540</option>
             <option value="AV. INDUSTRIAL 100">AV. INDUSTRIAL 100</option>
           </select>
-          <span class="form-select-card-val" id="lbl-outroute-address">CALLE COMERCIO 120 - CHINCHA</span>
+          <span class="form-select-card-val" id="lbl-outroute-address">CALLE MERCADERES 301</span>
           <span class="form-select-card-chevron">∨</span>
         </div>
       </div>
@@ -1013,10 +1473,18 @@
           </label>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f3f4f6;">
           <span style="font-size:13px; font-weight:500; color:#374151;">Pedidos</span>
           <label class="switch">
             <input type="checkbox" id="chk-motivo-pedidos" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+          <span style="font-size:13px; font-weight:500; color:#374151;">Cobranza</span>
+          <label class="switch">
+            <input type="checkbox" id="chk-motivo-cobranzas" checked />
             <span class="slider"></span>
           </label>
         </div>
@@ -1843,6 +2311,7 @@
           <select id="confirm-address-select" class="form-select">
             <option value="principal">AV. TOMAS TUYRUTUPAC 412 (Punto de venta / Visita)</option>
             <option value="almacen">ALMACÉN (a 600m de punto de venta)</option>
+            <option value="santa_marta">CALLE SANTA MARTA 205 (Almacén / Entrega)</option>
           </select>
         </div>
 
@@ -2277,6 +2746,68 @@
             <span style="font-size:13px; color:#9ca3af; margin-left:4px;">›</span>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL BOTTOM SHEET: ACCIONES DE FACTURA (documentos electrónicos-facturas.png) ================= -->
+  <div class="modal-overlay" id="docOptionsModal">
+    <div class="bottom-sheet doc-options-sheet-container">
+      <div class="doc-options-sheet-header">
+        <span class="doc-options-title" id="doc-options-modal-code">F001-00055048</span>
+        <span class="doc-options-close" onclick="window.UyapaySimulator.closeDocOptions()">✕</span>
+      </div>
+      <div class="doc-option-item" onclick="window.UyapaySimulator.openInvoiceDetail('F001-00055048')">
+        <div>
+          <div class="doc-option-title">Ver documento</div>
+          <div class="doc-option-sub">Obtenga más información del documento.</div>
+        </div>
+        <span class="doc-option-chevron">›</span>
+      </div>
+      <div class="doc-option-divider"></div>
+      <div class="doc-option-item" onclick="window.UyapaySimulator.hint('Generando y compartiendo archivo PDF...')">
+        <div>
+          <div class="doc-option-title">Compartir archivo PDF</div>
+          <div class="doc-option-sub">Comparta el documento en formato PDF.</div>
+        </div>
+        <span class="doc-option-chevron">›</span>
+      </div>
+      <div class="doc-option-divider"></div>
+      <div class="doc-option-item" onclick="window.UyapaySimulator.hint('Generando y compartiendo archivo XML...')">
+        <div>
+          <div class="doc-option-title">Compartir archivo XML</div>
+          <div class="doc-option-sub">Comparta el documento en formato XML.</div>
+        </div>
+        <span class="doc-option-chevron">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL BOTTOM SHEET: MOTIVO DE NO EMISIÓN DE PEDIDO (CP-08) ================= -->
+  <div class="modal-overlay" id="noOrderModal">
+    <div class="bottom-sheet" style="padding:16px 18px 24px;">
+      <div class="bs-header">
+        <span style="font-size:13px; font-weight:800; letter-spacing:0.5px;">MOTIVO DE NO EMISIÓN DE PEDIDO</span>
+        <span class="close-btn" onclick="window.UyapaySimulator.closeNoOrderModal()">✕</span>
+      </div>
+      <div style="padding:10px 0;">
+        <p style="font-size:12px; color:#4b5563; margin-bottom:12px; line-height:1.4;">
+          Para cerrar la visita sin registrar un pedido o cotización, debes seleccionar el motivo justificado de no venta:
+        </p>
+        <div class="form-field-group" style="margin-bottom:14px;">
+          <label class="form-field-label">Motivo justificado:</label>
+          <select id="sel-no-order-reason" class="form-select" style="padding:9px 10px; font-size:13px;">
+            <option value="">-- Seleccionar motivo oficial --</option>
+            <option value="Cliente solo cotiza" selected>Cliente solo cotiza</option>
+            <option value="Stock suficiente en tienda">Stock suficiente en tienda</option>
+            <option value="Precios de competencia más convenientes">Precios de competencia más convenientes</option>
+            <option value="No autoriza compra en la fecha">No autoriza compra en la fecha</option>
+            <option value="Encargado ausente">Encargado de compras ausente</option>
+          </select>
+        </div>
+        <button class="login-btn" onclick="window.UyapaySimulator.submitNoOrderReason()">
+          Completar y Finalizar Visita
+        </button>
       </div>
     </div>
   </div>

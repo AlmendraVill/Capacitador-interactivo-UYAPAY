@@ -658,63 +658,18 @@
    * Incluye filtro anti-repetición respecto al último intento del asesor.
    */
   function selectFiveEvaluationCases() {
-    const user = Auth.getCurrentUser();
-    const historyKey = user ? `uyapay_last_cases_${user.username.toLowerCase()}` : 'uyapay_last_cases';
-    let recentCaseIds = [];
-    try {
-      recentCaseIds = JSON.parse(localStorage.getItem(historyKey) || '[]');
-    } catch(e) {}
+    // Casos Oficiales de Evaluación Práctica UYAPAY Asesor B2C
+    // Secuencia fija sin shuffle (CP-05 a CP-09)
+    const fixedEvaluationCaseIds = ['case-cp05', 'case-cp06', 'case-cp07', 'case-cp08', 'case-cp09'];
+    const selectedCases = fixedEvaluationCaseIds
+      .map(id => Cases.find(c => c.id === id || c.code === id.replace('case-', '').toUpperCase() || (c.aliases && c.aliases.includes(id))))
+      .filter(Boolean);
 
-    // Definición de estratos temáticos oficiales
-    const strata = [
-      // Estrato 1: Venta regular y catálogo base
-      ['case-1', 'case-2', 'case-3', 'case-4'],
-      // Estrato 2: Condiciones especiales de pago, listas y multi-marca
-      ['case-6', 'case-8', 'case-9', 'case-10', 'case-11', 'case-14'],
-      // Estrato 3: Políticas promocionales y descuentos de escala
-      ['case-7', 'case-20', 'case-21'],
-      // Estrato 4: Procedimientos de visita, historial y excepciones de ruta
-      ['case-15', 'case-16', 'case-17', 'case-22'],
-      // Estrato 5: Cobranza vencida, cotizaciones Tipo 3 y liquidación de recaudación
-      ['case-5', 'case-18', 'case-19', 'case-23']
-    ];
-
-    const selectedCases = [];
-    const chosenIds = [];
-
-    strata.forEach((stratumIds) => {
-      // Filtrar candidatos disponibles en el catálogo activo
-      const candidates = stratumIds
-        .map(id => Cases.find(c => c.id === id))
-        .filter(c => c && c.active !== false);
-
-      if (candidates.length === 0) return;
-
-      // Priorizar candidatos que no se hayan presentado en la última evaluación del asesor
-      let pool = candidates.filter(c => !recentCaseIds.includes(c.id));
-      if (pool.length === 0) pool = candidates;
-
-      // Selección aleatoria dentro del estrato
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-      selectedCases.push(chosen);
-      chosenIds.push(chosen.id);
-    });
-
-    // Guardar para evitar repetición inmediata en el próximo intento
-    try {
-      localStorage.setItem(historyKey, JSON.stringify(chosenIds));
-    } catch(e) {}
-
-    // En caso de que algún estrato no complete 5 (fallback de seguridad)
-    if (selectedCases.length < 5) {
-      const remaining = Cases.filter(c => !chosenIds.includes(c.id) && c.active !== false);
-      while (selectedCases.length < 5 && remaining.length > 0) {
-        const extraIdx = Math.floor(Math.random() * remaining.length);
-        selectedCases.push(remaining.splice(extraIdx, 1)[0]);
-      }
+    if (selectedCases.length === 5) {
+      return selectedCases;
     }
-
-    return selectedCases.slice(0, 5);
+    // Fallback de seguridad si no se encuentran
+    return Cases.slice(0, 5);
   }
 
   function startExam() {

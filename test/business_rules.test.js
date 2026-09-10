@@ -726,4 +726,163 @@ describe('9. Navegación del Plan de Visitas y Bottom Sheet Oficial de Direccion
   });
 });
 
+describe('10. Reglas y Flujos de Solución de los 5 Casos de Evaluación Oficiales (CP-05 a CP-09)', () => {
+  // CP-05
+  test('CP-05: Consulta de documentos electrónicos y estado de cuenta (Constructora Vial Perú SAC)', () => {
+    const cp05 = CASES.find(c => c.id === 'case-cp05' || c.code === 'CP-05');
+    assert.ok(cp05, 'Caso CP-05 debe estar definido en CASES');
+    assert.strictEqual(cp05.rules.length, 6, 'CP-05 debe contener exactamente 6 reglas');
+
+    // Regla 0: OPEN_CUSTOMER_PROFILE
+    assert.strictEqual(cp05.rules[0].validate({ clientName: 'Constructora Vial Perú SAC' }), true);
+    assert.strictEqual(cp05.rules[0].validate({ clientName: 'Ferretería Central' }), false);
+
+    // Regla 1: VIEW_ACCOUNT_STATUS
+    assert.strictEqual(cp05.rules[1].validate({ viewed: true }), true);
+    assert.strictEqual(cp05.rules[1].validate({ viewed: false }), false);
+
+    // Regla 2: SUBMIT_INVOICE_AUDIT (F001-55048)
+    assert.strictEqual(cp05.rules[2].validate({ invoiceNumber: 'F001-55048' }), true);
+    assert.strictEqual(cp05.rules[2].validate({ invoiceNumber: 'F001-00055048' }), true);
+    assert.strictEqual(cp05.rules[2].validate({ invoiceNumber: 'F001-99999' }), false);
+
+    // Regla 3: OPEN_ELECTRONIC_DOCS
+    assert.strictEqual(cp05.rules[3].validate({ opened: true }), true);
+
+    // Regla 4: VIEW_INVOICE_DETAIL (F001-00055048)
+    assert.strictEqual(cp05.rules[4].validate({ invoiceNumber: 'F001-00055048' }), true);
+    assert.strictEqual(cp05.rules[4].validate({ invoiceNumber: 'F001-00012345' }), false);
+
+    // Regla 5: SUBMIT_RC_AUDIT (RE020-021740)
+    assert.strictEqual(cp05.rules[5].validate({ rcNumber: 'RE020-021740' }), true);
+    assert.strictEqual(cp05.rules[5].validate({ rcNumber: 'RE020-021741' }), false);
+  });
+
+  // CP-06
+  test('CP-06: Consulta de historial de visitas antes de venta (Bodega y Ferretería Dos Hermanos)', () => {
+    const cp06 = CASES.find(c => c.id === 'case-cp06' || c.code === 'CP-06');
+    assert.ok(cp06, 'Caso CP-06 debe estar definido en CASES');
+    assert.strictEqual(cp06.rules.length, 2, 'CP-06 debe contener exactamente 2 reglas');
+
+    // Regla 0: OPEN_CUSTOMER_PROFILE
+    assert.strictEqual(cp06.rules[0].validate({ clientName: 'Bodega y Ferretería Dos Hermanos' }), true);
+    assert.strictEqual(cp06.rules[0].validate({ consulted: true }), true);
+    assert.strictEqual(cp06.rules[0].validate({ clientName: 'Inversiones Islay' }), false);
+
+    // Regla 1: SUBMIT_HISTORY_DATE (14/08/2026)
+    assert.strictEqual(cp06.rules[1].validate({ date: '14/08/2026' }), true);
+    assert.strictEqual(cp06.rules[1].validate({ answer: '14/08/2026' }), true);
+    assert.strictEqual(cp06.rules[1].validate({ date: '18/07/2026' }), false, 'Debe rechazar la visita previa no reciente');
+  });
+
+  // CP-07
+  test('CP-07: Gestión de visita fuera de geocerca mediante visita telefónica (Distribuidora Lubrimotor EIRL)', () => {
+    const cp07 = CASES.find(c => c.id === 'case-cp07' || c.code === 'CP-07');
+    assert.ok(cp07, 'Caso CP-07 debe estar definido en CASES');
+    assert.strictEqual(cp07.rules.length, 5, 'CP-07 debe contener exactamente 5 reglas');
+
+    // Regla 0: SELECT_CLIENT
+    assert.strictEqual(cp07.rules[0].validate({ clientName: 'Distribuidora Lubrimotor EIRL' }), true);
+    assert.strictEqual(cp07.rules[0].validate({ clientName: 'Otro Cliente' }), false);
+
+    // Regla 1: SELECT_ACTION (iniciar via telefónica, no presencial)
+    assert.strictEqual(cp07.rules[1].validate({ action: 'iniciar', isPhone: true }), true);
+    assert.strictEqual(cp07.rules[1].validate({ action: 'iniciar', visitType: 'telefonica' }), true);
+    assert.strictEqual(cp07.rules[1].validate({ action: 'iniciar', isPhone: false, visitType: 'presencial' }), false, 'Debe rechazar visita presencial fuera de geocerca');
+
+    // Regla 2: CREATE_ORDER_CONFIG (Crédito 30d, Lista 3, Neumáticos Michelin)
+    assert.strictEqual(cp07.rules[2].validate({ paymentCondition: 'credito_30', priceList: '3', line: 'neumaticos', brand: 'michelin' }), true);
+    assert.strictEqual(cp07.rules[2].validate({ paymentCondition: 'contado', priceList: '3', line: 'neumaticos', brand: 'michelin' }), false);
+    assert.strictEqual(cp07.rules[2].validate({ paymentCondition: 'credito_30', priceList: '1', line: 'neumaticos', brand: 'michelin' }), false);
+
+    // Regla 3: ADD_PRODUCT (2 cajas Michelin Energy XM2+)
+    assert.strictEqual(cp07.rules[3].validate({ product: 'Michelin Energy XM2+', quantity: 2 }), true);
+    assert.strictEqual(cp07.rules[3].validate({ product: 'Michelin Energy XM2+', quantity: 9 }), false);
+
+    // Regla 4: SUBMIT_ORDER
+    assert.strictEqual(cp07.rules[4].validate({ confirmed: true }), true);
+  });
+
+  // CP-08
+  test('CP-08: Registro de precio de competencia (Transportes Pepito SRL)', () => {
+    const cp08 = CASES.find(c => c.id === 'case-cp08' || c.code === 'CP-08');
+    assert.ok(cp08, 'Caso CP-08 debe estar definido en CASES');
+    assert.strictEqual(cp08.rules.length, 3, 'CP-08 debe contener exactamente 3 reglas');
+
+    // Regla 0: SUBMIT_PRICE_TRACKING (Castrol Mineral 20W50 con precio numérico y foto)
+    assert.strictEqual(cp08.rules[0].validate({ price: 38.0, hasPhoto: true }), true);
+    assert.strictEqual(cp08.rules[0].validate({ price: 0, hasPhoto: true }), false, 'Debe rechazar foto sin precio numérico');
+    assert.strictEqual(cp08.rules[0].validate({ price: 38.0, hasPhoto: false }), false, 'Debe rechazar precio sin foto');
+
+    // Regla 1: SELECT_NO_ORDER_REASON
+    assert.strictEqual(cp08.rules[1].validate({ reason: 'Cliente solo cotiza' }), true);
+    assert.strictEqual(cp08.rules[1].validate({ reason: '' }), false);
+
+    // Regla 2: FINISH_VISIT
+    assert.strictEqual(cp08.rules[2].validate({ completed: true }), true);
+  });
+
+  // CP-09
+  test('CP-09: Visita fuera de ruta con pedido y cobranza (Comercial Vega Hnos.)', () => {
+    const cp09 = CASES.find(c => c.id === 'case-cp09' || c.code === 'CP-09');
+    assert.ok(cp09, 'Caso CP-09 debe estar definido en CASES');
+    assert.strictEqual(cp09.rules.length, 8, 'CP-09 debe contener exactamente 8 reglas');
+
+    // Regla 0: ADD_OUT_OF_ROUTE_CLIENT (Comercial Vega Hnos. con Pedido y Cobranza)
+    assert.strictEqual(cp09.rules[0].validate({
+      clientName: 'Comercial Vega Hnos.',
+      tasks: { pedidos: true, cobranza: true }
+    }), true);
+    assert.strictEqual(cp09.rules[0].validate({
+      clientName: 'Comercial Vega Hnos.',
+      tasks: { pedidos: true, cobranza: false }
+    }), false, 'Debe requerir tarea de cobranza');
+    assert.strictEqual(cp09.rules[0].validate({
+      clientName: 'Otro Cliente',
+      tasks: { pedidos: true, cobranza: true }
+    }), false);
+
+    // Regla 1: SELECT_ACTION
+    assert.strictEqual(cp09.rules[1].validate({ action: 'iniciar' }), true);
+
+    // Regla 2: CREATE_ORDER_CONFIG (Contado, Lista 3, Lubricantes Shell)
+    assert.strictEqual(cp09.rules[2].validate({ paymentCondition: 'contado', priceList: '3', line: 'lubricantes', brand: 'shell' }), true);
+    assert.strictEqual(cp09.rules[2].validate({ paymentCondition: 'credito_30', priceList: '3', line: 'lubricantes', brand: 'shell' }), false);
+
+    // Regla 3: ADD_PRODUCT (15 baldes Shell Helix HX7 con promoción de 3 gorros)
+    assert.strictEqual(cp09.rules[3].validate({ product: 'Shell Helix HX7 10W/40', quantity: 15, promoDiscount: true }), true);
+    assert.strictEqual(cp09.rules[3].validate({ product: 'Shell Helix HX7 10W/40', quantity: 10, promoDiscount: true }), false);
+
+    // Regla 4: SUBMIT_ORDER (Entrega 14 de septiembre en Calle Santa Marta 205)
+    assert.strictEqual(cp09.rules[4].validate({
+      confirmed: true,
+      estimatedDeliveryDate: '2026-09-14',
+      deliveryAddressText: 'Calle Santa Marta 205'
+    }), true);
+    assert.strictEqual(cp09.rules[4].validate({
+      confirmed: true,
+      estimatedDeliveryDate: '2026-09-16',
+      deliveryAddressText: 'Calle Santa Marta 205'
+    }), false, 'Debe rechazar fecha de entrega incorrecta');
+    assert.strictEqual(cp09.rules[4].validate({
+      confirmed: true,
+      estimatedDeliveryDate: '2026-09-14',
+      deliveryAddressText: 'Av. Tomas Tuyrutupac 412'
+    }), false, 'Debe rechazar dirección que no sea Santa Marta 205');
+
+    // Regla 5: SUBMIT_PAYMENT_1_CASH (Efectivo Soles PEN 276 = USD 80)
+    assert.strictEqual(cp09.rules[5].validate({ method: 'efectivo', currency: 'PEN', amount: 276 }), true);
+    assert.strictEqual(cp09.rules[5].validate({ method: 'efectivo', currency: 'USD', amount: 80 }), false, 'Debe ser en soles');
+
+    // Regla 6: SUBMIT_PAYMENT_2_DEPOSIT (Depósito BCP USD 300)
+    assert.strictEqual(cp09.rules[6].validate({ method: 'deposito', bank: 'BCP', amount: 300 }), true);
+    assert.strictEqual(cp09.rules[6].validate({ method: 'deposito', bank: 'BBVA', amount: 300 }), false);
+
+    // Regla 7: SUBMIT_CONSOLIDATED_COBRANZA (Total USD 380 con 2 pagos)
+    assert.strictEqual(cp09.rules[7].validate({ totalAmount: 380, paymentCount: 2 }), true);
+    assert.strictEqual(cp09.rules[7].validate({ totalAmount: 200, paymentCount: 1 }), false);
+  });
+});
+
+
 

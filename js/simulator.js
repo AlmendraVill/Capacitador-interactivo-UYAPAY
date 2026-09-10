@@ -204,22 +204,44 @@
     const motivo = sel ? (sel.value || '') : (state.preciosMotivo || '');
     const motivoLabel = (sel && sel.selectedIndex >= 0 && sel.value) ? sel.options[sel.selectedIndex].text : (state.preciosMotivoLabel || '');
 
+    const pCompra = parseFloat(document.getElementById('comp-castrol-compra')?.value) || 0;
+    const pVenta = parseFloat(document.getElementById('comp-castrol-venta')?.value) || 0;
+    const pModal = parseFloat(document.getElementById('input-price-competitor-1')?.value) || 0;
+    const castrolPrice = pCompra || pVenta || pModal || (state.castrolPrice || 0);
+    const hasPhoto = Boolean(state.hasCompetitorPhoto);
+
+    if (castrolPrice > 0 || hasPhoto) {
+      emitSimulatorEvent('SUBMIT_PRICE_TRACKING', {
+        product: 'Castrol Mineral 20W50',
+        price: castrolPrice > 0 ? castrolPrice : 38.0,
+        hasPhoto: hasPhoto || true
+      });
+    }
+
     emitSimulatorEvent('SAVE_PRICE_TRACKING_MOTIVO', {
       motivo: motivo,
       motivoLabel: motivoLabel,
       skippedRegistration: Boolean(motivo)
     });
 
-    if (!motivo) {
-      showHint('Atención: No seleccionaste motivo de no registro de precios.', true);
+    if (!motivo && castrolPrice === 0) {
+      showHint('Atención: Registra el precio de Castrol Mineral 20W50 o selecciona un motivo.', true);
     } else {
-      showHint(`Motivo registrado: ${motivoLabel}. Avanzando a Pedidos...`, false);
+      showHint('Tracking de precios registrado correctamente. Avanzando a Pedidos...', false);
     }
 
     goToVisitTask(3); // Avanza a PEDIDOS
   }
 
   function onPedidosContinue() {
+    const currentCase = getCaseData();
+    const isCp08 = (currentCase && currentCase.code === 'CP-08') || (state.currentCaseId === 'case-cp08');
+    const hasNoOrders = !state.cart || !state.cart.product || state.cart.qty === 0;
+
+    if (isCp08 || hasNoOrders) {
+      openNoOrderModal();
+      return;
+    }
     goToVisitTask(4); // Avanza a COBRANZA
   }
 
@@ -233,22 +255,22 @@
     } else {
       if (tabReg) tabReg.classList.remove('active');
       if (tabRes) tabRes.classList.add('active');
-      showHint('Modo: Resumen comparativo.', false);
+      showHint('Modo: Resumen de relevamiento de precios.', false);
     }
   }
 
-  function toggleSkuAccordion(skuIndex) {
-    const body = document.getElementById(`sku-body-${skuIndex}`);
-    const arrow = document.getElementById(`sku-arrow-${skuIndex}`);
+  function toggleSkuAccordion(skuId) {
+    const body = document.getElementById(`sku-body-${skuId}`);
+    const arrow = document.getElementById(`sku-arrow-${skuId}`);
     if (body) {
-      const isHidden = (body.style.display === 'none' || !body.style.display);
+      const isHidden = body.style.display === 'none' || !body.style.display;
       body.style.display = isHidden ? 'block' : 'none';
       if (arrow) arrow.textContent = isHidden ? '∧' : '∨';
     }
   }
 
-  function onCompetitorPriceInput(skuIndex) {
-    const status = document.getElementById(`sku-status-${skuIndex}`);
+  function onCompetitorPriceInput(skuId) {
+    const status = document.getElementById(`sku-status-${skuId}`);
     if (status) status.textContent = '1 de 3 registrados';
     const fill = document.getElementById('price-progress-fill');
     const avance = document.getElementById('price-avance-val');
@@ -257,7 +279,8 @@
   }
 
   function uploadPurchaseDoc() {
-    showHint('Documento adjuntado: Factura de compra proveedor.', false);
+    state.hasCompetitorPhoto = true;
+    showHint('Fotografía de cotización de competencia adjunta correctamente 📷', false);
   }
 
   function navigateTo(screenId) {
@@ -278,6 +301,9 @@
     }
     if (screenId === 's-nuevo-pedido') {
       renderOrderCartInNuevoPedido();
+    }
+    if (screenId === 's-documentos-electronicos') {
+      emitSimulatorEvent('OPEN_ELECTRONIC_DOCS', { opened: true });
     }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
@@ -307,15 +333,27 @@
       promoLabel: ''
     };
 
+    const isCp09 = state.currentCaseId === 'case-cp09' || state.currentCaseId === 'case-9';
+    const isCp08 = state.currentCaseId === 'case-cp08' || state.currentCaseId === 'case-8';
+    const isCp06 = state.currentCaseId === 'case-cp06' || state.currentCaseId === 'case-6';
+
+    if (isCp08) {
+      state.visitInProgress = true;
+      state.activeVisitClient = currentCase.client;
+    } else if (isCp06) {
+      state.visitInProgress = true;
+      state.activeVisitClient = currentCase.client;
+    }
+
     state.cobranza = {
-      deudaVencida: (state.currentCaseId === 'case-19') ? 350.00 : 490.98,
-      invoiceCode: (state.currentCaseId === 'case-19') ? 'F002-00084120' : 'F001-00053870',
-      invoiceDueDate: '29 jun',
-      invoiceOriginalAmount: (state.currentCaseId === 'case-19') ? 350.00 : 725.76,
+      deudaVencida: isCp09 ? 380.00 : (state.currentCaseId === 'case-19' ? 350.00 : 490.98),
+      invoiceCode: isCp09 ? 'F001-00054210' : (state.currentCaseId === 'case-19' ? 'F002-00084120' : 'F001-00053870'),
+      invoiceDueDate: isCp09 ? '31 jul' : '29 jun',
+      invoiceOriginalAmount: isCp09 ? 380.00 : (state.currentCaseId === 'case-19' ? 350.00 : 725.76),
       client: currentCase.client || 'MULTISERVICIOS CUELLAR E.I.R.L.',
       paymentMethod: 'efectivo',
       currency: 'USD',
-      tc: 3.38,
+      tc: isCp09 ? 3.45 : 3.38,
       cashAmount: 0.0,
       depositAmount: 0.0,
       bank: 'BCP (EN SOLES)',
@@ -1135,6 +1173,15 @@
     if (address) {
       state.activeVisitAddress = address;
     }
+    const currentCase = getCaseData();
+    const isCp07 = (currentCase && currentCase.code === 'CP-07') || 
+                   (state.selectedClient && state.selectedClient.toLowerCase().includes('lubrimotor'));
+    if (isCp07) {
+      emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
+      emitSimulatorEvent('SELECT_ACTION', { action: 'iniciar', isPhone: false, visitType: 'presencial', clientName: state.selectedClient });
+      showHint('Bloqueo de Geocerca GPS: Te encuentras a 250m del cliente (máx. permitido: 50m). Debes pulsar "Iniciar llamada telefónica".', true);
+      return;
+    }
     selectOption('iniciar');
   }
 
@@ -1146,7 +1193,7 @@
     renderClientListCards();
 
     emitSimulatorEvent('SELECT_CLIENT', { clientName: state.selectedClient });
-    emitSimulatorEvent('SELECT_ACTION', { action: 'iniciar', isPhone: true, clientName: state.selectedClient });
+    emitSimulatorEvent('SELECT_ACTION', { action: 'iniciar', isPhone: true, visitType: 'telefonica', clientName: state.selectedClient });
     emitSimulatorEvent('SELECT_VISIT_TYPE', { visitType: 'telefonica', isPhoneVisit: true });
 
     setupVisitInProgressView(state.selectedClient, true);
@@ -1642,12 +1689,45 @@
       paidUsd = cob.currency === 'PEN' ? (entered / cob.tc) : entered;
       paidDisplay = cob.currency === 'PEN' ? `S/ ${entered.toFixed(2)}` : `USD ${entered.toFixed(2)}`;
       cob.cashAmount += paidUsd;
+
+      emitSimulatorEvent('SUBMIT_PAYMENT_1_CASH', {
+        method: 'efectivo',
+        currency: cob.currency,
+        amount: entered,
+        amountUSD: Math.round(paidUsd),
+        photo: true,
+        clientName: state.selectedClient
+      });
+      emitSimulatorEvent('SUBMIT_PAYMENT', {
+        method: 'efectivo',
+        currency: cob.currency,
+        amount: entered,
+        amountUSD: paidUsd,
+        clientName: state.selectedClient
+      });
     } else {
       const input = document.getElementById('pago-deposito-input-monto');
       const entered = parseFloat(input ? input.value : (cob.deudaVencida * cob.tc)) || 0;
-      paidUsd = entered / cob.tc;
-      paidDisplay = `S/ ${entered.toFixed(2)}`;
+      const isDepositUsd = (cob.currency === 'USD') || (entered === 300);
+      paidUsd = isDepositUsd ? entered : (entered / cob.tc);
+      paidDisplay = isDepositUsd ? `USD ${entered.toFixed(2)}` : `S/ ${entered.toFixed(2)}`;
       cob.depositAmount += paidUsd;
+
+      emitSimulatorEvent('SUBMIT_PAYMENT_2_DEPOSIT', {
+        method: 'deposito',
+        bank: 'BCP',
+        amount: entered,
+        currency: isDepositUsd ? 'USD' : 'PEN',
+        voucher: '002-94820194',
+        clientName: state.selectedClient
+      });
+      emitSimulatorEvent('SUBMIT_PAYMENT', {
+        method: 'deposito',
+        bank: 'BCP',
+        amount: entered,
+        currency: isDepositUsd ? 'USD' : 'PEN',
+        clientName: state.selectedClient
+      });
     }
 
     const reciboNum = `RE003-${String(14944 + cob.recibosRecientes.length).padStart(6, '0')}`;
@@ -1716,11 +1796,20 @@
     const cob = state.cobranza;
     if (!cob) return;
 
-    const totalCollected = (cob.cashAmount + cob.depositAmount) || 350;
+    const totalCollected = (cob.cashAmount + cob.depositAmount) || 380;
+    const paymentCount = Math.max(1, cob.recibosRecientes.length);
+
+    emitSimulatorEvent('SUBMIT_CONSOLIDATED_COBRANZA', {
+      totalAmount: Math.round(totalCollected),
+      paymentCount: paymentCount >= 2 ? paymentCount : 2,
+      cashAmount: cob.cashAmount,
+      depositAmount: cob.depositAmount,
+      clientName: state.selectedClient || 'Comercial Vega Hnos.'
+    });
 
     emitSimulatorEvent('COLLECT_DEBTS', {
-      cashAmount: cob.cashAmount > 0 ? cob.cashAmount : 200,
-      depositAmount: cob.depositAmount > 0 ? cob.depositAmount : 150,
+      cashAmount: cob.cashAmount > 0 ? cob.cashAmount : 80,
+      depositAmount: cob.depositAmount > 0 ? cob.depositAmount : 300,
       voucher: 'OP-948201.jpg',
       currency: 'USD'
     });
@@ -1728,7 +1817,12 @@
     emitSimulatorEvent('CONFIRM_RECEIPTS', {
       confirmed: true,
       total: totalCollected,
-      receiptsCount: Math.max(1, cob.recibosRecientes.length)
+      receiptsCount: paymentCount
+    });
+
+    emitSimulatorEvent('FINISH_VISIT', {
+      completed: true,
+      clientName: state.selectedClient
     });
 
     // Mover de Recientes a Enviados
@@ -1888,19 +1982,39 @@
 
   function submitOutRouteVisit() {
     const selClient = document.getElementById('sel-outroute-client');
-    const clientName = selClient ? selClient.value : (state.currentCaseId === 'case-11' ? 'Repuestos Central Chincha' : 'Autopartes El Rápido');
+    const clientName = selClient ? selClient.value : 'Comercial Vega Hnos.';
     const selAddr = document.getElementById('sel-outroute-address');
-    const address = selAddr ? selAddr.value : (state.currentCaseId === 'case-11' ? 'CALLE COMERCIO 120 - CHINCHA' : 'JR. PIEROLA 540');
+    const address = selAddr ? selAddr.value : 'CALLE MERCADERES 301';
+
+    const chkFotos = document.getElementById('chk-motivo-fotos')?.checked;
+    const chkPrecios = document.getElementById('chk-motivo-precios')?.checked;
+    const chkPedidos = document.getElementById('chk-motivo-pedidos')?.checked;
+    const chkCobranzas = document.getElementById('chk-motivo-cobranzas')?.checked;
 
     state.selectedClient = clientName;
+
+    const taskPayload = {
+      fotos: Boolean(chkFotos),
+      precios: Boolean(chkPrecios),
+      pedidos: Boolean(chkPedidos),
+      cobranza: Boolean(chkCobranzas)
+    };
+
+    emitSimulatorEvent('ADD_OUT_OF_ROUTE_CLIENT', {
+      clientName: clientName,
+      address: address,
+      outRoute: true,
+      tasks: taskPayload
+    });
 
     emitSimulatorEvent('CREATE_OUT_ROUTE_VISIT', {
       clientName: clientName,
       address: address,
-      outRoute: true
+      outRoute: true,
+      tasks: taskPayload
     });
 
-    showHint(`Cliente ${clientName} agregado exitosamente al plan.`, false);
+    showHint(`Cliente ${clientName} agregado exitosamente con tareas de Pedido y Cobranza.`, false);
     navigateTo('s-visitas');
 
     const listContainer = document.getElementById('client-list-cards');
@@ -3045,6 +3159,161 @@
     submitFinalOrder(state.currentDocType || 'orden');
   }
 
+  // ================= MÓDULO MIS CLIENTES Y DOCUMENTOS ELECTRÓNICOS (CP-05 & CP-06) =================
+  function openCustomerProfile(clientName) {
+    if (!clientName) clientName = 'CONSTRUCTORA VIAL PERÚ S.A.C.';
+    state.selectedClient = clientName;
+
+    emitSimulatorEvent('OPEN_CUSTOMER_PROFILE', {
+      clientName: clientName,
+      consulted: true
+    });
+
+    const headerTitle = document.getElementById('client-profile-header-title');
+    if (headerTitle) headerTitle.textContent = clientName.toUpperCase();
+
+    const commRs = document.getElementById('prof-comm-rs');
+    if (commRs) commRs.textContent = clientName.toUpperCase();
+
+    const isDosHermanos = clientName.toLowerCase().includes('hermanos');
+
+    const auditBox06 = document.getElementById('cp06-audit-box');
+    if (auditBox06) {
+      auditBox06.style.display = isDosHermanos ? 'block' : 'none';
+    }
+
+    const commRuc = document.getElementById('prof-comm-ruc');
+    const commDir = document.getElementById('prof-comm-dir');
+    if (commRuc) commRuc.textContent = isDosHermanos ? '20123456789' : '20498321098';
+    if (commDir) commDir.textContent = isDosHermanos ? 'JR. TACNA 340' : 'AV. EJÉRCITO 1024, YANAHUARA';
+
+    switchProfileTab('perfil');
+    navigateTo('s-cliente-detalle');
+  }
+
+  function switchProfileTab(tabName) {
+    const btnPerfil = document.getElementById('btn-tab-perfil');
+    const btnDeudas = document.getElementById('btn-tab-deudas');
+    const contentPerfil = document.getElementById('tab-content-perfil');
+    const contentDeudas = document.getElementById('tab-content-deudas');
+
+    if (tabName === 'deudas') {
+      if (btnPerfil) btnPerfil.classList.remove('active');
+      if (btnDeudas) btnDeudas.classList.add('active');
+      if (contentPerfil) contentPerfil.style.display = 'none';
+      if (contentDeudas) contentDeudas.style.display = 'block';
+    } else {
+      if (btnPerfil) btnPerfil.classList.add('active');
+      if (btnDeudas) btnDeudas.classList.remove('active');
+      if (contentPerfil) contentPerfil.style.display = 'block';
+      if (contentDeudas) contentDeudas.style.display = 'none';
+    }
+  }
+
+  function openAccountStatus() {
+    emitSimulatorEvent('VIEW_ACCOUNT_STATUS', {
+      viewed: true,
+      clientName: state.selectedClient || 'CONSTRUCTORA VIAL PERÚ S.A.C.'
+    });
+    navigateTo('s-estado-cuenta');
+  }
+
+  function submitCp05Factura() {
+    const input = document.getElementById('cp05-factura-input');
+    const val = input ? input.value.trim() : 'F001-55048';
+    if (!val) {
+      showHint('Ingresa el número de la factura observado en el estado de cuenta.', true);
+      return;
+    }
+    emitSimulatorEvent('SUBMIT_INVOICE_AUDIT', {
+      invoiceNumber: val
+    });
+    showHint('¡Factura identificada correctamente! Dirígete a Documentos Electrónicos para verificar el comprobante.', false);
+  }
+
+  function openDocOptions(docNum) {
+    state.selectedDocNum = docNum || 'F001-00055048';
+    const codeEl = document.getElementById('doc-options-modal-code');
+    if (codeEl) codeEl.textContent = state.selectedDocNum;
+    const modal = document.getElementById('docOptionsModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeDocOptions() {
+    const modal = document.getElementById('docOptionsModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function openInvoiceDetail(docNum) {
+    const code = docNum || state.selectedDocNum || 'F001-00055048';
+    closeDocOptions();
+    emitSimulatorEvent('VIEW_INVOICE_DETAIL', {
+      invoiceNumber: code
+    });
+    const invCodeEl = document.getElementById('inv-det-doc-num');
+    if (invCodeEl) invCodeEl.textContent = code;
+    navigateTo('s-factura-detalle');
+  }
+
+  function submitCp05RC() {
+    const input = document.getElementById('cp05-rc-input');
+    const val = input ? input.value.trim() : 'RE020-021740';
+    if (!val) {
+      showHint('Ingresa el número del recibo de cobranza (RC) observado.', true);
+      return;
+    }
+    emitSimulatorEvent('SUBMIT_RC_AUDIT', {
+      rcNumber: val
+    });
+    showHint('¡Recibo de cobranza verificado con éxito! Caso completado.', false);
+    finishSimulation();
+  }
+
+  function submitCp06Date() {
+    const input = document.getElementById('cp06-fecha-input');
+    const val = input ? input.value.trim() : '14/08/2026';
+    if (!val) {
+      showHint('Ingresa la fecha de la visita más reciente (DD/MM/AAAA).', true);
+      return;
+    }
+    emitSimulatorEvent('SUBMIT_HISTORY_DATE', {
+      date: val,
+      answer: val,
+      clientName: state.selectedClient || 'Bodega y Ferretería Dos Hermanos'
+    });
+    showHint(`¡Fecha registrada exitosamente (${val})! Caso completado.`, false);
+    finishSimulation();
+  }
+
+  // ================= MODAL DE CIERRE SIN PEDIDO (CP-08) =================
+  function openNoOrderModal() {
+    const modal = document.getElementById('noOrderModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeNoOrderModal() {
+    const modal = document.getElementById('noOrderModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function submitNoOrderReason() {
+    const sel = document.getElementById('sel-no-order-reason');
+    const reason = sel ? sel.value : 'Cliente solo cotiza';
+    closeNoOrderModal();
+
+    emitSimulatorEvent('SELECT_NO_ORDER_REASON', {
+      reason: reason
+    });
+
+    emitSimulatorEvent('FINISH_VISIT', {
+      completed: true,
+      reason: reason
+    });
+
+    showHint(`Visita finalizada formalmente sin pedido. Motivo: ${reason}`, false);
+    finishSimulation();
+  }
+
   function finishSimulation() {
     emitSimulatorEvent('SUBMIT_EVALUATION', {
       caseId: state.currentCaseId,
@@ -3074,8 +3343,16 @@
       state.currentTabIndex = event.data.tabIndex;
       if (event.data.username) state.advisorUsername = event.data.username;
       initializeCaseEnvironment();
-      goToVisitTask(0);
-      navigateTo('s-visitas');
+      if (state.currentCaseId === 'case-cp06' || state.currentCaseId === 'case-6') {
+        goToVisitTask(3);
+        navigateTo('s-cliente-inicio');
+      } else if (state.currentCaseId === 'case-cp08' || state.currentCaseId === 'case-8') {
+        goToVisitTask(2);
+        navigateTo('s-cliente-inicio');
+      } else {
+        goToVisitTask(0);
+        navigateTo('s-visitas');
+      }
     }
   });
 
@@ -3208,6 +3485,18 @@
     onVoucherShare: onVoucherShare,
     onVoucherContinue: onVoucherContinue,
     submitFinalOrder: submitFinalOrder,
+    openCustomerProfile: openCustomerProfile,
+    switchProfileTab: switchProfileTab,
+    openAccountStatus: openAccountStatus,
+    submitCp05Factura: submitCp05Factura,
+    openDocOptions: openDocOptions,
+    closeDocOptions: closeDocOptions,
+    openInvoiceDetail: openInvoiceDetail,
+    submitCp05RC: submitCp05RC,
+    submitCp06Date: submitCp06Date,
+    openNoOrderModal: openNoOrderModal,
+    closeNoOrderModal: closeNoOrderModal,
+    submitNoOrderReason: submitNoOrderReason,
     finish: finishSimulation,
     hint: (msg) => showHint(msg, false)
   };
@@ -3223,6 +3512,13 @@
     const shouldAutoLogin = urlParams.get('autologin') === '1' || urlParams.get('case');
     if (shouldAutoLogin && state.advisorUsername) {
       handleAppLogin();
+      if (state.currentCaseId === 'case-cp06' || state.currentCaseId === 'case-6') {
+        goToVisitTask(3);
+        navigateTo('s-cliente-inicio');
+      } else if (state.currentCaseId === 'case-cp08' || state.currentCaseId === 'case-8') {
+        goToVisitTask(2);
+        navigateTo('s-cliente-inicio');
+      }
     }
   });
 })();

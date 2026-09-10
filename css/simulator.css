@@ -4314,3 +4314,646 @@ input:checked + .slider:before {
   font-weight: 700;
   color: #111827;
 }
+
+/* ================= 23. ESTILOS OFICIALES: PERFIL DEL CLIENTE Y DEUDAS (mis clientes-detalle del cliente.png) ================= */
+.profile-tabs-header {
+  display: flex;
+  background: #ffffff;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.profile-tab-btn {
+  flex: 1;
+  text-align: center;
+  padding: 13px 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.profile-tab-btn.active {
+  color: #111827;
+}
+
+.profile-tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-yellow, #ffc82c);
+}
+
+.profile-customer-dropdown-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.profile-avatar-icon {
+  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-customer-select-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-select-clean {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 20px;
+}
+
+.select-arrow-down {
+  position: absolute;
+  right: 0;
+  pointer-events: none;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.profile-scoring-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-score-card {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.score-letter {
+  font-size: 26px;
+  font-weight: 900;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.score-line {
+  width: 32px;
+  height: 3px;
+  background: var(--primary-yellow, #ffc82c);
+  margin: 6px auto 0;
+  border-radius: 2px;
+}
+
+.profile-info-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.profile-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.profile-edit-link {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.profile-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.profile-info-item:last-child {
+  border-bottom: none;
+}
+
+.profile-info-item span {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.profile-info-item b {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* ================= 24. ESTILOS DEUDAS PENDIENTES Y ESTADO DE CUENTA ================= */
+.credit-line-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.credit-line-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.credit-line-total {
+  font-size: 20px;
+  font-weight: 900;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.credit-line-breakdown {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #4b5563;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btn-estado-cuenta-official {
+  width: 100%;
+  height: 44px;
+  background: var(--primary-yellow, #ffc82c);
+  border: none;
+  border-radius: 22px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #111827;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 187, 51, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  transition: all 0.15s ease;
+}
+
+.btn-estado-cuenta-official:hover {
+  background: #f5b026;
+  transform: translateY(-1px);
+}
+
+.debt-chart-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.debt-chart-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.pie-chart-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0 16px;
+}
+
+.pie-chart-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-chart-slice-label {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.label-vencida {
+  left: 28px;
+  top: 55px;
+}
+
+.label-por-vencer {
+  right: 20px;
+  top: 40px;
+  color: #374151;
+  text-shadow: none;
+}
+
+.pie-chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #4b5563;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-yellow {
+  background: #f59e0b;
+}
+
+.dot-grey {
+  background: #e5e7eb;
+}
+
+.pending-debts-list-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.pending-debts-header {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.pending-debt-item {
+  padding: 8px 4px;
+}
+
+/* ================= 25. HOJA OFICIAL ESTADO DE CUENTA (mis clientes-detalle del cliente-estado de cuenta.png) ================= */
+.account-status-paper-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.account-status-logo-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.account-status-main-title {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: #111827;
+  letter-spacing: 0.6px;
+  margin-bottom: 16px;
+}
+
+.account-status-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  padding: 6px 0;
+}
+
+.as-lbl {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.as-val {
+  color: #111827;
+  font-weight: 700;
+  text-align: right;
+}
+
+.account-status-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 3px 0;
+}
+
+.account-status-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 12px;
+}
+
+.toggle-pill-round {
+  width: 36px;
+  height: 20px;
+  background: #10b981;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+
+.toggle-dot-active {
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  right: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.btn-share-account-status {
+  width: 100%;
+  height: 44px;
+  background: var(--primary-yellow, #ffc82c);
+  border: none;
+  border-radius: 22px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #111827;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 187, 51, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+/* ================= 26. ESTILOS OFICIALES: DETALLE DE FACTURA Y MOVIMIENTOS ================= */
+.invoice-detail-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  margin-bottom: 14px;
+}
+
+.invoice-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  padding: 6px 0;
+}
+
+.inv-lbl {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.inv-val {
+  color: #111827;
+  font-weight: 600;
+}
+
+.invoice-divider {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 2px 0;
+}
+
+.invoice-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
+  margin: 14px 2px 8px;
+}
+
+.invoice-products-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  margin-bottom: 14px;
+}
+
+.inv-prod-header-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 6px;
+}
+
+.inv-prod-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 7px 0;
+  font-size: 12px;
+}
+
+.inv-prod-qty {
+  font-weight: 800;
+  color: #16a34a;
+  min-width: 24px;
+}
+
+.inv-prod-desc {
+  color: #1f2937;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.invoice-movimientos-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mov-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.mov-body {
+  flex: 1;
+}
+
+.mov-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.mov-code {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.mov-amount {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.mov-bot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.rc-circle {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  font-weight: 800;
+}
+
+/* ================= 27. BOTTOM SHEET DE ACCIONES DE FACTURA ================= */
+.doc-options-sheet-container {
+  padding: 14px 16px 22px;
+  border-radius: 20px 20px 0 0;
+}
+
+.doc-options-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 10px;
+}
+
+.doc-options-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.doc-options-close {
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.doc-option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.doc-option-item:hover {
+  background: #fafafa;
+}
+
+.doc-option-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.doc-option-sub {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.doc-option-chevron {
+  font-size: 16px;
+  color: #9ca3af;
+  font-weight: bold;
+}
+
+.doc-option-divider {
+  height: 1px;
+  background: #f3f4f6;
+}
+
+/* ================= 28. RECUADROS DE AUDITORÍA (CP-05 Y CP-06) ================= */
+.audit-verification-card {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.06);
+}
+
