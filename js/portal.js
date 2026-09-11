@@ -127,7 +127,25 @@
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const target = document.getElementById(containerId);
     if (target) target.classList.add('active');
-    if (navElement) navElement.classList.add('active');
+
+    if (navElement) {
+      navElement.classList.add('active');
+    } else {
+      // Activar el botón correspondiente en la barra de navegación superior
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        const text = (item.textContent || '').toLowerCase();
+        if (
+          (containerId === 'ranking-view' && text.includes('ranking')) ||
+          (containerId === 'asesor-notas' && text.includes('calificaciones')) ||
+          (containerId === 'asesor-eval-intro' && text.includes('evaluación')) ||
+          (containerId === 'admin-dashboard' && text.includes('dashboard')) ||
+          (containerId === 'admin-historial' && text.includes('historial'))
+        ) {
+          item.classList.add('active');
+        }
+      });
+    }
 
     // Refrescar vistas según pestaña activa
     const currentUser = Auth.getCurrentUser();
@@ -1091,7 +1109,9 @@
     document.getElementById('evaluation-arena').style.display = 'none';
     document.getElementById('top-navbar').style.display = 'flex';
 
-    await renderLeaderboard();
+    // Activar inmediatamente de fondo la vista de Ranking General & Podio (evita pantalla blanca)
+    switchTab('ranking-view');
+
     const currentUser = Auth.getCurrentUser();
     if (currentUser && currentUser.role === 'admin') {
       await renderAdminDashboard();
@@ -1158,17 +1178,18 @@
       modal.classList.remove('active');
       modal.style.display = 'none';
     }
+    // Redirigir a la sección de Ranking y Podio
+    switchTab('ranking-view');
+  }
+
+  function goToRanking() {
+    closePersonalModal();
+    switchTab('ranking-view');
   }
 
   function goToMyGrades() {
     closePersonalModal();
-    const currentUser = Auth.getCurrentUser();
-    if (currentUser && currentUser.role === 'asesor') {
-      const asesorNotesTab = document.getElementById('asesor-notas');
-      if (asesorNotesTab) {
-        switchTab('asesor-notas');
-      }
-    }
+    switchTab('ranking-view');
   }
 
   // ================= EXPORTACIÓN DE REPORTES (CSV Y EXCEL) =================
@@ -1320,6 +1341,7 @@
     showAdminErrorDetails: showAdminErrorDetails,
     closeAuditModal: closeAuditModal,
     closePersonalModal: closePersonalModal,
+    goToRanking: goToRanking,
     goToMyGrades: goToMyGrades,
     exportReport: exportReport,
     resetData: async () => {
