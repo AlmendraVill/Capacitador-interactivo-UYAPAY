@@ -23,12 +23,126 @@
       .replace(/'/g, '&#039;');
   }
 
+  // ================= SISTEMA DE MODALES CENTRADOS (ALERT Y CONFIRM) =================
+  let activeDialogResolve = null;
+
+  function showCustomAlert(options = {}) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('portal-dialog-modal');
+      const titleEl = document.getElementById('dialog-title');
+      const msgEl = document.getElementById('dialog-message');
+      const iconEl = document.getElementById('dialog-icon-circle');
+      const btnCancel = document.getElementById('btn-dialog-cancel');
+      const btnConfirm = document.getElementById('btn-dialog-confirm');
+
+      if (!modal) {
+        window.alert(options.message || '');
+        resolve(true);
+        return;
+      }
+
+      activeDialogResolve = resolve;
+
+      if (titleEl) titleEl.textContent = options.title || 'Información';
+      if (msgEl) msgEl.textContent = options.message || '';
+
+      if (iconEl) {
+        iconEl.textContent = options.icon || 'ℹ️';
+        iconEl.className = 'dialog-icon-circle ' + (options.iconType || (options.icon === '✅' ? 'success' : (options.icon === '🔒' ? 'warning' : 'info')));
+      }
+
+      if (btnCancel) btnCancel.style.display = 'none';
+      if (btnConfirm) {
+        btnConfirm.textContent = options.confirmText || 'Entendido';
+        btnConfirm.className = 'btn-primary';
+      }
+
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    });
+  }
+
+  function showCustomConfirm(options = {}) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('portal-dialog-modal');
+      const titleEl = document.getElementById('dialog-title');
+      const msgEl = document.getElementById('dialog-message');
+      const iconEl = document.getElementById('dialog-icon-circle');
+      const btnCancel = document.getElementById('btn-dialog-cancel');
+      const btnConfirm = document.getElementById('btn-dialog-confirm');
+
+      if (!modal) {
+        const res = window.confirm(options.message || '');
+        resolve(res);
+        return;
+      }
+
+      activeDialogResolve = resolve;
+
+      if (titleEl) titleEl.textContent = options.title || 'Confirmación';
+      if (msgEl) msgEl.textContent = options.message || '';
+
+      if (iconEl) {
+        iconEl.textContent = options.icon || '⚠️';
+        iconEl.className = 'dialog-icon-circle ' + (options.confirmDanger ? 'danger' : (options.icon === '🏆' ? 'success' : 'warning'));
+      }
+
+      if (btnCancel) {
+        btnCancel.style.display = 'inline-flex';
+        btnCancel.textContent = options.cancelText || 'Cancelar';
+      }
+
+      if (btnConfirm) {
+        btnConfirm.textContent = options.confirmText || 'Confirmar';
+        btnConfirm.className = options.confirmDanger ? 'btn-primary btn-dialog-danger' : 'btn-primary';
+      }
+
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    });
+  }
+
+  function closeCustomDialog(result = false) {
+    const modal = document.getElementById('portal-dialog-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+    if (activeDialogResolve) {
+      const resolve = activeDialogResolve;
+      activeDialogResolve = null;
+      resolve(result);
+    }
+  }
+
+  function handleDialogConfirm() {
+    closeCustomDialog(true);
+  }
+
+  function handleDialogCancel() {
+    closeCustomDialog(false);
+  }
+
+  function dismissDialog() {
+    closeCustomDialog(false);
+  }
+
   // ================= INICIALIZACIÓN =================
   document.addEventListener('DOMContentLoaded', () => {
     initAuthListener();
     initMessageListener();
     initLiveStream();
     initFirebaseRealtimeListeners();
+
+    const dialogModal = document.getElementById('portal-dialog-modal');
+    if (dialogModal) {
+      dialogModal.addEventListener('click', (e) => {
+        if (e.target === dialogModal) dismissDialog();
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') dismissDialog();
+    });
 
     const session = Auth.getCurrentUser();
     if (session) {
@@ -213,7 +327,11 @@
   async function togglePodiumVisibility() {
     const user = Auth.getCurrentUser();
     if (!user || user.role !== 'admin') {
-      alert('Solo los administradores pueden cambiar la visibilidad del podio.');
+      await showCustomAlert({
+        title: 'Acceso Restringido',
+        message: 'Solo los administradores pueden cambiar la visibilidad del podio oficial.',
+        icon: '🔒'
+      });
       return;
     }
 
@@ -630,14 +748,22 @@
   async function showAdminErrorDetails(resultId) {
     const currentUser = Auth.getCurrentUser();
     if (!currentUser || currentUser.role !== 'admin') {
-      alert('Acceso restringido únicamente a administradores.');
+      await showCustomAlert({
+        title: 'Acceso Restringido',
+        message: 'Acceso restringido únicamente a administradores.',
+        icon: '🔒'
+      });
       return;
     }
 
     const results = await Storage.getResults();
     const result = results.find(r => r.id === resultId);
     if (!result) {
-      alert('Evaluación no encontrada.');
+      await showCustomAlert({
+        title: 'No Encontrado',
+        message: 'Evaluación no encontrada en los registros.',
+        icon: '🔍'
+      });
       return;
     }
 
@@ -885,20 +1011,32 @@
       }
     }
 
-    // Actualizar botones de navegación
+    // Actualizar botones de navegación: exactamente 50% cada uno, uniforme y con disabled en inactivo
     const btnPrev = document.getElementById('btn-prev-tab');
     const btnNext = document.getElementById('btn-next-tab');
     const btnFinish = document.getElementById('btn-finish-exam');
+    const isLastTab = tabIndex === evaluationCases.length - 1;
 
-    if (btnPrev) btnPrev.style.visibility = tabIndex === 0 ? 'hidden' : 'visible';
-    
-    // Verificar si todos los casos están completos
-    const allCompleted = Evaluator.getAllCaseStates().every(cs => cs.completed);
-    if (btnFinish) {
-      btnFinish.style.display = (allCompleted || tabIndex === evaluationCases.length - 1) ? 'inline-block' : 'none';
+    if (btnPrev) {
+      btnPrev.style.display = 'inline-flex';
+      btnPrev.style.visibility = 'visible';
+      btnPrev.disabled = (tabIndex === 0);
     }
-    if (btnNext) {
-      btnNext.style.display = tabIndex === evaluationCases.length - 1 ? 'none' : 'inline-block';
+
+    if (isLastTab) {
+      if (btnNext) btnNext.style.display = 'none';
+      if (btnFinish) {
+        btnFinish.style.display = 'inline-flex';
+        btnFinish.disabled = false;
+      }
+    } else {
+      if (btnNext) {
+        btnNext.style.display = 'inline-flex';
+        btnNext.disabled = false;
+      }
+      if (btnFinish) {
+        btnFinish.style.display = 'none';
+      }
     }
 
     // Refrescar clases de tabs
@@ -907,8 +1045,18 @@
     // Cargar o conmutar simulador móvil sin recargar iframe para eliminar parpadeo blanco
     const frame = document.getElementById('simulador-frame');
     if (frame && user) {
-      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1&v=2.3`;
-      const isAlreadyLoaded = frame.dataset.loaded === 'true' && frame.contentWindow;
+      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1&v=2.4`;
+      
+      let isAlreadyLoaded = false;
+      try {
+        isAlreadyLoaded = Boolean(
+          frame.dataset.loaded === 'true' &&
+          frame.contentWindow &&
+          frame.contentWindow.location.href.includes('simulator.html')
+        );
+      } catch (e) {
+        isAlreadyLoaded = Boolean(frame.dataset.loaded === 'true' && frame.contentWindow);
+      }
 
       if (isAlreadyLoaded) {
         // Conmutación instantánea en caliente sin recargar el iframe
@@ -919,11 +1067,11 @@
           username: user.username
         }, '*');
       } else {
-        // Carga inicial
+        // Carga inicial o recuperación limpia con token de tiempo para evitar about:blank
         frame.onload = () => {
           frame.dataset.loaded = 'true';
         };
-        frame.src = targetUrl;
+        frame.src = `${targetUrl}&_t=${Date.now()}`;
       }
     }
   }
@@ -940,28 +1088,40 @@
     }
   }
 
-  function cancelExam() {
-    if (confirm("¿Estás seguro de cancelar la evaluación? Se perderá el avance de los 5 casos.")) {
-      const user = Auth.getCurrentUser();
-      if (user) {
-        Storage.sendLiveEvent({
-          advisor: user.name || user.username,
-          step: 'Evaluación Cancelada',
-          detail: 'El asesor canceló la evaluación.',
-          type: 'ERROR',
-          errors: Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().totalErrors : 0
-        });
-      }
-      Evaluator.cancelEvaluation();
-      const frame = document.getElementById('simulador-frame');
-      if (frame) {
-        delete frame.dataset.loaded;
-        frame.src = '';
-      }
-      document.getElementById('evaluation-arena').style.display = 'none';
-      document.getElementById('top-navbar').style.display = 'flex';
-      document.getElementById('asesor-eval-intro').classList.add('active');
+  async function cancelExam() {
+    const confirmed = await showCustomConfirm({
+      title: '¿Cancelar Evaluación?',
+      message: '¿Estás seguro de cancelar la evaluación?\nSe perderá el avance de los 5 casos prácticos.',
+      icon: '⚠️',
+      confirmText: 'Sí, Cancelar',
+      cancelText: 'Continuar Examen',
+      confirmDanger: true
+    });
+    if (!confirmed) return;
+
+    const user = Auth.getCurrentUser();
+    if (user) {
+      Storage.sendLiveEvent({
+        advisor: user.name || user.username,
+        step: 'Evaluación Cancelada',
+        detail: 'El asesor canceló la evaluación.',
+        type: 'ERROR',
+        errors: Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().totalErrors : 0
+      });
     }
+    Evaluator.cancelEvaluation();
+
+    // Notificar al simulador para que limpie su estado sin destruir el iframe
+    const frame = document.getElementById('simulador-frame');
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({
+        type: 'PORTAL_RESET_SIMULATOR'
+      }, '*');
+    }
+
+    document.getElementById('evaluation-arena').style.display = 'none';
+    document.getElementById('top-navbar').style.display = 'flex';
+    document.getElementById('asesor-eval-intro').classList.add('active');
   }
 
   // ================= COMUNICACIÓN BIDIRECCIONAL CON EL SIMULADOR =================
@@ -996,8 +1156,15 @@
 
           const allCompleted = Evaluator.getAllCaseStates().every(cs => cs.completed);
           if (allCompleted) {
-            setTimeout(() => {
-              if (confirm("🎉 ¡Has completado los 5 casos de la evaluación!\n\n¿Deseas finalizar y enviar tu evaluación ahora?")) {
+            setTimeout(async () => {
+              const confirmed = await showCustomConfirm({
+                title: '¡5 Casos Completados!',
+                message: '🎉 ¡Has completado los 5 casos de la evaluación!\n\n¿Deseas finalizar y enviar tu evaluación ahora?',
+                icon: '🏆',
+                confirmText: 'Finalizar y Enviar',
+                cancelText: 'Revisar Casos'
+              });
+              if (confirmed) {
                 finishFullExam();
               }
             }, 400);
@@ -1006,8 +1173,12 @@
             const nextIncomplete = Evaluator.getAllCaseStates().findIndex((cs, i) => !cs.completed && i > currentTab);
             const targetTab = nextIncomplete !== -1 ? nextIncomplete : Evaluator.getAllCaseStates().findIndex(cs => !cs.completed);
             if (targetTab !== -1) {
-              setTimeout(() => {
-                alert(`✅ Caso ${currentTab + 1} completado. Avanzando al Caso ${targetTab + 1}.`);
+              setTimeout(async () => {
+                await showCustomAlert({
+                  title: 'Caso Completado',
+                  message: `✅ Caso ${currentTab + 1} completado. Avanzando al Caso ${targetTab + 1}.`,
+                  icon: '✅'
+                });
                 loadCaseInTab(targetTab);
               }, 300);
             }
@@ -1080,9 +1251,15 @@
     const incomplete = states.filter(cs => !cs.completed).length;
 
     if (incomplete > 0) {
-      if (!confirm(`Aún tienes ${incomplete} caso(s) sin completar. ¿Estás seguro de enviar la evaluación ahora? Los casos no completados se calificarán con puntuación parcial.`)) {
-        return;
-      }
+      const confirmed = await showCustomConfirm({
+        title: 'Casos Incompletos',
+        message: `Aún tienes ${incomplete} caso(s) sin completar.\n\n¿Estás seguro de enviar la evaluación ahora? Los casos no completados se calificarán con puntuación parcial.`,
+        icon: '⚠️',
+        confirmText: 'Enviar de Todos Modos',
+        cancelText: 'Volver y Completar',
+        confirmDanger: true
+      });
+      if (!confirmed) return;
     }
 
     const finalResult = Evaluator.finishMultiEvaluation();
@@ -1100,10 +1277,12 @@
       errors: saved.errors
     });
 
+    // Notificar al simulador para que limpie su estado sin destruir el iframe
     const frame = document.getElementById('simulador-frame');
-    if (frame) {
-      delete frame.dataset.loaded;
-      frame.src = '';
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({
+        type: 'PORTAL_RESET_SIMULATOR'
+      }, '*');
     }
 
     document.getElementById('evaluation-arena').style.display = 'none';
@@ -1196,7 +1375,11 @@
   async function exportReport(format = 'csv') {
     const results = await Storage.getResults();
     if (!results || results.length === 0) {
-      alert('No hay evaluaciones registradas para exportar.');
+      await showCustomAlert({
+        title: 'Sin Evaluaciones',
+        message: 'No hay evaluaciones registradas para exportar en este momento.',
+        icon: '📊'
+      });
       return;
     }
 
@@ -1345,11 +1528,22 @@
     goToMyGrades: goToMyGrades,
     exportReport: exportReport,
     resetData: async () => {
-      if (confirm('¿Restablecer base de datos y reiniciar el ranking?')) {
+      const confirmed = await showCustomConfirm({
+        title: '¿Restablecer Base de Datos?',
+        message: '¿Estás seguro de restablecer todos los registros y reiniciar el ranking general?',
+        icon: '🗑️',
+        confirmText: 'Sí, Restablecer',
+        cancelText: 'Cancelar',
+        confirmDanger: true
+      });
+      if (confirmed) {
         await Storage.resetAll();
         location.reload();
       }
-    }
+    },
+    handleDialogConfirm: handleDialogConfirm,
+    handleDialogCancel: handleDialogCancel,
+    dismissDialog: dismissDialog
   };
 })();
 

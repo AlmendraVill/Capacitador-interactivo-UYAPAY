@@ -505,6 +505,32 @@
     </div>
   </div>
 
+  <!-- MODAL DE DIÁLOGO / CONFIRMACIÓN Y ALERTA (CENTRADO Y CON FORMATO) -->
+  <div id="portal-dialog-modal" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal">
+      <div class="portal-modal-header" style="justify-content:center; position:relative; border-bottom:none; padding-bottom:0;">
+        <div id="dialog-icon-circle" class="dialog-icon-circle">⚠️</div>
+        <button class="portal-modal-close" id="btn-dialog-close" style="position:absolute; right:16px; top:16px;" onclick="window.UyapayPortal.dismissDialog()">&times;</button>
+      </div>
+      <div class="portal-modal-body" style="padding:12px 28px 20px 28px;">
+        <h3 id="dialog-title" style="font-size:18px; font-weight:700; color:var(--text-dark); margin:0 0 10px 0;">
+          Confirmar Acción
+        </h3>
+        <p id="dialog-message" style="font-size:14px; color:var(--text-muted); line-height:1.6; margin:0; white-space:pre-line;">
+          Mensaje de diálogo
+        </p>
+      </div>
+      <div class="portal-modal-footer" id="dialog-footer" style="justify-content:center; gap:12px;">
+        <button class="btn-secondary" id="btn-dialog-cancel" style="width:auto; min-width:110px; padding:10px 20px;" onclick="window.UyapayPortal.handleDialogCancel()">
+          Cancelar
+        </button>
+        <button class="btn-primary" id="btn-dialog-confirm" style="width:auto; min-width:130px; padding:10px 20px;" onclick="window.UyapayPortal.handleDialogConfirm()">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= 7. SCRIPTS MODULARES Y FIREBASE ================= -->
   <!-- Firebase Cloud Firestore SDK (Compat Mode para navegador sin build) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>

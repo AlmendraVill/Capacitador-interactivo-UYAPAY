@@ -305,9 +305,24 @@
     if (screenId === 's-documentos-electronicos') {
       emitSimulatorEvent('OPEN_ELECTRONIC_DOCS', { opened: true });
     }
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+    if (screenId === 's-dashboard' && !document.getElementById('s-dashboard')) {
+      screenId = 's-inicio';
+    }
+
     const target = document.getElementById(screenId);
-    if (target) target.classList.add('active');
+    if (!target) {
+      console.warn(`[Simulator] Pantalla '${screenId}' no encontrada. Activando respaldo.`);
+      const fallback = document.getElementById('s-visitas') || document.getElementById('s-inicio');
+      if (fallback) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        fallback.classList.add('active');
+      }
+      return;
+    }
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    target.classList.add('active');
   }
 
   // 1. Inicialización de Visitas y Clientes según el Caso Activo
@@ -3338,7 +3353,49 @@
       }
     }
 
+    if (event.data.type === 'PORTAL_RESET_SIMULATOR') {
+      // 1. Cerrar todos los modales y drawers abiertos
+      document.querySelectorAll('.modal, .portal-modal, .app-modal, .task-dropdown-modal').forEach(m => m.classList.remove('active'));
+      const taskDrop = document.getElementById('taskDropdownModal');
+      if (taskDrop) taskDrop.classList.remove('active');
+      const photoHist = document.getElementById('photoHistoryModal');
+      if (photoHist) photoHist.classList.remove('active');
+      const drawer = document.getElementById('secondaryDrawer');
+      if (drawer) drawer.classList.remove('active');
+
+      // 2. Resetear variables de visita y pedido
+      state.visitInProgress = false;
+      state.activeVisitClient = null;
+      state.cart = {
+        productId: '',
+        product: '',
+        sku: '',
+        line: '',
+        brand: '',
+        format: '',
+        unitPrice: 0,
+        qty: 0,
+        promoDiscount: false,
+        promoType: 'none',
+        promoDiscountAmount: 0.0,
+        promoLabel: ''
+      };
+
+      // 3. Volver a pantalla inicial de visitas
+      goToVisitTask(0);
+      navigateTo('s-visitas');
+    }
+
     if (event.data.type === 'PORTAL_SET_CASE') {
+      // Limpiar modales y drawers previos
+      document.querySelectorAll('.modal, .portal-modal, .app-modal, .task-dropdown-modal').forEach(m => m.classList.remove('active'));
+      const taskDrop = document.getElementById('taskDropdownModal');
+      if (taskDrop) taskDrop.classList.remove('active');
+      const photoHist = document.getElementById('photoHistoryModal');
+      if (photoHist) photoHist.classList.remove('active');
+      const drawer = document.getElementById('secondaryDrawer');
+      if (drawer) drawer.classList.remove('active');
+
       state.currentCaseId = event.data.caseId;
       state.currentTabIndex = event.data.tabIndex;
       if (event.data.username) state.advisorUsername = event.data.username;

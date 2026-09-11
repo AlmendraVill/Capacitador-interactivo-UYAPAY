@@ -548,14 +548,34 @@ th {
 .situation-action-bar .tab-nav-buttons {
   display: flex;
   gap: 12px;
+  width: 100%;
   align-items: center;
 }
 
 .situation-action-bar .tab-nav-buttons button {
+  flex: 1 1 50%;
+  width: 50%;
   font-size: 14px;
   font-weight: 600;
-  padding: 10px 20px;
+  padding: 12px 18px;
   border-radius: 8px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.situation-action-bar .tab-nav-buttons button:disabled,
+.situation-action-bar .tab-nav-buttons button[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: none !important;
 }
 
 .exam-instructions {
@@ -1215,5 +1235,57 @@ th {
   .mockup-screen {
     border-radius: 18px;
   }
+}
+
+/* ================= 9. MODALES DE DIÁLOGO Y CONFIRMACIÓN CENTRADOS ================= */
+#portal-dialog-modal .portal-modal {
+  max-width: 440px;
+  text-align: center;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.28);
+}
+
+.dialog-icon-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 8px auto 4px auto;
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.dialog-icon-circle.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.dialog-icon-circle.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.dialog-icon-circle.info {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.dialog-icon-circle.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.btn-dialog-danger {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #b91c1c !important;
+}
+
+.btn-dialog-danger:hover {
+  background: #b91c1c !important;
 }
 
