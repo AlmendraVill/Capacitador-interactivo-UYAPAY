@@ -127,4 +127,15 @@ describe('6. Integración End-to-End del Backend UYAPAY (server.js)', () => {
     assert.ok(res.headers['content-disposition'].includes('.xls'));
     assert.ok(typeof res.body === 'string' && res.body.includes('urn:schemas-microsoft-com:office:spreadsheet'));
   });
+
+  test('Protección de archivos internos del servidor (server.js, sqlite y package.json responden HTTP 403)', async () => {
+    const resServer = await request('GET', '/server.js');
+    assert.strictEqual(resServer.status, 403);
+
+    const resSqlite = await request('GET', '/uyapay.sqlite');
+    assert.strictEqual(resSqlite.status, 403);
+
+    const resPackage = await request('GET', '/package.json');
+    assert.strictEqual(resPackage.status, 403);
+  });
 });

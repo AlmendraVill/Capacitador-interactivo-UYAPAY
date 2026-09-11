@@ -28,6 +28,7 @@
     initAuthListener();
     initMessageListener();
     initLiveStream();
+    initFirebaseRealtimeListeners();
 
     const session = Auth.getCurrentUser();
     if (session) {
@@ -380,6 +381,71 @@
     } catch (e) {}
   }
 
+  // ================= SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE CLOUD =================
+  function initFirebaseRealtimeListeners() {
+    const fb = window.UyapayServices && window.UyapayServices.Firebase;
+    const cloudBadge = document.getElementById('firebase-cloud-badge');
+
+    if (fb && fb.isConfigured()) {
+      const ready = fb.init();
+      if (ready) {
+        if (cloudBadge) {
+          cloudBadge.style.display = 'inline-flex';
+          cloudBadge.textContent = '☁️ Firebase Cloud';
+          cloudBadge.style.background = '#ecfdf5';
+          cloudBadge.style.color = '#059669';
+          cloudBadge.style.borderColor = '#a7f3d0';
+        }
+
+        // 1. Escuchar cambios de podio en tiempo real (Asesores y Admin)
+        fb.onPodiumStatusChange(async (visible) => {
+          console.log('🔥 [Firebase Realtime] Estado del podio recibido:', visible);
+          isPodiumVisible = visible;
+          updatePodiumControlsUI(visible);
+          await renderLeaderboard();
+        });
+
+        // 2. Escuchar resultados en tiempo real (Para el Administrador y Ranking)
+        fb.onResultsChange(async (cloudResults) => {
+          console.log(`🔥 [Firebase Realtime] ${cloudResults.length} resultados actualizados en la nube.`);
+          await renderLeaderboard();
+
+          const currentUser = Auth.getCurrentUser();
+          if (currentUser) {
+            if (currentUser.role === 'admin') {
+              await renderAdminDashboard();
+              await renderResultsTable('admin-results-table');
+            } else {
+              await renderResultsTable('asesor-results-table', currentUser.username);
+            }
+          }
+        });
+
+        // 3. Escuchar monitor en vivo en la nube
+        fb.onLiveEvent((liveData) => {
+          if (liveData) {
+            applyLiveStatus(liveData);
+            if (liveData.detail) {
+              appendLiveFeed(liveData, true);
+            }
+          }
+        });
+
+        return;
+      }
+    }
+
+    // Si Firebase no está configurado aún con credenciales reales:
+    if (cloudBadge) {
+      cloudBadge.style.display = 'inline-flex';
+      cloudBadge.textContent = '💾 Modo Local';
+      cloudBadge.style.background = '#f1f5f9';
+      cloudBadge.style.color = '#64748b';
+      cloudBadge.style.borderColor = '#cbd5e1';
+      cloudBadge.title = 'Configura Firebase en js/services/firebase-config.js para habilitar tiempo real en la nube';
+    }
+  }
+
   // ================= RANKING GENERAL Y PODIO (RF-MVP-042 A 047) =================
   async function renderLeaderboard() {
     isPodiumVisible = await Storage.getPodiumStatus();
@@ -635,12 +701,16 @@
       }
     }
 
+    modal.style.display = 'flex';
     modal.classList.add('active');
   }
 
   function closeAuditModal() {
     const modal = document.getElementById('admin-error-detail-modal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
   }
 
   // ================= EVALUACIÓN MULTI-CASO EN PESTAÑAS (5 CASOS) =================
@@ -1078,12 +1148,16 @@
       }
     }
 
+    modal.style.display = 'flex';
     modal.classList.add('active');
   }
 
   function closePersonalModal() {
     const modal = document.getElementById('personal-result-modal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
   }
 
   function goToMyGrades() {

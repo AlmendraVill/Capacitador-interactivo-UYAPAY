@@ -16,6 +16,27 @@ const PORT = process.env.PORT || 3000;
 // Configuración de middlewares
 app.use(cors());
 app.use(express.json());
+
+// Proteger archivos sensibles del backend y base de datos contra descargas directas
+app.use((req, res, next) => {
+  const normalizedPath = req.path.toLowerCase();
+  const sensitiveFiles = [
+    '/server.js',
+    '/package.json',
+    '/package-lock.json',
+    '/.gitignore'
+  ];
+  if (
+    sensitiveFiles.includes(normalizedPath) ||
+    normalizedPath.includes('.sqlite') ||
+    normalizedPath.startsWith('/test/') ||
+    normalizedPath.startsWith('/.git')
+  ) {
+    return res.status(403).json({ success: false, message: 'Acceso denegado a recursos internos.' });
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname)));
 
 // ================= INICIALIZACIÓN BASE DE DATOS SQLITE (CON WAL Y BUSY TIMEOUT) =================
@@ -68,6 +89,20 @@ function generateSessionToken(user) {
   const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 horas de vigencia
   ACTIVE_SESSIONS.set(token, { user, expiresAt });
   return token;
+}
+
+// Limpieza periódica de sesiones expiradas para evitar fugas de memoria
+const SESSION_CLEANUP_MS = 15 * 60 * 1000;
+const sessionCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [token, session] of ACTIVE_SESSIONS.entries()) {
+    if (!session || session.expiresAt < now) {
+      ACTIVE_SESSIONS.delete(token);
+    }
+  }
+}, SESSION_CLEANUP_MS);
+if (sessionCleanupTimer.unref) {
+  sessionCleanupTimer.unref(); // Permite que el proceso cierre limpiamente en tests
 }
 
 function authMiddleware(req, res, next) {
@@ -753,16 +788,16 @@ app.post('/api/reset', adminMiddleware, (req, res) => {
 
   insertResult.run(
     'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
-    'maria', 'María Fernandez', '20 / 20', 20, 0, 2, 'Aprobado',
+    'alvaro', 'Álvaro Rodríguez', '20 / 20', 20, 0, 2, 'Aprobado',
     38, '00:38', new Date().toLocaleString('es-PE'), '[]',
     JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '20 / 20', numericScore: 20, errors: 0, completed: true, actionsLog: [] }])
   );
 
   insertResult.run(
-    'eval-seed-2', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
-    'carlos', 'Carlos Mendoza', '16 / 20', 16, 1, 2, 'Aprobado',
+    'eval-seed-2', 'case-2', 'B2C-02', 'Caso 2: Venta a crédito 30 días con descuento en dinero',
+    'lruiz', 'Leonardo Ruíz', '16 / 20', 16, 1, 2, 'Aprobado',
     52, '00:52', new Date().toLocaleString('es-PE'), '[]',
-    JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Fotos obligatorias', detail: 'Faltó foto de fachada' }] }])
+    JSON.stringify([{ caseCode: 'B2C-02', caseTitle: 'Caso 2: Venta a crédito 30 días', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Configurar pedido', detail: 'Seleccionó condición errónea' }] }])
   );
 
   res.json({ success: true, message: 'Datos restablecidos con éxito.' });

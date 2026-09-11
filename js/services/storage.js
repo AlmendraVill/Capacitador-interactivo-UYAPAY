@@ -117,6 +117,21 @@ window.UyapayServices = window.UyapayServices || {};
 
     // ---- RESULTADOS E HISTORIAL ----
     async getResults() {
+      // 1. Intentar leer de Firebase Cloud Firestore (Nube)
+      const fb = window.UyapayServices && window.UyapayServices.Firebase;
+      if (fb && fb.isReady()) {
+        try {
+          const cloudResults = await fb.getResults();
+          if (Array.isArray(cloudResults) && cloudResults.length > 0) {
+            setLocalItem(KEYS.RESULTS, cloudResults);
+            return cloudResults;
+          }
+        } catch (e) {
+          console.warn('[Storage] Leyendo de Firebase fallback:', e);
+        }
+      }
+
+      // 2. Intentar backend SQLite
       try {
         const res = await fetch(resolveUrl('/api/results'));
         if (res.ok) {
@@ -136,7 +151,19 @@ window.UyapayServices = window.UyapayServices || {};
     },
 
     async saveResult(evalData) {
-      // 1. Guardar en Backend SQLite
+      let savedResult = null;
+
+      // 1. Guardar en Firebase Cloud Firestore (Nube)
+      const fb = window.UyapayServices && window.UyapayServices.Firebase;
+      if (fb && fb.isReady()) {
+        try {
+          savedResult = await fb.saveResult(evalData);
+        } catch (fbErr) {
+          console.warn('[Storage] Error guardando en Firebase:', fbErr);
+        }
+      }
+
+      // 2. Guardar en Backend SQLite (API REST local de respaldo)
       try {
         const res = await fetch(resolveUrl('/api/results'), {
           method: 'POST',
@@ -146,18 +173,21 @@ window.UyapayServices = window.UyapayServices || {};
         if (res.ok) {
           const json = await res.json();
           if (json.success) {
-            // Actualizar caché local
+            savedResult = savedResult || json.result;
             const local = getLocalItem(KEYS.RESULTS, []);
             local.unshift(json.result);
             setLocalItem(KEYS.RESULTS, local);
-            return json.result;
           }
         }
       } catch (e) {
         // Fallback local si el servidor no está corriendo
       }
 
-      // 2. Guardado local de respaldo
+      if (savedResult) {
+        return savedResult;
+      }
+
+      // 3. Guardado local de respaldo (localStorage)
       const results = getLocalItem(KEYS.RESULTS, []);
       const score = evalData.numericScore !== undefined ? evalData.numericScore : 20;
       const duration = evalData.durationSeconds || 0;
@@ -190,6 +220,17 @@ window.UyapayServices = window.UyapayServices || {};
 
     // ---- ESTADO DE VISIBILIDAD DEL PODIO (RF-MVP-042) ----
     async getPodiumStatus() {
+      // 1. Consultar estado en la nube desde Firebase
+      const fb = window.UyapayServices && window.UyapayServices.Firebase;
+      if (fb && fb.isReady()) {
+        try {
+          const cloudStatus = await fb.getPodiumStatus();
+          setLocalItem('uyapay_podium_visible', cloudStatus);
+          return Boolean(cloudStatus);
+        } catch (e) {}
+      }
+
+      // 2. Fallback backend local
       try {
         const res = await fetch(resolveUrl('/api/settings/podium'));
         if (res.ok) {
@@ -202,11 +243,24 @@ window.UyapayServices = window.UyapayServices || {};
     },
 
     async setPodiumStatus(visible) {
+      const val = Boolean(visible);
+
+      // 1. Sincronizar en Firebase Cloud Firestore (Notifica a todos los asesores)
+      const fb = window.UyapayServices && window.UyapayServices.Firebase;
+      if (fb && fb.isReady()) {
+        try {
+          await fb.setPodiumStatus(val);
+        } catch (e) {
+          console.warn('[Storage] Error publicando podio en Firebase:', e);
+        }
+      }
+
+      // 2. Sincronizar en backend SQLite local
       try {
         const res = await fetch(resolveUrl('/api/settings/podium'), {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ visible: Boolean(visible) })
+          body: JSON.stringify({ visible: val })
         });
         if (res.ok) {
           const data = await res.json();
@@ -214,8 +268,8 @@ window.UyapayServices = window.UyapayServices || {};
           return Boolean(data.podiumVisible);
         }
       } catch (e) {}
-      setLocalItem('uyapay_podium_visible', Boolean(visible));
-      return Boolean(visible);
+      setLocalItem('uyapay_podium_visible', val);
+      return val;
     },
 
     // ---- ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (ADMIN) ----
@@ -279,6 +333,13 @@ window.UyapayServices = window.UyapayServices || {};
 
     // ---- EVENTOS EN VIVO ----
     async sendLiveEvent(eventData) {
+      const fb = window.UyapayServices && window.UyapayServices.Firebase;
+      if (fb && fb.isReady()) {
+        try {
+          fb.sendLiveEvent(eventData);
+        } catch (e) {}
+      }
+
       try {
         await fetch(resolveUrl('/api/live-events'), {
           method: 'POST',

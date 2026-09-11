@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Plataforma de Capacitación UYAPAY</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=2.4">
 </head>
 <body>
 
@@ -33,6 +33,7 @@
     <div class="nav-header-row">
       <div class="nav-brand">UYAPAY B2C</div>
       <div class="nav-user">
+        <span class="nav-badge" id="firebase-cloud-badge" style="display:none; background:#ecfdf5; color:#059669; border-color:#a7f3d0; font-weight:700;" title="Sincronización en la nube con Firebase">☁️ Nube Activa</span>
         <span class="nav-badge" id="user-role-badge">ROL</span>
         <span id="user-greeting">Hola</span>
         <span class="logout" onclick="window.UyapayPortal.logout()">Salir</span>
@@ -426,7 +427,7 @@
   <!-- ================= 6. MODALES DEL SISTEMA ================= -->
 
   <!-- MODAL DE RESULTADOS PERSONALES DEL ASESOR (POST-EVALUACIÓN) -->
-  <div id="personal-result-modal" class="portal-modal-backdrop">
+  <div id="personal-result-modal" class="portal-modal-backdrop" style="display:none;">
     <div class="portal-modal">
       <div class="portal-modal-header">
         <h3>🎉 ¡Evaluación Finalizada!</h3>
@@ -477,7 +478,7 @@
   </div>
 
   <!-- MODAL DE AUDITORÍA DE ERRORES (EXCLUSIVO ADMINISTRADOR) -->
-  <div id="admin-error-detail-modal" class="portal-modal-backdrop">
+  <div id="admin-error-detail-modal" class="portal-modal-backdrop" style="display:none;">
     <div class="portal-modal" style="max-width:700px;">
       <div class="portal-modal-header">
         <div>
@@ -504,7 +505,13 @@
     </div>
   </div>
 
-  <!-- ================= 7. SCRIPTS MODULARES ================= -->
+  <!-- ================= 7. SCRIPTS MODULARES Y FIREBASE ================= -->
+  <!-- Firebase Cloud Firestore SDK (Compat Mode para navegador sin build) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/services/firebase-config.js"></script>
+  <script src="js/services/firebase-service.js"></script>
+
   <script src="js/data/users.js"></script>
   <script src="js/data/cases.js"></script>
   <script src="js/services/storage.js"></script>

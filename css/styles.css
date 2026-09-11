@@ -406,7 +406,7 @@ th {
 
 .exam-situation-panel {
   flex: 1 1 520px;
-  min-width: 340px;
+  min-width: 440px;
   max-width: 850px;
   width: 100%;
 }
@@ -879,7 +879,7 @@ th {
   height: 100vh;
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(4px);
-  display: none;
+  display: none !important;
   align-items: center;
   justify-content: center;
   z-index: 9999;
@@ -891,7 +891,7 @@ th {
 }
 
 .portal-modal-backdrop.active {
-  display: flex;
+  display: flex !important;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1080,8 +1080,8 @@ th {
 
 /* ================= 9. MEDIA QUERIES (RESPONSIVE) ================= */
 
-/* Tablets grandes y laptops medianas (<= 991px) */
-@media (max-width: 991px) {
+/* Tablets grandes y laptops medianas (<= 1100px) */
+@media (max-width: 1100px) {
   .exam-workspace {
     padding: 12px 10px;
     gap: 14px;
@@ -1095,7 +1095,7 @@ th {
 
   .exam-situation-panel {
     width: 100%;
-    max-width: 650px;
+    max-width: 720px;
     min-width: 0;
   }
 

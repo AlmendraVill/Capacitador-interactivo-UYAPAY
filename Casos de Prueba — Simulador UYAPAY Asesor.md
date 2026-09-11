@@ -164,17 +164,13 @@
 
 * *Cliente:* Distribuidora Lubrimotor EIRL — Av. Industrial 104, Socabaya.
 
-* *Situación / Enunciado:* El cliente se encuentra a 250 metros del punto actual. Intentas iniciar una visita presencial, pero la geocerca permite un máximo de 50 metros. Debes gestionar correctamente la atención mediante una visita telefónica y registrar el pedido solicitado por el cliente.
-
-* *Tipo de Atención:* Llamada telefónica (Bypass GPS).
+* *Situación / Enunciado:* El cliente se encuentra a 250 metros del punto actual. Intentas iniciar una visita presencial, pero la geocerca permite un máximo de 50 metros. Debes gestionar la atención al cliente, ya que el cliente quiere 2 cajas de Michelin Energy XM2+. 
 
 * *Parámetros Comerciales:*
-
   * Condición de pago: Crédito 30 días.
   * Lista de precios: Lista 3.
   * Línea y Marca: Neumáticos | Michelin.
   * Producto(s) y Cantidad: 2 cajas de Michelin Energy XM2+.
-  * Promoción / Beneficio: No especificado.
 
 * *Flujo de Solución Paso a Paso:*
 

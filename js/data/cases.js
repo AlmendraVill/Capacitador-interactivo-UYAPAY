@@ -776,7 +776,7 @@ window.UyapayData.CASES = [
   "expectedQty": 2,
   "isPhoneVisit": true,
   "publicTitle": "Gestión Fuera de Geocerca con Visita Telefónica",
-  "instructions": "Cliente: Distribuidora Lubrimotor EIRL — Av. Industrial 104, Socabaya.\n\nSituación: El cliente se encuentra a 250 metros del punto actual. Intentas iniciar una visita presencial, pero la geocerca permite un máximo de 50 metros. Debes gestionar correctamente la atención mediante una visita telefónica y registrar el pedido solicitado por el cliente.\n\nTipo de Atención: Llamada telefónica (Bypass GPS).\n\nParámetros Comerciales:\n- Condición de pago: Crédito 30 días\n- Lista de precios: Lista 3\n- Línea y Marca: Neumáticos | Michelin\n- Producto(s) y Cantidad: 2 cajas de Michelin Energy XM2+",
+  "instructions": "Cliente: Distribuidora Lubrimotor EIRL — Av. Industrial 104, Socabaya.\n\nSituación: El cliente se encuentra a 250 metros del punto actual. Intentas iniciar una visita presencial, pero la geocerca permite un máximo de 50 metros. Debes gestionar la atención comercial mediante visita telefónica y registrar el pedido solicitado por el cliente.\n\nTipo de Atención: Llamada telefónica (Bypass GPS).\n\nParámetros Comerciales:\n- Condición de pago: Crédito 30 días\n- Lista de precios: Lista 3\n- Línea y Marca: Neumáticos | Michelin\n- Producto(s) y Cantidad: 2 cajas de Michelin Energy XM2+",
   "active": true,
   "scoring": {
     "maxScore": 20,
