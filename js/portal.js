@@ -1538,18 +1538,18 @@
     exportReport: exportReport,
     resetData: async () => {
       const confirmed = await showCustomConfirm({
-        title: '¿Restablecer Datos de Evaluación?',
-        message: '¿Estás seguro de restablecer todos los registros y reiniciar el ranking general?\n\nSe limpiarán las evaluaciones registradas y se sincronizará la nube (Firebase) y el servidor con el estado demo inicial.',
+        title: '¿Limpiar Todas las Evaluaciones?',
+        message: '¿Estás seguro de eliminar todas las evaluaciones y reiniciar el ranking?\n\nLa base de datos quedará completamente limpia (0 evaluaciones) tanto en la nube (Firebase) como en el servidor local. Solo figurarán los asesores que rindan el examen.',
         icon: '🗑️',
-        confirmText: 'Sí, Restablecer',
+        confirmText: 'Sí, Limpiar Todo',
         cancelText: 'Cancelar',
         confirmDanger: true
       });
       if (confirmed) {
         await Storage.resetAll();
         await showCustomAlert({
-          title: 'Datos Restablecidos',
-          message: '✅ Base de datos restablecida con éxito tanto en la nube (Firebase) como en el servidor local.',
+          title: 'Base de Datos Limpia',
+          message: '✅ Todas las evaluaciones han sido eliminadas.\nLa base de datos ahora está en blanco (0 evaluaciones) y lista para recibir a los asesores reales.',
           icon: '✅'
         });
         location.reload();

@@ -304,53 +304,10 @@ window.UyapayServices = window.UyapayServices || {};
           await batch.commit();
         }
 
-        // 2. Re-sembrar resultados demo en Firestore (sincronizados con el backend)
-        const seed1 = {
-          id: 'eval-seed-1',
-          advisorName: 'Álvaro Rodríguez',
-          username: 'alvaro',
-          caseId: 'case-1',
-          caseCode: 'B2C-01',
-          caseTitle: 'Caso 1: Venta simple contado con regalo por volumen',
-          score: '20 / 20',
-          numericScore: 20,
-          errors: 0,
-          maxErrorsAllowed: 2,
-          status: 'Aprobado',
-          durationSeconds: 38,
-          formattedDuration: '00:38',
-          completedAt: new Date().toLocaleString('es-PE'),
-          casesDetails: [{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '20 / 20', numericScore: 20, errors: 0, completed: true, actionsLog: [] }],
-          interactions: []
-        };
-        const seed2 = {
-          id: 'eval-seed-2',
-          advisorName: 'Leonardo Ruíz',
-          username: 'lruiz',
-          caseId: 'case-2',
-          caseCode: 'B2C-02',
-          caseTitle: 'Caso 2: Venta a crédito 30 días con descuento en dinero',
-          score: '16 / 20',
-          numericScore: 16,
-          errors: 1,
-          maxErrorsAllowed: 2,
-          status: 'Aprobado',
-          durationSeconds: 52,
-          formattedDuration: '00:52',
-          completedAt: new Date().toLocaleString('es-PE'),
-          casesDetails: [{ caseCode: 'B2C-02', caseTitle: 'Caso 2: Venta a crédito 30 días', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Configurar pedido', detail: 'Seleccionó condición errónea' }] }],
-          interactions: []
-        };
-
-        const seedBatch = db.batch();
-        seedBatch.set(db.collection('results').doc(seed1.id), seed1);
-        seedBatch.set(db.collection('results').doc(seed2.id), seed2);
-        await seedBatch.commit();
-
-        // 3. Restablecer podio a oculto
+        // 2. Restablecer podio a oculto
         await this.setPodiumStatus(false);
 
-        // 4. Restablecer monitor en vivo
+        // 3. Restablecer monitor en vivo
         await db.collection('settings').doc('live_state').set({
           advisor: 'En espera',
           step: 'Sin actividad',
@@ -361,7 +318,7 @@ window.UyapayServices = window.UyapayServices || {};
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log('🔥 [Firebase] Colección results y configuración restablecidas al estado demo con éxito.');
+        console.log('🔥 [Firebase] Colección results limpiada a 0 evaluaciones y configuración restablecida.');
         return true;
       } catch (err) {
         console.error('[Firebase Error] Error al restablecer datos en Firestore:', err);

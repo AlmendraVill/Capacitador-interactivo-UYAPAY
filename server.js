@@ -271,34 +271,6 @@ for (const row of allUsersInDb) {
 }
 console.log(`[DB] Nómina oficial de ${INITIAL_USERS.length} usuarios sincronizada y asegurada correctamente.`);
 
-// Sembrar evaluaciones iniciales de demostración si la tabla está vacía
-const resultsCount = db.prepare('SELECT COUNT(*) as count FROM results').get().count;
-if (resultsCount === 0) {
-  const insertResult = db.prepare(`
-    INSERT INTO results (
-      id, case_id, case_code, case_title, username, advisor_name,
-      score, numeric_score, errors, max_errors, status,
-      duration_seconds, formatted_duration, completed_at, interactions, cases_details
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertResult.run(
-    'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
-    'alvaro', 'Álvaro Rodríguez', '20 / 20', 20, 0, 2, 'Aprobado',
-    38, '00:38', new Date(Date.now() - 3600000).toLocaleString('es-PE'), '[]',
-    JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '20 / 20', numericScore: 20, errors: 0, completed: true, actionsLog: [] }])
-  );
-
-  insertResult.run(
-    'eval-seed-2', 'case-2', 'B2C-02', 'Caso 2: Venta a crédito 30 días con descuento en dinero',
-    'lruiz', 'Leonardo Ruíz', '16 / 20', 16, 1, 2, 'Aprobado',
-    52, '00:52', new Date(Date.now() - 7200000).toLocaleString('es-PE'), '[]',
-    JSON.stringify([{ caseCode: 'B2C-02', caseTitle: 'Caso 2: Venta a crédito 30 días', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Configurar pedido', detail: 'Seleccionó condición errónea' }] }])
-  );
-
-  console.log('[DB] Se han sembrado resultados iniciales para el ranking.');
-}
-
 // Clientes suscritos a Server-Sent Events (SSE) para el monitor en vivo
 let sseClients = [];
 
@@ -812,31 +784,8 @@ app.post('/api/reset', adminMiddleware, (req, res) => {
     errors: 0,
     time: ''
   };
-  
-  // Re-sembrar resultados demo
-  const insertResult = db.prepare(`
-    INSERT INTO results (
-      id, case_id, case_code, case_title, username, advisor_name,
-      score, numeric_score, errors, max_errors, status,
-      duration_seconds, formatted_duration, completed_at, interactions, cases_details
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
 
-  insertResult.run(
-    'eval-seed-1', 'case-1', 'B2C-01', 'Caso 1: Venta simple contado con regalo por volumen',
-    'alvaro', 'Álvaro Rodríguez', '20 / 20', 20, 0, 2, 'Aprobado',
-    38, '00:38', new Date().toLocaleString('es-PE'), '[]',
-    JSON.stringify([{ caseCode: 'B2C-01', caseTitle: 'Caso 1: Venta simple contado con regalo', score: '20 / 20', numericScore: 20, errors: 0, completed: true, actionsLog: [] }])
-  );
-
-  insertResult.run(
-    'eval-seed-2', 'case-2', 'B2C-02', 'Caso 2: Venta a crédito 30 días con descuento en dinero',
-    'lruiz', 'Leonardo Ruíz', '16 / 20', 16, 1, 2, 'Aprobado',
-    52, '00:52', new Date().toLocaleString('es-PE'), '[]',
-    JSON.stringify([{ caseCode: 'B2C-02', caseTitle: 'Caso 2: Venta a crédito 30 días', score: '16 / 20', numericScore: 16, errors: 1, completed: true, actionsLog: [{ time: '10:15:00', type: 'ERROR', step: 'Configurar pedido', detail: 'Seleccionó condición errónea' }] }])
-  );
-
-  res.json({ success: true, message: 'Datos restablecidos con éxito.' });
+  res.json({ success: true, message: 'Todas las evaluaciones han sido eliminadas y la base de datos se restableció a 0.' });
 });
 
 // 12. Exportación de reportes administrativos (CSV y Excel XML - Solo Admin)
