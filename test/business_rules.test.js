@@ -7,9 +7,11 @@ const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 
-// Cargar catálogo de casos y datos
+// Cargar catálogo de casos, usuarios y motor evaluador
 const { CASES, PRODUCTS } = require('../js/data/cases.js');
 const { INITIAL_USERS } = require('../js/data/users.js');
+const Evaluator = require('../js/services/evaluator.js');
+const { calculateCaseScore } = Evaluator;
 
 describe('1. Catálogo Oficial de Casos y Productos UYAPAY', () => {
   test('El catálogo contiene exactamente los 21 casos oficiales de capacitación B2C', () => {
@@ -63,30 +65,56 @@ describe('1. Catálogo Oficial de Casos y Productos UYAPAY', () => {
   });
 });
 
-describe('2. Sistema de Calificación Vigesimal (Escala 0 a 20)', () => {
-  function calculateScore(errors) {
-    return Math.max(0, 20 - (errors * 4));
-  }
-
-  test('0 errores otorga nota perfecta 20/20', () => {
-    assert.strictEqual(calculateScore(0), 20);
+describe('2. Sistema de Calificación Vigesimal de Doble Factor (60% Avance / 40% Calidad)', () => {
+  test('Caso no intentado (0 pasos completados) otorga nota 00/20', () => {
+    const result = calculateCaseScore(0, 6, 0, false);
+    assert.strictEqual(result.numericScore, 0);
+    assert.strictEqual(result.score, '00 / 20');
+    assert.strictEqual(result.advancePoints, 0);
+    assert.strictEqual(result.qualityPoints, 0);
   });
 
-  test('1 error deduce 4 puntos (nota 16/20)', () => {
-    assert.strictEqual(calculateScore(1), 16);
+  test('Caso completado al 100% con 0 errores otorga nota perfecta 20/20', () => {
+    const result = calculateCaseScore(6, 6, 0, true);
+    assert.strictEqual(result.numericScore, 20);
+    assert.strictEqual(result.score, '20 / 20');
+    assert.strictEqual(result.advancePoints, 12.0);
+    assert.strictEqual(result.qualityPoints, 8.0);
   });
 
-  test('2 errores deduce 8 puntos (nota 12/20)', () => {
-    assert.strictEqual(calculateScore(2), 12);
+  test('Caso completado al 100% tras 4 errores iniciales (recuperación exitosa) otorga nota aprobatoria (18/20)', () => {
+    const result = calculateCaseScore(10, 10, 4, true);
+    // Avance: 12.0 pts. Calidad: (10 / 14) * 8.0 = 5.71 pts. Total: 17.71 -> 18
+    assert.strictEqual(result.numericScore, 18);
+    assert.strictEqual(result.score, '18 / 20');
+    assert.ok(result.numericScore >= 11, 'El asesor debe aprobar por haber resuelto el 100% del caso');
   });
 
-  test('3 errores deduce 12 puntos (nota 08/20)', () => {
-    assert.strictEqual(calculateScore(3), 8);
+  test('Caso completado al 100% con alta tasa de errores conserva la base de avance (15/20)', () => {
+    const result = calculateCaseScore(6, 6, 10, true);
+    // Avance: 12.0 pts. Calidad: (6 / 16) * 8.0 = 3.0 pts. Total: 15
+    assert.strictEqual(result.numericScore, 15);
+    assert.ok(result.numericScore >= 12, 'El caso completado debe garantizar la base de avance de 12 pts');
   });
 
-  test('5 o más errores nunca da puntaje negativo (piso en 0)', () => {
-    assert.strictEqual(calculateScore(5), 0);
-    assert.strictEqual(calculateScore(10), 0);
+  test('Caso incompleto con avance del 50% y 0 errores otorga nota proporcional (10/20)', () => {
+    const result = calculateCaseScore(3, 6, 0, false);
+    // Avance: 0.5 * 12.0 = 6.0 pts. Calidad: 0.5 * 1.0 * 8.0 = 4.0 pts. Total: 10
+    assert.strictEqual(result.numericScore, 10);
+    assert.strictEqual(result.score, '10 / 20');
+  });
+
+  test('Caso incompleto con avance del 50% y 3 errores otorga nota proporcional reducida (08/20)', () => {
+    const result = calculateCaseScore(3, 6, 3, false);
+    // Avance: 6.0 pts. Calidad: 0.5 * (3 / 6) * 8.0 = 2.0 pts. Total: 8
+    assert.strictEqual(result.numericScore, 8);
+    assert.strictEqual(result.score, '08 / 20');
+  });
+
+  test('Puntaje siempre se mantiene acotado en escala vigesimal válida [0 a 20]', () => {
+    assert.strictEqual(calculateCaseScore(0, 5, 20, false).numericScore, 0);
+    assert.strictEqual(calculateCaseScore(5, 5, 0, true).numericScore, 20);
+    assert.ok(calculateCaseScore(2, 5, 100, false).numericScore >= 0);
   });
 });
 

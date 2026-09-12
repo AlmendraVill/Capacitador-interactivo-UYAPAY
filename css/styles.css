@@ -1043,6 +1043,11 @@ th {
   border-left: 4px solid var(--success);
 }
 
+.case-result-row.warning {
+  border-left: 4px solid var(--yellow-dark);
+  background: #fffdf5;
+}
+
 .case-result-row.failed {
   border-left: 4px solid var(--danger);
 }

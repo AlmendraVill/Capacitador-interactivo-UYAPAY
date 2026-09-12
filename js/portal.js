@@ -1328,16 +1328,25 @@
       if (casesDetails.length > 0) {
         casesListEl.innerHTML = casesDetails.map((cs, idx) => {
           const isComp = cs.completed;
-          const rowClass = isComp ? 'completed' : 'failed';
-          const errText = cs.errors === 0 ? 'Sin errores' : `${cs.errors} error(es)`;
+          const hasProgress = (cs.currentRuleIndex || 0) > 0;
+          const rowClass = isComp ? 'completed' : (hasProgress ? 'warning' : 'failed');
+          const errText = (cs.errors === 0 || cs.errors === undefined) ? 'Sin errores' : `${cs.errors} error(es)`;
+          const pct = cs.completionRate !== undefined ? cs.completionRate : (hasProgress ? Math.round((cs.currentRuleIndex / (cs.totalSteps || 1)) * 100) : 0);
+          const statusText = isComp
+            ? '✅ Resuelto al 100%'
+            : (hasProgress ? `⏳ Incompleto (Avance: ${pct}%)` : '❌ Sin resolver (0%)');
+          const badgeClass = isComp ? 'badge-success' : (cs.numericScore >= 11 ? 'badge-warning' : 'badge-danger');
+
           return `
             <div class="case-result-row ${rowClass}">
               <div>
                 <b>Caso ${idx + 1}:</b> ${escapeHtml(cs.client ? `${cs.client} — ${getCleanCaseTitle({ title: cs.caseTitle })}` : getCleanCaseTitle({ title: cs.caseTitle }))}
-                <div style="font-size:11px; color:var(--text-muted);">${errText}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                  <span>${statusText}</span> • <span>${errText}</span>
+                </div>
               </div>
               <div style="text-align:right;">
-                <span class="badge ${isComp ? 'badge-success' : 'badge-danger'}">${cs.score || '20 / 20'}</span>
+                <span class="badge ${badgeClass}">${cs.score || '00 / 20'}</span>
               </div>
             </div>
           `;

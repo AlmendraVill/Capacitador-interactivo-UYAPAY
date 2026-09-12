@@ -3,6 +3,9 @@
  * Soporta Evaluación Multi-Caso en Pestañas (5 casos en tabs) y cronómetro continuo.
  * Implementa los requisitos RF-MVP-026 a RF-MVP-035 y nuevo Flujo 2.
  */
+if (typeof window === 'undefined') {
+  global.window = {};
+}
 window.UyapayServices = window.UyapayServices || {};
 
 (function() {
@@ -19,7 +22,76 @@ window.UyapayServices = window.UyapayServices || {};
     return `${padZero(mins)}:${padZero(secs)}`;
   }
 
+  /**
+   * Calcula la calificación de un caso según el Modelo de Doble Factor:
+   * - 60% Avance / Logro de la Meta (hasta 12.0 puntos)
+   * - 40% Calidad / Precisión Operativa (hasta 8.0 puntos)
+   * Escala vigesimal oficial (0 a 20).
+   *
+   * @param {number} completedSteps - Pasos completados exitosamente
+   * @param {number} totalSteps - Total de pasos esperados del caso
+   * @param {number} errors - Errores cometidos en el caso
+   * @param {boolean} isCompleted - Si el caso fue completado con éxito
+   */
+  function calculateCaseScore(completedSteps, totalSteps, errors, isCompleted = false) {
+    const total = Math.max(1, totalSteps || 1);
+    const steps = isCompleted ? total : Math.max(0, Math.min(completedSteps || 0, total));
+    const errs = Math.max(0, errors || 0);
+
+    // Caso no tocado o sin pasos completados: 0 puntos
+    if (steps === 0) {
+      return {
+        advancePoints: 0,
+        qualityPoints: 0,
+        precisionRate: 0,
+        completionRate: 0,
+        numericScore: 0,
+        score: '00 / 20'
+      };
+    }
+
+    // 1. Tasa de Avance (0.0 a 1.0)
+    const completionRate = steps / total;
+
+    // Puntos de Avance: 60% del peso total (hasta 12.0 puntos)
+    const advancePoints = completionRate * 12.0;
+
+    // 2. Tasa de Precisión Operativa (Pasos válidos / (Pasos válidos + Errores))
+    const precisionRate = steps / (steps + errs);
+
+    // Puntos de Calidad: 40% del peso total (hasta 8.0 puntos, proporcional al avance logrado)
+    const qualityPoints = completionRate * precisionRate * 8.0;
+
+    // Puntaje consolidado del caso entre 0 y 20
+    const finalScore = Math.min(20, Math.max(0, Math.round(advancePoints + qualityPoints)));
+    const formatted = finalScore < 10 ? `0${finalScore} / 20` : `${finalScore} / 20`;
+
+    return {
+      advancePoints: parseFloat(advancePoints.toFixed(1)),
+      qualityPoints: parseFloat(qualityPoints.toFixed(1)),
+      precisionRate: parseFloat((precisionRate * 100).toFixed(1)),
+      completionRate: parseFloat((completionRate * 100).toFixed(1)),
+      numericScore: finalScore,
+      score: formatted
+    };
+  }
+
+  function applyCaseScore(caseState, currentCase, isCompleted = false) {
+    const totalSteps = (currentCase && currentCase.rules && currentCase.rules.length) ? currentCase.rules.length : (caseState.totalSteps || 1);
+    const scoreObj = calculateCaseScore(caseState.currentRuleIndex, totalSteps, caseState.errors, isCompleted || caseState.completed);
+    caseState.totalSteps = totalSteps;
+    caseState.advancePoints = scoreObj.advancePoints;
+    caseState.qualityPoints = scoreObj.qualityPoints;
+    caseState.precisionRate = scoreObj.precisionRate;
+    caseState.completionRate = scoreObj.completionRate;
+    caseState.numericScore = scoreObj.numericScore;
+    caseState.score = scoreObj.score;
+    return scoreObj;
+  }
+
   window.UyapayServices.Evaluator = {
+    calculateCaseScore,
+
     /**
      * Inicia una sesión de evaluación multi-caso (5 casos en pestañas)
      * @param {object} user - Usuario evaluado
@@ -39,18 +111,27 @@ window.UyapayServices = window.UyapayServices || {};
         activeTabIndex: 0,
         startTime: Date.now(),
         elapsedSeconds: 0,
-        caseStates: cases.map(c => ({
-          caseId: c.id,
-          caseCode: c.code,
-          caseTitle: c.title,
-          client: c.client,
-          currentRuleIndex: 0,
-          errors: 0,
-          completed: false,
-          actionsLog: [],
-          numericScore: 20,
-          score: '20 / 20'
-        })),
+        caseStates: cases.map(c => {
+          const totalSteps = (c.rules && c.rules.length) ? c.rules.length : 1;
+          const initialScore = calculateCaseScore(0, totalSteps, 0, false);
+          return {
+            caseId: c.id,
+            caseCode: c.code,
+            caseTitle: c.title,
+            client: c.client,
+            currentRuleIndex: 0,
+            totalSteps: totalSteps,
+            errors: 0,
+            completed: false,
+            actionsLog: [],
+            advancePoints: initialScore.advancePoints,
+            qualityPoints: initialScore.qualityPoints,
+            precisionRate: initialScore.precisionRate,
+            completionRate: initialScore.completionRate,
+            numericScore: initialScore.numericScore,
+            score: initialScore.score
+          };
+        }),
         totalErrors: 0,
         status: 'IN_PROGRESS'
       };
@@ -212,9 +293,8 @@ window.UyapayServices = window.UyapayServices || {};
           
           if (isCaseComplete) {
             caseState.completed = true;
-            caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
-            caseState.score = `${caseState.numericScore} / 20`;
           }
+          applyCaseScore(caseState, currentCase, isCaseComplete);
 
           const logEntry = {
             time: timeStamp,
@@ -239,8 +319,7 @@ window.UyapayServices = window.UyapayServices || {};
           // Error en el paso esperado
           caseState.errors++;
           activeEvaluation.totalErrors++;
-          caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
-          caseState.score = `${caseState.numericScore} / 20`;
+          applyCaseScore(caseState, currentCase, false);
 
           const logEntry = {
             time: timeStamp,
@@ -267,8 +346,7 @@ window.UyapayServices = window.UyapayServices || {};
       // Si es SUBMIT_ORDER o SUBMIT_EVALUATION fuera del índice estricto pero finaliza el caso
       if (eventName === 'SUBMIT_ORDER' || eventName === 'SUBMIT_EVALUATION') {
         caseState.completed = true;
-        caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
-        caseState.score = `${caseState.numericScore} / 20`;
+        applyCaseScore(caseState, currentCase, true);
         const logEntry = {
           time: timeStamp,
           type: 'SUCCESS',
@@ -293,8 +371,7 @@ window.UyapayServices = window.UyapayServices || {};
       // Acción fuera de secuencia
       caseState.errors++;
       activeEvaluation.totalErrors++;
-      caseState.numericScore = Math.max(0, 20 - (caseState.errors * 4));
-      caseState.score = `${caseState.numericScore} / 20`;
+      applyCaseScore(caseState, currentCase, false);
 
       const unexpectedError = `Acción fuera del flujo esperado para ${currentCase.code}.`;
       const logEntry = {
@@ -330,25 +407,20 @@ window.UyapayServices = window.UyapayServices || {};
       const durationSeconds = activeEvaluation.elapsedSeconds;
       const totalCases = activeEvaluation.caseStates.length;
       
-      // Asegurar que cada caso calcule su nota
+      // Asegurar que cada caso calcule su nota con el modelo 60% avance / 40% calidad
       activeEvaluation.caseStates.forEach(cs => {
-        if (!cs.completed && cs.currentRuleIndex === 0) {
-          // Caso no intentado: nota proporcional o mínima
-          cs.numericScore = Math.max(0, 20 - (cs.errors * 4) - 10);
-        } else {
-          cs.numericScore = Math.max(0, 20 - (cs.errors * 4));
-        }
-        cs.score = `${cs.numericScore} / 20`;
+        const cCase = (activeEvaluation.cases || []).find(c => c.id === cs.caseId) || {};
+        applyCaseScore(cs, cCase, cs.completed);
       });
 
-      // Calificación consolidada: promedio de los casos
+      // Calificación consolidada: promedio exacto de los casos
       const sumScores = activeEvaluation.caseStates.reduce((acc, cs) => acc + cs.numericScore, 0);
-      const avgScore = totalCases > 0 ? Math.round(sumScores / totalCases) : 20;
+      const avgScore = totalCases > 0 ? Math.round(sumScores / totalCases) : 0;
       const totalErrors = activeEvaluation.totalErrors;
       const completedCount = activeEvaluation.caseStates.filter(cs => cs.completed).length;
 
-      // Criterio de aprobación: promedio >= 11 y errores <= 6 en los 5 casos
-      const passed = avgScore >= 11 && totalErrors <= 6;
+      // Criterio de aprobación: promedio vigesimal >= 11
+      const passed = avgScore >= 11;
 
       const casesCodes = activeEvaluation.cases.map(c => c.code).join(', ');
 
@@ -362,7 +434,7 @@ window.UyapayServices = window.UyapayServices || {};
         errors: totalErrors,
         maxErrorsAllowed: 6,
         numericScore: avgScore,
-        score: `${avgScore} / 20`,
+        score: `${avgScore < 10 ? '0' + avgScore : avgScore} / 20`,
         status: passed ? 'Aprobado' : 'Desaprobado',
         durationSeconds: durationSeconds,
         formattedDuration: formatTime(durationSeconds),
@@ -391,3 +463,7 @@ window.UyapayServices = window.UyapayServices || {};
     }
   };
 })();
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = window.UyapayServices.Evaluator;
+}

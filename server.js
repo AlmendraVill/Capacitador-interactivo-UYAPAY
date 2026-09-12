@@ -587,11 +587,13 @@ app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
               attempts: 0,
               totalErrors: 0,
               completedCount: 0,
+              totalScores: 0,
               errorMessages: {}
             };
           }
           casesStats[cKey].attempts += 1;
           casesStats[cKey].totalErrors += (cd.errors || 0);
+          casesStats[cKey].totalScores += (cd.numericScore !== undefined ? cd.numericScore : (cd.score ? parseInt(cd.score, 10) : 0));
           if (cd.completed) casesStats[cKey].completedCount += 1;
 
           // Registrar las reglas específicas que fallaron
@@ -611,11 +613,13 @@ app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
             attempts: 0,
             totalErrors: 0,
             completedCount: 0,
+            totalScores: 0,
             errorMessages: {}
           };
         }
         casesStats[cKey].attempts += 1;
         casesStats[cKey].totalErrors += (r.errors || 0);
+        casesStats[cKey].totalScores += (r.numeric_score || 0);
         if (r.status === 'Aprobado') casesStats[cKey].completedCount += 1;
       }
 
@@ -637,7 +641,7 @@ app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
       });
     });
 
-    // Ordenar los casos con más errores en orden descendente
+    // Ordenar los casos con más errores o menor desempeño en orden descendente
     const rankedCases = Object.values(casesStats).map(c => {
       const commonErrorsList = Object.entries(c.errorMessages)
         .sort((a, b) => b[1] - a[1])
@@ -645,11 +649,23 @@ app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
         .map(([msg, count]) => ({ message: msg, count }));
 
       const errorRate = c.attempts > 0 ? (c.totalErrors / c.attempts).toFixed(1) : '0.0';
+      const completionRate = c.attempts > 0 ? (c.completedCount / c.attempts) : 1;
+      const avgScore = c.attempts > 0 ? (c.totalScores / c.attempts).toFixed(1) : '0.0';
+
+      let severity = 'BAJA';
+      if (c.totalErrors >= 3 || completionRate < 0.6 || parseFloat(avgScore) < 11) {
+        severity = 'ALTA';
+      } else if (c.totalErrors >= 1 || completionRate < 0.9 || parseFloat(avgScore) < 15) {
+        severity = 'MEDIA';
+      }
+
       return {
         ...c,
         errorRate: parseFloat(errorRate),
+        avgScore: parseFloat(avgScore),
+        completionRate: parseFloat((completionRate * 100).toFixed(0)),
         commonErrors: commonErrorsList,
-        severity: c.totalErrors >= 3 ? 'ALTA' : (c.totalErrors >= 1 ? 'MEDIA' : 'BAJA')
+        severity: severity
       };
     }).sort((a, b) => b.totalErrors - a.totalErrors);
 
