@@ -1421,9 +1421,9 @@
           `"${(r.caseCode || '').replace(/"/g, '""')}"`,
           `"${(r.caseTitle || '').replace(/"/g, '""')}"`,
           `"${(r.score || '').replace(/"/g, '""')}"`,
-          r.numericScore !== undefined ? r.numericScore : 20,
+          r.numericScore !== undefined ? r.numericScore : 0,
           r.errors !== undefined ? r.errors : 0,
-          r.maxErrors !== undefined ? r.maxErrors : 2,
+          r.maxErrors !== undefined ? r.maxErrors : 6,
           `"${(r.status || '').replace(/"/g, '""')}"`,
           r.durationSeconds || 0,
           `"${(r.formattedDuration || '00:00').replace(/"/g, '""')}"`,
@@ -1491,7 +1491,7 @@
             <td>${escapeHtml(r.username)}</td>
             <td>${escapeHtml(r.caseTitle || r.caseCode)}</td>
             <td><b>${escapeHtml(r.score)}</b></td>
-            <td>${r.numericScore !== undefined ? r.numericScore : 20}</td>
+            <td>${r.numericScore !== undefined ? r.numericScore : 0}</td>
             <td>${r.errors !== undefined ? r.errors : 0}</td>
             <td class="${statusClass}">${escapeHtml(r.status)}</td>
             <td>${escapeHtml(r.formattedDuration || '00:00')}</td>

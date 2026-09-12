@@ -71,7 +71,7 @@ window.UyapayServices = window.UyapayServices || {};
 
       try {
         const id = evalData.id || ('eval-' + Date.now());
-        const numericScore = evalData.numericScore !== undefined ? evalData.numericScore : 20;
+        const numericScore = evalData.numericScore !== undefined ? evalData.numericScore : 0;
         const durationSeconds = evalData.durationSeconds || 0;
         const mins = Math.floor(durationSeconds / 60);
         const secs = durationSeconds % 60;
@@ -84,7 +84,7 @@ window.UyapayServices = window.UyapayServices || {};
           caseId: evalData.caseId || 'multi-5-cases',
           caseCode: evalData.caseCode || '5 Casos B2C',
           caseTitle: evalData.caseTitle || 'Evaluación de 5 Casos B2C',
-          score: evalData.score || `${numericScore} / 20`,
+          score: evalData.score || `${numericScore < 10 ? '0' + numericScore : numericScore} / 20`,
           numericScore: numericScore,
           errors: evalData.errors !== undefined ? evalData.errors : 0,
           maxErrorsAllowed: evalData.maxErrorsAllowed || 6,

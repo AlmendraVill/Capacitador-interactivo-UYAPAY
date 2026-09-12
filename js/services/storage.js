@@ -189,7 +189,7 @@ window.UyapayServices = window.UyapayServices || {};
 
       // 3. Guardado local de respaldo (localStorage)
       const results = getLocalItem(KEYS.RESULTS, []);
-      const score = evalData.numericScore !== undefined ? evalData.numericScore : 20;
+      const score = evalData.numericScore !== undefined ? evalData.numericScore : 0;
       const duration = evalData.durationSeconds || 0;
       const mins = Math.floor(duration / 60);
       const secs = duration % 60;
@@ -203,9 +203,9 @@ window.UyapayServices = window.UyapayServices || {};
         caseCode: evalData.caseCode || 'B2C-01',
         caseTitle: evalData.caseTitle || 'Caso 1',
         errors: evalData.errors || 0,
-        score: evalData.score || `${score} / 20`,
+        score: evalData.score || `${score < 10 ? '0' + score : score} / 20`,
         numericScore: score,
-        status: evalData.status || 'Aprobado',
+        status: evalData.status || (score >= 11 ? 'Aprobado' : 'Desaprobado'),
         durationSeconds: duration,
         formattedDuration: formattedDuration,
         completedAt: evalData.completedAt || new Date().toLocaleString('es-PE'),

@@ -37,6 +37,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Deshabilitar caché para código de aplicación y assets en desarrollo / evaluación
+app.use((req, res, next) => {
+  if (req.path.endsWith('.js') || req.path.endsWith('.css') || req.path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname)));
 
 // ================= INICIALIZACIÓN BASE DE DATOS SQLITE (CON WAL Y BUSY TIMEOUT) =================
@@ -395,9 +405,9 @@ app.post('/api/results', (req, res) => {
   }
 
   const id = data.id || ('eval-' + Date.now());
-  const numericScore = data.numericScore !== undefined ? data.numericScore : Math.max(0, 20 - ((data.errors || 0) * 4));
-  const maxErrors = data.maxErrorsAllowed !== undefined ? data.maxErrorsAllowed : 2;
-  const status = data.status || ((data.errors || 0) <= maxErrors ? 'Aprobado' : 'Desaprobado');
+  const numericScore = data.numericScore !== undefined ? data.numericScore : 0;
+  const maxErrors = data.maxErrorsAllowed !== undefined ? data.maxErrorsAllowed : 6;
+  const status = data.status || (numericScore >= 11 ? 'Aprobado' : 'Desaprobado');
   const durationSeconds = data.durationSeconds || 0;
   const mins = Math.floor(durationSeconds / 60);
   const secs = durationSeconds % 60;

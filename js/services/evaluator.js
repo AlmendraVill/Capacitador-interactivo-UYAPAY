@@ -23,9 +23,11 @@ window.UyapayServices = window.UyapayServices || {};
   }
 
   /**
-   * Calcula la calificación de un caso según el Modelo de Doble Factor:
-   * - 60% Avance / Logro de la Meta (hasta 12.0 puntos)
-   * - 40% Calidad / Precisión Operativa (hasta 8.0 puntos)
+   * Calcula la calificación de un caso según el Modelo Oficial:
+   * - 60% Avance / Logro de la Meta (hasta 12.0 puntos): Analiza si resolvió el caso o no, así sea con errores.
+   *   Si no hizo nada (0 pasos), otorga 0 puntos.
+   * - 40% Calidad Operativa (hasta 8.0 puntos): Si no tuvo errores asigna todos los puntos (8 pts) y
+   *   resta 1 punto por cada error, con un tope de 4 puntos menos.
    * Escala vigesimal oficial (0 a 20).
    *
    * @param {number} completedSteps - Pasos completados exitosamente
@@ -38,29 +40,30 @@ window.UyapayServices = window.UyapayServices || {};
     const steps = isCompleted ? total : Math.max(0, Math.min(completedSteps || 0, total));
     const errs = Math.max(0, errors || 0);
 
-    // Caso no tocado o sin pasos completados: 0 puntos
-    if (steps === 0) {
+    // Caso no tocado, no contestado o sin pasos completados: 0 puntos
+    if (!isCompleted && steps === 0) {
       return {
         advancePoints: 0,
         qualityPoints: 0,
-        precisionRate: 0,
+        errorDeduction: 0,
         completionRate: 0,
         numericScore: 0,
         score: '00 / 20'
       };
     }
 
-    // 1. Tasa de Avance (0.0 a 1.0)
-    const completionRate = steps / total;
-
-    // Puntos de Avance: 60% del peso total (hasta 12.0 puntos)
+    // 1. Logro de la Meta / Resolución del Caso (60% del peso = hasta 12.0 puntos)
+    // 60% analiza si resolvió el caso o no así sea con errores
+    const completionRate = isCompleted ? 1.0 : (steps / total);
     const advancePoints = completionRate * 12.0;
 
-    // 2. Tasa de Precisión Operativa (Pasos válidos / (Pasos válidos + Errores))
-    const precisionRate = steps / (steps + errs);
-
-    // Puntos de Calidad: 40% del peso total (hasta 8.0 puntos, proporcional al avance logrado)
-    const qualityPoints = completionRate * precisionRate * 8.0;
+    // 2. Calidad Operativa (40% del peso = hasta 8.0 puntos)
+    // Si no tuvo errores asigna todos los puntos (8 pts) y resta 1 punto por cada error,
+    // con un tope de 4 puntos menos (máxima penalización 4 pts).
+    const errorDeduction = Math.min(errs, 4); // Tope de 4 puntos menos
+    const baseQuality = Math.max(0, 8.0 - errorDeduction);
+    // Ponderado según el avance completado en el caso
+    const qualityPoints = completionRate * baseQuality;
 
     // Puntaje consolidado del caso entre 0 y 20
     const finalScore = Math.min(20, Math.max(0, Math.round(advancePoints + qualityPoints)));
@@ -69,7 +72,7 @@ window.UyapayServices = window.UyapayServices || {};
     return {
       advancePoints: parseFloat(advancePoints.toFixed(1)),
       qualityPoints: parseFloat(qualityPoints.toFixed(1)),
-      precisionRate: parseFloat((precisionRate * 100).toFixed(1)),
+      errorDeduction: errorDeduction,
       completionRate: parseFloat((completionRate * 100).toFixed(1)),
       numericScore: finalScore,
       score: formatted
@@ -82,7 +85,7 @@ window.UyapayServices = window.UyapayServices || {};
     caseState.totalSteps = totalSteps;
     caseState.advancePoints = scoreObj.advancePoints;
     caseState.qualityPoints = scoreObj.qualityPoints;
-    caseState.precisionRate = scoreObj.precisionRate;
+    caseState.errorDeduction = scoreObj.errorDeduction;
     caseState.completionRate = scoreObj.completionRate;
     caseState.numericScore = scoreObj.numericScore;
     caseState.score = scoreObj.score;
@@ -126,7 +129,7 @@ window.UyapayServices = window.UyapayServices || {};
             actionsLog: [],
             advancePoints: initialScore.advancePoints,
             qualityPoints: initialScore.qualityPoints,
-            precisionRate: initialScore.precisionRate,
+            errorDeduction: initialScore.errorDeduction,
             completionRate: initialScore.completionRate,
             numericScore: initialScore.numericScore,
             score: initialScore.score

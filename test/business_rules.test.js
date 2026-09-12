@@ -65,8 +65,8 @@ describe('1. Catálogo Oficial de Casos y Productos UYAPAY', () => {
   });
 });
 
-describe('2. Sistema de Calificación Vigesimal de Doble Factor (60% Avance / 40% Calidad)', () => {
-  test('Caso no intentado (0 pasos completados) otorga nota 00/20', () => {
+describe('2. Sistema de Calificación Vigesimal de Doble Factor (60% Resolución / 40% Calidad)', () => {
+  test('Caso no intentado / saltado (0 pasos completados) otorga nota 00/20', () => {
     const result = calculateCaseScore(0, 6, 0, false);
     assert.strictEqual(result.numericScore, 0);
     assert.strictEqual(result.score, '00 / 20');
@@ -82,33 +82,81 @@ describe('2. Sistema de Calificación Vigesimal de Doble Factor (60% Avance / 40
     assert.strictEqual(result.qualityPoints, 8.0);
   });
 
-  test('Caso completado al 100% tras 4 errores iniciales (recuperación exitosa) otorga nota aprobatoria (18/20)', () => {
-    const result = calculateCaseScore(10, 10, 4, true);
-    // Avance: 12.0 pts. Calidad: (10 / 14) * 8.0 = 5.71 pts. Total: 17.71 -> 18
-    assert.strictEqual(result.numericScore, 18);
-    assert.strictEqual(result.score, '18 / 20');
-    assert.ok(result.numericScore >= 11, 'El asesor debe aprobar por haber resuelto el 100% del caso');
+  test('Caso completado al 100% con 1 error deduce 1 punto de calidad (nota 19/20)', () => {
+    const result = calculateCaseScore(6, 6, 1, true);
+    assert.strictEqual(result.numericScore, 19);
+    assert.strictEqual(result.score, '19 / 20');
+    assert.strictEqual(result.advancePoints, 12.0);
+    assert.strictEqual(result.qualityPoints, 7.0);
   });
 
-  test('Caso completado al 100% con alta tasa de errores conserva la base de avance (15/20)', () => {
+  test('Caso completado al 100% con 2 errores deduce 2 puntos de calidad (nota 18/20)', () => {
+    const result = calculateCaseScore(6, 6, 2, true);
+    assert.strictEqual(result.numericScore, 18);
+    assert.strictEqual(result.score, '18 / 20');
+    assert.strictEqual(result.advancePoints, 12.0);
+    assert.strictEqual(result.qualityPoints, 6.0);
+  });
+
+  test('Caso completado al 100% con 4 errores deduce 4 puntos de calidad (nota 16/20)', () => {
+    const result = calculateCaseScore(6, 6, 4, true);
+    assert.strictEqual(result.numericScore, 16);
+    assert.strictEqual(result.score, '16 / 20');
+    assert.strictEqual(result.advancePoints, 12.0);
+    assert.strictEqual(result.qualityPoints, 4.0);
+  });
+
+  test('Caso completado al 100% con alta tasa de errores (ej. 10 errores) aplica tope de 4 puntos menos (nota 16/20)', () => {
     const result = calculateCaseScore(6, 6, 10, true);
-    // Avance: 12.0 pts. Calidad: (6 / 16) * 8.0 = 3.0 pts. Total: 15
-    assert.strictEqual(result.numericScore, 15);
-    assert.ok(result.numericScore >= 12, 'El caso completado debe garantizar la base de avance de 12 pts');
+    // Avance: 12.0 pts. Calidad con tope: 8.0 - 4.0 = 4.0 pts. Total: 16
+    assert.strictEqual(result.numericScore, 16);
+    assert.strictEqual(result.score, '16 / 20');
+    assert.strictEqual(result.advancePoints, 12.0);
+    assert.strictEqual(result.qualityPoints, 4.0);
+    assert.ok(result.numericScore >= 11, 'El asesor aprueba el caso por haber resuelto la meta');
   });
 
   test('Caso incompleto con avance del 50% y 0 errores otorga nota proporcional (10/20)', () => {
     const result = calculateCaseScore(3, 6, 0, false);
-    // Avance: 0.5 * 12.0 = 6.0 pts. Calidad: 0.5 * 1.0 * 8.0 = 4.0 pts. Total: 10
+    // Avance: 0.5 * 12.0 = 6.0 pts. Calidad: 0.5 * 8.0 = 4.0 pts. Total: 10
     assert.strictEqual(result.numericScore, 10);
     assert.strictEqual(result.score, '10 / 20');
   });
 
-  test('Caso incompleto con avance del 50% y 3 errores otorga nota proporcional reducida (08/20)', () => {
-    const result = calculateCaseScore(3, 6, 3, false);
-    // Avance: 6.0 pts. Calidad: 0.5 * (3 / 6) * 8.0 = 2.0 pts. Total: 8
-    assert.strictEqual(result.numericScore, 8);
-    assert.strictEqual(result.score, '08 / 20');
+  test('Caso incompleto con avance del 50% y 2 errores otorga nota proporcional reducida (09/20)', () => {
+    const result = calculateCaseScore(3, 6, 2, false);
+    // Avance: 6.0 pts. Calidad: 0.5 * (8 - 2) = 3.0 pts. Total: 9
+    assert.strictEqual(result.numericScore, 9);
+    assert.strictEqual(result.score, '09 / 20');
+  });
+
+  test('Caso no resuelto con 0 pasos completados pero con errores cometidos otorga 00/20', () => {
+    const result = calculateCaseScore(0, 6, 5, false);
+    assert.strictEqual(result.numericScore, 0);
+    assert.strictEqual(result.score, '00 / 20');
+    assert.strictEqual(result.advancePoints, 0);
+    assert.strictEqual(result.qualityPoints, 0);
+  });
+
+  test('Simulación de usuario que se salta todos los 5 casos: promedio exacto 00/20 y desaprobado', () => {
+    const mockCases = [
+      { id: 'c1', code: 'CP-01', rules: [{}, {}, {}] },
+      { id: 'c2', code: 'CP-02', rules: [{}, {}, {}] },
+      { id: 'c3', code: 'CP-03', rules: [{}, {}, {}] },
+      { id: 'c4', code: 'CP-04', rules: [{}, {}, {}] },
+      { id: 'c5', code: 'CP-05', rules: [{}, {}, {}] }
+    ];
+    Evaluator.startMultiEvaluation({ username: 'testuser', name: 'Test User' }, mockCases);
+    const finalResult = Evaluator.finishMultiEvaluation();
+    assert.strictEqual(finalResult.numericScore, 0);
+    assert.strictEqual(finalResult.score, '00 / 20');
+    assert.strictEqual(finalResult.status, 'Desaprobado');
+    assert.strictEqual(finalResult.completedCasesCount, 0);
+    assert.strictEqual(finalResult.casesDetails.length, 5);
+    finalResult.casesDetails.forEach(cs => {
+      assert.strictEqual(cs.numericScore, 0);
+      assert.strictEqual(cs.score, '00 / 20');
+    });
   });
 
   test('Puntaje siempre se mantiene acotado en escala vigesimal válida [0 a 20]', () => {
