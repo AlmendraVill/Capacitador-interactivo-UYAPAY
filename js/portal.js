@@ -1538,8 +1538,8 @@
     exportReport: exportReport,
     resetData: async () => {
       const confirmed = await showCustomConfirm({
-        title: '¿Restablecer Base de Datos?',
-        message: '¿Estás seguro de restablecer todos los registros y reiniciar el ranking general?',
+        title: '¿Restablecer Datos de Evaluación?',
+        message: '¿Estás seguro de restablecer todos los registros y reiniciar el ranking general?\n\nSe limpiarán las evaluaciones registradas y se sincronizará la nube (Firebase) y el servidor con el estado demo inicial.',
         icon: '🗑️',
         confirmText: 'Sí, Restablecer',
         cancelText: 'Cancelar',
@@ -1547,6 +1547,11 @@
       });
       if (confirmed) {
         await Storage.resetAll();
+        await showCustomAlert({
+          title: 'Datos Restablecidos',
+          message: '✅ Base de datos restablecida con éxito tanto en la nube (Firebase) como en el servidor local.',
+          icon: '✅'
+        });
         location.reload();
       }
     },

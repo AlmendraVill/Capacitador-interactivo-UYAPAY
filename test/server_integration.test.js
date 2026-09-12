@@ -110,6 +110,14 @@ describe('6. Integración End-to-End del Backend UYAPAY (server.js)', () => {
     assert.strictEqual(res.body.podiumVisible, true);
   });
 
+  test('Endpoint /api/reset restablece datos demo con token de Administrador (HTTP 200)', async () => {
+    const res = await request('POST', '/api/reset', null, {
+      'Authorization': `Bearer ${adminToken}`
+    });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+  });
+
   test('Endpoint /api/admin/export genera CSV con BOM UTF-8 y cabeceras correctas', async () => {
     const res = await request('GET', '/api/admin/export?format=csv', null, {
       'Authorization': `Bearer ${adminToken}`

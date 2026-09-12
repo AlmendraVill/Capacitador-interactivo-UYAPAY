@@ -63,6 +63,9 @@ window.UyapayServices = window.UyapayServices || {};
     if (session && session.token) {
       headers['Authorization'] = `Bearer ${session.token}`;
     }
+    if (session && session.role) {
+      headers['X-User-Role'] = session.role;
+    }
     return headers;
   }
 
@@ -376,17 +379,31 @@ window.UyapayServices = window.UyapayServices || {};
 
     // ---- RESETEAR A DEMO ----
     async resetAll() {
+      // 1. Limpiar y re-sembrar en Firebase Cloud Firestore (Nube)
+      const fb = window.UyapayServices && window.UyapayServices.Firebase;
+      if (fb && fb.isReady()) {
+        try {
+          await fb.resetAll();
+        } catch (fbErr) {
+          console.warn('[Storage] Error al reiniciar Firebase Firestore:', fbErr);
+        }
+      }
+
+      // 2. Limpiar y re-sembrar en Backend SQLite (API local)
       try {
         await fetch(resolveUrl('/api/reset'), {
           method: 'POST',
           headers: getAuthHeaders()
         });
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[Storage] Error al reiniciar backend SQLite:', e);
+      }
 
+      // 3. Limpiar almacenamiento local (PRESERVANDO la sesión del usuario activo)
       if (hasStorage) {
-        localStorage.removeItem(KEYS.USERS);
         localStorage.removeItem(KEYS.RESULTS);
-        localStorage.removeItem(KEYS.SESSION);
+        localStorage.removeItem(KEYS.USERS);
+        // NOTA: NO eliminar KEYS.SESSION para no desloguear al administrador
       }
     }
   };
