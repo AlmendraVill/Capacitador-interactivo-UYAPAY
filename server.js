@@ -16,6 +16,7 @@ const { createTrainingRouter } = require('./src/routes/training.js');
 const { createKnowledgeRouter } = require('./src/routes/knowledge.js');
 const { createGamificationRouter } = require('./src/routes/gamification.js');
 const { createIntegrationRouter } = require('./src/routes/integration.js');
+const { createEvaluationsRouter } = require('./src/routes/evaluations.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -445,6 +446,16 @@ app.post('/api/results', (req, res) => {
     JSON.stringify(data.interactions || []),
     JSON.stringify(data.casesDetails || [])
   );
+
+  // Limpiar sesión en curso del simulador y auto-desbloquear Gatekeeper si correspondía (Algoritmo 3 PRDv2)
+  try {
+    db.prepare('DELETE FROM simulator_sessions WHERE user_id = ?').run(data.username);
+    const today = new Date().toISOString().split('T')[0];
+    db.prepare(`
+      UPDATE evaluation_assignments SET status = 'COMPLETADO', updated_at = ?
+      WHERE user_id = ? AND scheduled_date = ? AND status IN ('PENDIENTE', 'EN_CURSO')
+    `).run(new Date().toISOString(), data.username, today);
+  } catch (e) {}
 
   const savedRecord = {
     id,
@@ -909,12 +920,53 @@ app.get('/api/admin/export', adminMiddleware, (req, res) => {
   }
 });
 
-// ================= RUTAS DE MÓDULOS EXPANDIDOS (REQUISITOS.PDF) =================
+// ================= RUTAS DE MÓDULOS EXPANDIDOS (REQUISITOS.PDF / PRDV2) =================
 app.use('/api/users-mgmt', createUsersRouter(db, authMiddleware, adminMiddleware));
 app.use('/api/training', createTrainingRouter(db, authMiddleware, adminMiddleware));
 app.use('/api/knowledge', createKnowledgeRouter(db, authMiddleware, adminMiddleware));
 app.use('/api/gamification', createGamificationRouter(db, authMiddleware));
 app.use('/api/integration', createIntegrationRouter(db));
+app.use('/api/evaluations', createEvaluationsRouter(db, authMiddleware, adminMiddleware));
+
+// Endpoint canónico directo para Gatekeeper (PRDv2 Algoritmo 3)
+app.get('/api/gatekeeper/status', (req, res) => {
+  try {
+    const userId = req.query.userId || (req.user ? req.user.id : null);
+    const queryDate = req.query.date || new Date().toISOString().split('T')[0];
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'El parámetro userId es obligatorio.' });
+    }
+
+    const activeAssignments = db.prepare(`
+      SELECT * FROM evaluation_assignments
+      WHERE user_id = ? AND scheduled_date = ?
+    `).all(userId, queryDate);
+
+    for (const assign of activeAssignments) {
+      if (assign.status === 'PENDIENTE' || assign.status === 'EN_CURSO') {
+        return res.json({
+          has_blocking_evaluation: true,
+          status: 'LOCKED',
+          evaluation: {
+            eventId: assign.event_id,
+            title: assign.title,
+            type: assign.evaluation_type,
+            status: assign.status,
+            scheduledDate: assign.scheduled_date
+          }
+        });
+      }
+    }
+
+    res.json({
+      has_blocking_evaluation: false,
+      status: 'UNLOCKED'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // Función para obtener dinámicamente la IP de la red local (Wi-Fi / Ethernet)
 function getLocalNetworkIp() {

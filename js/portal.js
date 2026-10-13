@@ -1951,64 +1951,116 @@
     switchTab('training-view');
   }
 
-  // 4. Capacitador Paso a Paso e Inducción (Onboarding)
+  // 4. Capacitador Paso a Paso e Inducción (Onboarding de 7 Hitos Oficiales PRDv2)
   const ONBOARDING_TASKS = [
     {
       id: 'task-1',
-      code: 'T1',
-      title: 'Geocerca GPS y Comprobación de Punto',
-      desc: 'Verifica la distancia al cliente (radio de 50m). Si estás lejos, utiliza Visita Telefónica justificada.',
-      icon: '📍'
+      code: 'H1',
+      title: 'Inicio de Sesión y Selección de Agencia',
+      desc: 'Ingreso con credenciales corporativas y selección opcional de sede asignada (Arequipa/Cusco) en el drawer.',
+      icon: '🔐'
     },
     {
       id: 'task-2',
-      code: 'T2',
-      title: 'Registro de Fotos de Exhibición',
-      desc: 'Toma la foto inicial de góndola/estantería y la foto final de cierre de visita obligatorias.',
-      icon: '📸'
+      code: 'H2',
+      title: 'Reconocimiento de Interfaces y Tipo de Cambio',
+      desc: 'Navegación por barra inferior (Inicio, Visitas, Pedidos) y lectura del indicador del tipo de cambio oficial del día.',
+      icon: '📱'
     },
     {
       id: 'task-3',
-      code: 'T3',
-      title: 'Tracking de Precios de Competencia',
-      desc: 'Registra el precio numérico y foto de cotización observada o selecciona motivo de no registro.',
-      icon: '🏷️'
+      code: 'H3',
+      title: 'Menú Secundario / Drawer Lateral Completo',
+      desc: 'Exploración de Mis Clientes, Estados de Cuenta en PDF, Historial de Visitas a 6 meses y Documentos Electrónicos.',
+      icon: '📑'
     },
     {
       id: 'task-4',
-      code: 'T4',
-      title: 'Toma de Pedido y Cobranza Mixta',
-      desc: 'Aplica condición de pago, lista de precios autorizada, promociones combo y arqueo de cobranzas.',
-      icon: '🛒'
+      code: 'H4',
+      title: 'Proyección de Ventas por Familia de Productos',
+      desc: 'Ingreso de metas por familias (Rimula Multigrado, Spirax, Shell Premium, Neumáticos, Repuestos Hyundai) y guardado.',
+      icon: '📊'
     },
     {
       id: 'task-5',
-      code: 'T5',
-      title: 'Cierre de Visita y Liquidación Diaria',
-      desc: 'Completa la visita con o sin pedido justificado y genera el comprobante consolidado de ruta.',
+      code: 'H5',
+      title: 'Plan de Visitas, Geocerca y Contingencias de Ruta',
+      desc: 'Verificación de radio GPS de 50 metros, cambio de almacén/dirección, reseteo de coordenadas y visita telefónica (máx. 5/día).',
+      icon: '📍'
+    },
+    {
+      id: 'task-6',
+      code: 'H6',
+      title: 'Secuencia Operativa de Visita (Tareas T1 a T5)',
+      desc: 'Scoring A/1, fotos obligatorias antes/después, tracking de precios, toma de pedido con listas y cobranza con voucher/retención.',
+      icon: '🛒'
+    },
+    {
+      id: 'task-7',
+      code: 'H7',
+      title: 'Cierre de Visita, Justificación y Seguimiento',
+      desc: 'Cierre de visita formal, justificación de tareas omitidas, seguimiento del pedido y obtención de la insignia Pionero UYAPAY.',
       icon: '🏁'
     }
   ];
 
-  function getOnboardingState() {
+  let cachedOnboardingState = null;
+
+  async function getOnboardingState() {
     const user = Auth.getCurrentUser();
-    const key = `uyapay_onboarding_${user ? user.username : 'guest'}`;
+    const localKey = `uyapay_onboarding_${user ? user.username : 'guest'}`;
+
+    if (cachedOnboardingState) return cachedOnboardingState;
+
     try {
-      return JSON.parse(localStorage.getItem(key)) || {};
+      if (user) {
+        const res = await fetch('/api/training/onboarding/progress', { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          const state = {};
+          if (Array.isArray(data.completedTasks)) {
+            data.completedTasks.forEach(tId => state[tId] = true);
+          }
+          cachedOnboardingState = state;
+          try { localStorage.setItem(localKey, JSON.stringify(state)); } catch (e) {}
+          return state;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      cachedOnboardingState = JSON.parse(localStorage.getItem(localKey)) || {};
+      return cachedOnboardingState;
     } catch (e) {
       return {};
     }
   }
 
-  function saveOnboardingState(state) {
+  async function saveOnboardingState(state) {
+    cachedOnboardingState = state;
     const user = Auth.getCurrentUser();
-    const key = `uyapay_onboarding_${user ? user.username : 'guest'}`;
+    const localKey = `uyapay_onboarding_${user ? user.username : 'guest'}`;
+
     try {
-      localStorage.setItem(key, JSON.stringify(state));
+      localStorage.setItem(localKey, JSON.stringify(state));
+    } catch (e) {}
+
+    try {
+      if (user) {
+        const completedTasks = Object.keys(state).filter(k => Boolean(state[k]));
+        await fetch('/api/training/onboarding/progress', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            completedTasks: completedTasks,
+            examUnlocked: completedTasks.length >= ONBOARDING_TASKS.length
+          })
+        });
+      }
     } catch (e) {}
   }
 
-  function renderOnboardingView() {
+  async function renderOnboardingView() {
     const container = document.getElementById('onboarding-tasks-list');
     const progressBar = document.getElementById('onboarding-progress-bar');
     const progressText = document.getElementById('onboarding-progress-text');
@@ -2016,7 +2068,7 @@
     const btnExam = document.getElementById('btn-start-onboarding-exam');
     if (!container) return;
 
-    const state = getOnboardingState();
+    const state = await getOnboardingState();
     let completedCount = 0;
 
     let html = '';
@@ -2029,14 +2081,14 @@
           <div style="display:flex; align-items:center; gap:16px;">
             <div class="onboarding-task-icon">${task.icon}</div>
             <div>
-              <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tarea ${idx + 1} de 5 • ${task.code}</div>
+              <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Hito ${idx + 1} de 7 • ${task.code}</div>
               <h4 style="margin:2px 0 4px 0; font-size:15px; color:var(--text-dark);">${escapeHtml(task.title)}</h4>
               <p style="margin:0; font-size:12.5px; color:var(--text-muted); line-height:1.4;">${escapeHtml(task.desc)}</p>
             </div>
           </div>
           <div>
             <button class="btn-${isDone ? 'secondary' : 'primary'}" style="width:auto; font-size:12.5px; padding:8px 16px;" onclick="window.UyapayPortal.toggleOnboardingTask('${task.id}')">
-              ${isDone ? '✓ Completada' : 'Completar Tarea'}
+              ${isDone ? '✓ Completado' : 'Completar Hito'}
             </button>
           </div>
         </div>
@@ -2046,10 +2098,10 @@
 
     const pct = Math.round((completedCount / ONBOARDING_TASKS.length) * 100);
     if (progressBar) progressBar.style.width = pct + '%';
-    if (progressText) progressText.textContent = `${pct}% Completado (${completedCount} de 5 tareas)`;
+    if (progressText) progressText.textContent = `${pct}% Completado (${completedCount} de 7 hitos)`;
     if (statusPill) {
       if (pct === 100) {
-        statusPill.textContent = '🌟 Listo para Evaluación';
+        statusPill.textContent = '🌟 Inducción Completada';
         statusPill.style.background = '#dcfce7';
         statusPill.style.color = '#16a34a';
       } else {
@@ -2062,21 +2114,21 @@
     if (btnExam) {
       if (pct === 100) {
         btnExam.disabled = false;
-        btnExam.textContent = '🚀 Iniciar Evaluación de Onboarding ➔';
+        btnExam.textContent = '🚀 Iniciar Evaluación Práctica ➔';
         btnExam.style.background = 'var(--success)';
       } else {
         btnExam.disabled = true;
-        btnExam.textContent = `🔒 Bloqueado (Faltan ${5 - completedCount} tareas)`;
+        btnExam.textContent = `🔒 Bloqueado (Faltan ${7 - completedCount} hitos)`;
         btnExam.style.background = 'var(--yellow)';
       }
     }
   }
 
-  function toggleOnboardingTask(taskId) {
-    const state = getOnboardingState();
+  async function toggleOnboardingTask(taskId) {
+    const state = await getOnboardingState();
     state[taskId] = !state[taskId];
-    saveOnboardingState(state);
-    renderOnboardingView();
+    await saveOnboardingState(state);
+    await renderOnboardingView();
   }
 
   function startOnboardingExam() {

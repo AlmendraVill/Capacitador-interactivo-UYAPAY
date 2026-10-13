@@ -172,6 +172,38 @@ function initDatabaseSchema(db) {
       rules_json TEXT,
       status TEXT DEFAULT 'active'
     );
+
+    -- Persistencia del Onboarding Interactivo de 7 Hitos (Flujo 5 PRDv2)
+    CREATE TABLE IF NOT EXISTS user_onboarding (
+      user_id TEXT PRIMARY KEY,
+      completed_tasks_json TEXT NOT NULL DEFAULT '[]',
+      exam_unlocked INTEGER NOT NULL DEFAULT 0,
+      exam_passed INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+
+    -- Persistencia granular de sesión activa del simulador móvil ante recargas / F5 (Flujo 6 PRDv2)
+    CREATE TABLE IF NOT EXISTS simulator_sessions (
+      user_id TEXT PRIMARY KEY,
+      current_case_code TEXT,
+      cases_progress_json TEXT NOT NULL DEFAULT '[]',
+      active_tab_index INTEGER DEFAULT 0,
+      elapsed_seconds INTEGER DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+
+    -- Asignaciones de evaluación y Gatekeeper de bloqueo/desbloqueo (Algoritmo 3 PRDv2)
+    CREATE TABLE IF NOT EXISTS evaluation_assignments (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      evaluation_type TEXT NOT NULL DEFAULT 'SIMULADOR',
+      scheduled_date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'PENDIENTE',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 
   // 3. Sembrado de datos iniciales esenciales (Seed Data)

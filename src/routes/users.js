@@ -181,6 +181,48 @@ function createUsersRouter(db, authMiddleware, adminMiddleware) {
     }
   });
 
+  // 6. Modificar contraseña de usuario en caliente (Flujo 10 PRDv2)
+  router.patch('/:id/password', authMiddleware, (req, res) => {
+    try {
+      const targetUserId = req.params.id;
+      const { newPassword } = req.body;
+
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length === 0) {
+        return res.status(400).json({ success: false, message: 'La nueva contraseña no puede estar vacía.' });
+      }
+
+      const currentUser = req.user;
+      const isSelf = currentUser && currentUser.id === targetUserId;
+      const isAdmin = currentUser && (currentUser.role === 'admin' || (Array.isArray(currentUser.roles) && currentUser.roles.includes('admin')));
+      const isEditor = currentUser && (currentUser.role === 'editor' || (Array.isArray(currentUser.roles) && currentUser.roles.includes('editor')));
+
+      if (!isSelf && !isAdmin && !isEditor) {
+        return res.status(403).json({ success: false, message: 'No tienes permisos para modificar la contraseña de este usuario.' });
+      }
+
+      const targetUser = db.prepare('SELECT id, username FROM users WHERE id = ?').get(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+      }
+
+      const crypto = require('crypto');
+      const salt = crypto.randomBytes(16).toString('hex');
+      const iterations = 10000;
+      const derived = crypto.pbkdf2Sync(newPassword.trim(), salt, iterations, 64, 'sha512').toString('hex');
+      const hashedPassword = `$pbkdf2$${iterations}$${salt}$${derived}`;
+
+      db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPassword, targetUserId);
+
+      res.json({
+        success: true,
+        message: 'Contraseña actualizada correctamente en caliente.',
+        userId: targetUserId
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+
   return router;
 }
 
