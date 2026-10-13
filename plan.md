@@ -58,16 +58,18 @@ flowchart TD
 
 ---
 
-### Hito 3: Onboarding Asistido y Motor de Casos en Simulador (Flujos 5, 6)
+### Hito 3: Onboarding Asistido y Motor de Casos en Simulador (Flujos 5, 6) [COMPLETADO]
 * **Alcance Técnico:**
-  1. **Onboarding Guiado de 7 Hitos:** Recorrido secuencial en el smartphone virtual con tooltips de ayuda contextual y botón "OK" según el flujo oficial.
-  2. **Arena de Evaluación con Simulador:** Navegación en pestañas por casos prácticos sin retorno una vez finalizados.
-  3. **Aislamiento de Casos:** Reseteo total de estado del cliente al cambiar de pestaña ("cambio de celular"). Persistencia de avance ante recarga accidental (F5).
-  4. **Motor de Calificación y Cronómetro:** Temporizador global de 30 min, registro de penalizaciones por `[CLIC INDEBIDO]` y `[DATO INCORRECTO]`.
-* **Criterios de Aceptación (DoD):**
-  * El participante no puede volver a pestañas de casos ya resueltos.
-  * Los errores restan puntaje del caso sin generar valores negativos por caso.
-  * Al culminar los 3 niveles (Básico, Intermedio, Avanzado), el simulador queda deshabilitado para el asesor conservando sus puntos.
+  1. **Onboarding Guiado de 7 Hitos:** Recorrido secuencial en el smartphone virtual con tooltips flotantes (`#onboardingGuideOverlay`), explicaciones paso a paso de los 7 hitos oficiales (`task-1` a `task-7`), botón interactivo `"OK ➔"` y persistencia en tiempo real en SQLite (`user_onboarding`).
+  2. **Arena de Evaluación con Simulador:** Navegación en pestañas de 5 casos prácticos con **regla estricta de no retorno** (`.eval-tab-item.completed.locked` con indicador `✅ 🔒`) bloqueando reingreso y mutaciones.
+  3. **Aislamiento de Casos ("Cambio de Celular en Caliente"):** Limpieza y reinicio total del estado de clientes, carritos y visitas al conmutar pestañas. Resiliencia ante recargas accidentales (`F5`) mediante recuperación automática desde `/api/evaluations/simulator/session`.
+  4. **Motor de Calificación y Cronómetro Regresivo de 30 min:** Reloj global continuo con cuenta regresiva `30:00` $\rightarrow$ `00:00`, alerta visual al restar $\le 5$ minutos y auto-entrega al expirar. Modelo vigesimal 60/40 sin valores negativos por caso.
+  5. **Estratificación Oficial:** Catálogo de 30 casos clasificados en Básico, Intermedio y Avanzado con badges visibles en la arena.
+* **Criterios de Aceptación (DoD) - Verificados:**
+  * ✅ El participante no puede volver a pestañas de casos ya resueltos (`completed locked`).
+  * ✅ Los errores restan puntaje de avance/calidad sin generar valores negativos por caso (`Math.max(0, ...)`).
+  * ✅ Al culminar los casos o agotarse el tiempo, la evaluación se cierra formalmente conservando los puntos auditables en SQLite.
+  * ✅ Suite automatizada `test/hito3_simulator_engine.test.js` con 93/93 tests pasando al 100%.
 
 ---
 

@@ -101,7 +101,7 @@ window.UyapayServices = window.UyapayServices || {};
      * @param {Array} casesArray - Batería de 5 casos seleccionados
      * @param {function} onTick - Callback del cronómetro continuo cada segundo
      */
-    startMultiEvaluation(user, casesArray, onTick) {
+    startMultiEvaluation(user, casesArray, onTick, maxSeconds = 1800, onTimeout = null) {
       this.stopTimer();
 
       const cases = Array.isArray(casesArray) && casesArray.length > 0
@@ -139,12 +139,93 @@ window.UyapayServices = window.UyapayServices || {};
         status: 'IN_PROGRESS'
       };
 
-      // Cronómetro global continuo para toda la evaluación (no se reinicia al cambiar de tab)
+      // Cronómetro global continuo para toda la evaluación con soporte de cuenta regresiva (30:00)
+      const maxSecs = maxSeconds || 1800;
+      activeEvaluation.maxSeconds = maxSecs;
+
       timerInterval = setInterval(() => {
         if (!activeEvaluation) return;
         activeEvaluation.elapsedSeconds = Math.floor((Date.now() - activeEvaluation.startTime) / 1000);
+        const remaining = Math.max(0, activeEvaluation.maxSeconds - activeEvaluation.elapsedSeconds);
+
         if (typeof onTick === 'function') {
-          onTick(activeEvaluation.elapsedSeconds, formatTime(activeEvaluation.elapsedSeconds));
+          onTick(activeEvaluation.elapsedSeconds, formatTime(remaining), remaining, formatTime(activeEvaluation.elapsedSeconds));
+        }
+
+        if (remaining <= 0 && activeEvaluation.status === 'IN_PROGRESS') {
+          activeEvaluation.status = 'TIME_OUT';
+          if (typeof onTimeout === 'function') {
+            onTimeout();
+          }
+        }
+      }, 1000);
+
+      return activeEvaluation;
+    },
+
+    /**
+     * Restaura una evaluación activa interrumpida (por recarga F5 o caída de conexión)
+     */
+    restoreMultiEvaluation(user, casesArray, sessionData, onTick, maxSeconds = 1800, onTimeout = null) {
+      this.stopTimer();
+
+      const elapsed = (sessionData && sessionData.elapsedSeconds) || 0;
+      const cases = Array.isArray(casesArray) && casesArray.length > 0
+        ? casesArray
+        : (window.UyapayData && window.UyapayData.CASES ? window.UyapayData.CASES.slice(0, 5) : []);
+
+      const savedProgress = (sessionData && sessionData.casesProgress) || [];
+
+      activeEvaluation = {
+        user: user || { username: 'alvaro', name: 'Alvaro Rodriguez' },
+        cases: cases,
+        activeTabIndex: (sessionData && sessionData.activeTabIndex) || 0,
+        startTime: Date.now() - (elapsed * 1000),
+        elapsedSeconds: elapsed,
+        maxSeconds: maxSeconds || 1800,
+        caseStates: cases.map((c, idx) => {
+          const totalSteps = (c.rules && c.rules.length) ? c.rules.length : 1;
+          const prog = savedProgress.find(p => p.caseCode === c.code || p.caseId === c.id || p.tabIndex === idx) || {};
+          const isDone = Boolean(prog.completed || prog.status === 'RESOLVED');
+          const errs = Number(prog.errors || 0);
+          const scoreObj = calculateCaseScore(prog.currentRuleIndex || (isDone ? totalSteps : 0), totalSteps, errs, isDone);
+
+          return {
+            caseId: c.id,
+            caseCode: c.code,
+            caseTitle: c.title,
+            client: c.client,
+            currentRuleIndex: prog.currentRuleIndex || (isDone ? totalSteps : 0),
+            totalSteps: totalSteps,
+            errors: errs,
+            completed: isDone,
+            actionsLog: prog.actionsLog || [],
+            advancePoints: scoreObj.advancePoints,
+            qualityPoints: scoreObj.qualityPoints,
+            errorDeduction: scoreObj.errorDeduction,
+            completionRate: scoreObj.completionRate,
+            numericScore: scoreObj.numericScore,
+            score: scoreObj.score
+          };
+        }),
+        totalErrors: savedProgress.reduce((sum, p) => sum + Number(p.errors || 0), 0),
+        status: 'IN_PROGRESS'
+      };
+
+      timerInterval = setInterval(() => {
+        if (!activeEvaluation) return;
+        activeEvaluation.elapsedSeconds = Math.floor((Date.now() - activeEvaluation.startTime) / 1000);
+        const remaining = Math.max(0, activeEvaluation.maxSeconds - activeEvaluation.elapsedSeconds);
+
+        if (typeof onTick === 'function') {
+          onTick(activeEvaluation.elapsedSeconds, formatTime(remaining), remaining, formatTime(activeEvaluation.elapsedSeconds));
+        }
+
+        if (remaining <= 0 && activeEvaluation.status === 'IN_PROGRESS') {
+          activeEvaluation.status = 'TIME_OUT';
+          if (typeof onTimeout === 'function') {
+            onTimeout();
+          }
         }
       }, 1000);
 

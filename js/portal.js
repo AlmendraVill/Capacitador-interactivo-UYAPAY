@@ -225,6 +225,11 @@
 
     await updateNavbarProfileBadges(user);
     await renderLeaderboard();
+
+    // Comprobar si hay una evaluación en curso activa (resiliencia ante F5)
+    if (user.role !== 'admin') {
+      await checkActiveEvaluationSession(user);
+    }
   }
 
   function setupNavigation(tabs) {
@@ -909,6 +914,126 @@
     return Cases.slice(0, 5);
   }
 
+  // ---- PERSISTENCIA Y SINCRONIZACIÓN DE SESIÓN (Flujo 6 PRDv2) ----
+  async function syncSimulatorSession(elapsed) {
+    const user = Auth.getCurrentUser();
+    if (!user || !evaluationCases || !evaluationCases.length) return;
+    const states = Evaluator.getAllCaseStates();
+    const activeCase = evaluationCases[currentActiveTab] || evaluationCases[0];
+    try {
+      await Storage.saveSimulatorSession({
+        currentCaseCode: activeCase.code,
+        activeTabIndex: currentActiveTab,
+        elapsedSeconds: elapsed !== undefined ? elapsed : (Evaluator.getActiveEvaluation() ? Evaluator.getActiveEvaluation().elapsedSeconds : 0),
+        casesProgress: states.map((s, idx) => ({
+          tabIndex: idx,
+          caseId: s.caseId,
+          caseCode: s.caseCode,
+          currentRuleIndex: s.currentRuleIndex,
+          completed: s.completed,
+          errors: s.errors,
+          score: s.score,
+          actionsLog: s.actionsLog
+        }))
+      });
+    } catch (e) {
+      console.warn('Error al sincronizar sesión de simulador:', e);
+    }
+  }
+
+  async function checkActiveEvaluationSession(user) {
+    try {
+      const sessionResult = await Storage.getSimulatorSession();
+      if (!sessionResult || !sessionResult.hasActiveSession || !sessionResult.session) {
+        return false;
+      }
+
+      const session = sessionResult.session;
+      if (session.elapsedSeconds >= 1800) {
+        await Storage.clearSimulatorSession();
+        return false;
+      }
+
+      let recoveredCases = [];
+      if (Array.isArray(session.casesProgress) && session.casesProgress.length > 0) {
+        recoveredCases = session.casesProgress.map(cp => {
+          return Cases.find(c => c.code === cp.caseCode || c.id === cp.caseId);
+        }).filter(Boolean);
+      }
+
+      if (recoveredCases.length < 5) {
+        evaluationCases = selectFiveEvaluationCases();
+      } else {
+        evaluationCases = recoveredCases;
+      }
+
+      currentActiveTab = session.activeTabIndex || 0;
+
+      // Desplegar arena de evaluación
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      document.getElementById('top-navbar').style.display = 'none';
+      document.getElementById('evaluation-arena').style.display = 'flex';
+
+      const timerEl = document.getElementById('exam-timer');
+      const liveAdvisorEl = document.getElementById('live-advisor');
+      if (liveAdvisorEl) liveAdvisorEl.textContent = user.name;
+
+      Evaluator.restoreMultiEvaluation(
+        user,
+        evaluationCases,
+        session,
+        (elapsedSec, formattedRemaining, remainingSec) => {
+          if (timerEl) {
+            timerEl.textContent = formattedRemaining;
+            if (remainingSec <= 300) {
+              timerEl.classList.add('timer-warning');
+            } else {
+              timerEl.classList.remove('timer-warning');
+            }
+          }
+          if (elapsedSec % 10 === 0) {
+            syncSimulatorSession(elapsedSec);
+          }
+        },
+        1800,
+        () => {
+          handleExamTimeout();
+        }
+      );
+
+      renderEvaluationTabs();
+
+      const states = Evaluator.getAllCaseStates();
+      let tabToLoad = currentActiveTab;
+      if (states[tabToLoad] && states[tabToLoad].completed) {
+        const firstIncomplete = states.findIndex(s => !s.completed);
+        if (firstIncomplete !== -1) tabToLoad = firstIncomplete;
+      }
+
+      loadCaseInTab(tabToLoad, true);
+
+      showCustomAlert({
+        title: 'Evaluación Reanudada (Resiliencia F5)',
+        message: '🔄 Se detectó una evaluación en curso activa. El cronómetro y tus casos resueltos se han restaurado.',
+        icon: '🔄'
+      });
+
+      return true;
+    } catch (err) {
+      console.warn('Error al verificar sesión de simulador:', err);
+      return false;
+    }
+  }
+
+  async function handleExamTimeout() {
+    await showCustomAlert({
+      title: 'Tiempo Límite Agotado (30:00)',
+      message: '⏰ El tiempo límite de 30 minutos para la evaluación ha concluido.\n\nEl sistema cerrará y calificará automáticamente tu examen con los casos resueltos hasta el momento.',
+      icon: '⏰'
+    });
+    finishFullExam(true);
+  }
+
   function startExam() {
     const user = Auth.getCurrentUser();
     if (!user) return;
@@ -923,12 +1048,33 @@
     document.getElementById('evaluation-arena').style.display = 'flex';
 
     const timerEl = document.getElementById('exam-timer');
-    if (timerEl) timerEl.textContent = '00:00';
+    if (timerEl) {
+      timerEl.textContent = '30:00';
+      timerEl.classList.remove('timer-warning');
+    }
 
-    // 3. Iniciar cronómetro continuo y motor multi-caso
-    Evaluator.startMultiEvaluation(user, evaluationCases, (seconds, formatted) => {
-      if (timerEl) timerEl.textContent = formatted;
-    });
+    // 3. Iniciar cronómetro continuo regresivo de 30 minutos (1800s) y motor multi-caso
+    Evaluator.startMultiEvaluation(
+      user,
+      evaluationCases,
+      (elapsedSec, formattedRemaining, remainingSec) => {
+        if (timerEl) {
+          timerEl.textContent = formattedRemaining;
+          if (remainingSec <= 300) {
+            timerEl.classList.add('timer-warning');
+          } else {
+            timerEl.classList.remove('timer-warning');
+          }
+        }
+        if (elapsedSec % 10 === 0) {
+          syncSimulatorSession(elapsedSec);
+        }
+      },
+      1800,
+      () => {
+        handleExamTimeout();
+      }
+    );
 
     const liveAdvisorEl = document.getElementById('live-advisor');
     if (liveAdvisorEl) liveAdvisorEl.textContent = user.name;
@@ -942,9 +1088,12 @@
       errors: 0
     });
 
+    // Guardar sesión inicial en SQLite
+    syncSimulatorSession(0);
+
     // 4. Renderizar pestañas y cargar el primer caso
     renderEvaluationTabs();
-    loadCaseInTab(0);
+    loadCaseInTab(0, true);
   }
 
   function getCleanCaseTitle(c) {
@@ -970,12 +1119,12 @@
 
       let classes = 'eval-tab-item';
       if (isActive) classes += ' active';
-      if (isCompleted) classes += ' completed';
+      if (isCompleted) classes += ' completed locked';
 
-      const statusIcon = isCompleted ? '✅' : (isActive ? '⏳' : '⚪');
+      const statusIcon = isCompleted ? '✅ 🔒' : (isActive ? '⏳' : '⚪');
 
       return `
-        <button class="${classes}" id="tab-btn-${index}" onclick="window.UyapayPortal.switchCaseTab(${index})">
+        <button class="${classes}" id="tab-btn-${index}" onclick="window.UyapayPortal.switchCaseTab(${index})" ${isCompleted && !isActive ? 'title="Caso completado y bloqueado"' : ''}>
           <span class="tab-pill-num">${index + 1}</span>
           <span>Caso ${index + 1}</span>
           <span id="tab-status-icon-${index}">${statusIcon}</span>
@@ -984,8 +1133,23 @@
     }).join('');
   }
 
-  function loadCaseInTab(tabIndex) {
+  function loadCaseInTab(tabIndex, force = false) {
     if (tabIndex < 0 || tabIndex >= evaluationCases.length) return;
+
+    const states = Evaluator.getAllCaseStates();
+    const targetCaseState = states[tabIndex] || {};
+
+    // REGLA ESTRICTA DE NO RETORNO:
+    // Si el caso ya fue completado y no se fuerza la carga, bloquear el reingreso
+    if (!force && targetCaseState.completed) {
+      showCustomAlert({
+        title: 'Caso Finalizado y Bloqueado',
+        message: `🔒 El Caso ${tabIndex + 1} ya fue enviado y completado.\n\nPor política de evaluación estricta, no se permite volver a editar o revisar casos resueltos. Por favor, selecciona una pestaña pendiente.`,
+        icon: '🔒'
+      });
+      return;
+    }
+
     currentActiveTab = tabIndex;
     Evaluator.switchActiveTab(tabIndex);
 
@@ -1007,6 +1171,7 @@
     // Actualizar encabezados y panel de situación (sin revelar códigos internos ni trampas)
     const caseOrdinalBadgeEl = document.getElementById('case-ordinal-badge');
     const caseCodeEl = document.getElementById('case-code');
+    const caseLevelBadgeEl = document.getElementById('case-level-badge');
     const moduleBadgeEl = document.getElementById('case-module-badge');
     const tabStatusEl = document.getElementById('case-tab-status');
     const titleEl = document.getElementById('case-title');
@@ -1017,6 +1182,27 @@
 
     if (caseOrdinalBadgeEl) caseOrdinalBadgeEl.textContent = `Caso ${tabIndex + 1} de 5`;
     if (caseCodeEl) caseCodeEl.textContent = `Caso ${tabIndex + 1} de 5`;
+
+    // Badge de Nivel de Dificultad (Estratificación PRDv2)
+    if (caseLevelBadgeEl) {
+      const level = activeCase.level || 'basico';
+      const label = activeCase.levelLabel || (level === 'avanzado' ? '🔴 Nivel 3: Avanzado' : (level === 'intermedio' ? '🟡 Nivel 2: Intermedio' : '🟢 Nivel 1: Básico'));
+      caseLevelBadgeEl.textContent = label;
+      if (level === 'avanzado') {
+        caseLevelBadgeEl.style.background = '#fee2e2';
+        caseLevelBadgeEl.style.color = '#b91c1c';
+        caseLevelBadgeEl.style.borderColor = '#fca5a5';
+      } else if (level === 'intermedio') {
+        caseLevelBadgeEl.style.background = '#fef3c7';
+        caseLevelBadgeEl.style.color = '#b45309';
+        caseLevelBadgeEl.style.borderColor = '#fde68a';
+      } else {
+        caseLevelBadgeEl.style.background = '#dcfce7';
+        caseLevelBadgeEl.style.color = '#15803d';
+        caseLevelBadgeEl.style.borderColor = '#bbf7d0';
+      }
+    }
+
     if (moduleBadgeEl) moduleBadgeEl.textContent = activeCase.module || 'Ventas B2C';
     if (titleEl) titleEl.textContent = getCleanCaseTitle(activeCase);
     if (clientNameEl) clientNameEl.textContent = activeCase.client || 'Cliente en ruta';
@@ -1026,7 +1212,7 @@
 
     if (tabStatusEl) {
       if (caseState.completed) {
-        tabStatusEl.textContent = '✅ Completado';
+        tabStatusEl.textContent = '✅ Completado 🔒';
         tabStatusEl.className = 'badge badge-success';
       } else {
         tabStatusEl.textContent = '⏳ En evaluación';
@@ -1034,19 +1220,19 @@
       }
     }
 
-    // Actualizar botones de navegación: exactamente 50% cada uno, uniforme y con disabled en inactivo
+    // Actualizar botones de navegación respetando casos no resueltos
     const btnPrev = document.getElementById('btn-prev-tab');
     const btnNext = document.getElementById('btn-next-tab');
     const btnFinish = document.getElementById('btn-finish-exam');
-    const isLastTab = tabIndex === evaluationCases.length - 1;
+    const hasRemainingAhead = states.some((s, idx) => idx > tabIndex && !s.completed);
+    const hasRemainingBehind = states.some((s, idx) => idx < tabIndex && !s.completed);
 
     if (btnPrev) {
       btnPrev.style.display = 'inline-flex';
-      btnPrev.style.visibility = 'visible';
-      btnPrev.disabled = (tabIndex === 0);
+      btnPrev.disabled = !hasRemainingBehind;
     }
 
-    if (isLastTab) {
+    if (!hasRemainingAhead) {
       if (btnNext) btnNext.style.display = 'none';
       if (btnFinish) {
         btnFinish.style.display = 'inline-flex';
@@ -1062,13 +1248,16 @@
       }
     }
 
+    // Sincronizar sesión ante cambio de tab
+    syncSimulatorSession();
+
     // Refrescar clases de tabs
     renderEvaluationTabs();
 
-    // Cargar o conmutar simulador móvil sin recargar iframe para eliminar parpadeo blanco
+    // Cargar o conmutar simulador móvil con aislamiento limpio
     const frame = document.getElementById('simulador-frame');
     if (frame && user) {
-      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1&v=2.4`;
+      const targetUrl = `simulator.html?user=${encodeURIComponent(user.username)}&case=${activeCase.id}&tab=${tabIndex}&autologin=1&v=2.5`;
       
       let isAlreadyLoaded = false;
       try {
@@ -1090,7 +1279,6 @@
           username: user.username
         }, '*');
       } else {
-        // Carga inicial o recuperación limpia con token de tiempo para evitar about:blank
         frame.onload = () => {
           frame.dataset.loaded = 'true';
         };
@@ -1100,14 +1288,45 @@
   }
 
   function nextTab() {
-    if (currentActiveTab < evaluationCases.length - 1) {
-      loadCaseInTab(currentActiveTab + 1);
+    const states = Evaluator.getAllCaseStates();
+    let target = -1;
+    for (let i = currentActiveTab + 1; i < evaluationCases.length; i++) {
+      if (!states[i] || !states[i].completed) {
+        target = i;
+        break;
+      }
+    }
+    if (target === -1) {
+      for (let i = 0; i < currentActiveTab; i++) {
+        if (!states[i] || !states[i].completed) {
+          target = i;
+          break;
+        }
+      }
+    }
+
+    if (target !== -1) {
+      loadCaseInTab(target);
+    } else {
+      showCustomAlert({
+        title: 'Evaluación Completada',
+        message: '¡Has completado todos los casos de la evaluación! Haz clic en "Finalizar y Enviar Evaluación" para culminar tu examen.',
+        icon: '🏆'
+      });
     }
   }
 
   function prevTab() {
-    if (currentActiveTab > 0) {
-      loadCaseInTab(currentActiveTab - 1);
+    const states = Evaluator.getAllCaseStates();
+    let target = -1;
+    for (let i = currentActiveTab - 1; i >= 0; i--) {
+      if (!states[i] || !states[i].completed) {
+        target = i;
+        break;
+      }
+    }
+    if (target !== -1) {
+      loadCaseInTab(target);
     }
   }
 
@@ -1133,6 +1352,7 @@
       });
     }
     Evaluator.cancelEvaluation();
+    await Storage.clearSimulatorSession();
 
     // Notificar al simulador para que limpie su estado sin destruir el iframe
     const frame = document.getElementById('simulador-frame');
@@ -1152,6 +1372,34 @@
     window.addEventListener('message', async (event) => {
       if (!event.data || !event.data.type) return;
 
+      // Eventos de Onboarding Guiado (7 Hitos)
+      if (event.data.type === 'ONBOARDING_STEP_COMPLETED') {
+        const taskId = event.data.taskId;
+        if (taskId) {
+          const state = await getOnboardingState();
+          state[taskId] = true;
+          await saveOnboardingState(state);
+          await renderOnboardingView();
+        }
+        return;
+      }
+
+      if (event.data.type === 'ONBOARDING_FINISHED') {
+        const state = await getOnboardingState();
+        ONBOARDING_TASKS.forEach(t => { state[t.id] = true; });
+        await saveOnboardingState(state);
+        await renderOnboardingView();
+
+        closeOnboardingSimulator();
+
+        await showCustomAlert({
+          title: '¡Inducción Oficial Completada!',
+          message: '🌟 ¡Felicitaciones! Has completado satisfactoriamente los 7 hitos del Onboarding Guiado UYAPAY B2C.\n\nSe ha desbloqueado la Evaluación Práctica de Inducción y tu insignia oficial Pionero UYAPAY.',
+          icon: '🎓'
+        });
+        return;
+      }
+
       const frame = document.getElementById('simulador-frame');
       const frameWindow = frame ? frame.contentWindow : null;
 
@@ -1166,7 +1414,7 @@
           const evalResult = Evaluator.processAction('SUBMIT_ORDER', { confirmed: true });
 
           renderEvaluationTabs();
-          loadCaseInTab(currentTab);
+          syncSimulatorSession();
 
           const currentUser = Auth.getCurrentUser();
           Storage.sendLiveEvent({
@@ -1198,11 +1446,11 @@
             if (targetTab !== -1) {
               setTimeout(async () => {
                 await showCustomAlert({
-                  title: 'Caso Completado',
-                  message: `✅ Caso ${currentTab + 1} completado. Avanzando al Caso ${targetTab + 1}.`,
+                  title: 'Caso Completado y Bloqueado',
+                  message: `✅ Caso ${currentTab + 1} completado satisfactoriamente.\n🔒 Esta pestaña ha quedado bloqueada para evitar modificaciones.\n\nAvanzando al Caso ${targetTab + 1}.`,
                   icon: '✅'
                 });
-                loadCaseInTab(targetTab);
+                loadCaseInTab(targetTab, true);
               }, 300);
             }
           }
@@ -1237,7 +1485,7 @@
           renderEvaluationTabs();
           const tabStatusEl = document.getElementById('case-tab-status');
           if (tabStatusEl) {
-            tabStatusEl.textContent = '✅ Completado';
+            tabStatusEl.textContent = '✅ Completado 🔒';
             tabStatusEl.className = 'badge badge-success';
           }
         }
@@ -1269,11 +1517,11 @@
     });
   }
 
-  async function finishFullExam() {
+  async function finishFullExam(forced = false) {
     const states = Evaluator.getAllCaseStates();
     const incomplete = states.filter(cs => !cs.completed).length;
 
-    if (incomplete > 0) {
+    if (!forced && incomplete > 0) {
       const confirmed = await showCustomConfirm({
         title: 'Casos Incompletos',
         message: `Aún tienes ${incomplete} caso(s) sin completar.\n\n¿Estás seguro de enviar la evaluación ahora? Los casos no completados se calificarán con puntuación parcial.`,
@@ -1287,6 +1535,9 @@
 
     const finalResult = Evaluator.finishMultiEvaluation();
     if (!finalResult) return;
+
+    // Limpiar sesión activa en backend y localStorage
+    await Storage.clearSimulatorSession();
 
     // Guardar persistentemente en SQLite / API
     const saved = await Storage.saveResult(finalResult);
@@ -2141,6 +2392,24 @@
     });
   }
 
+  function openOnboardingSimulator() {
+    const user = Auth.getCurrentUser();
+    const modal = document.getElementById('onboarding-simulator-modal');
+    const frame = document.getElementById('onboarding-simulador-frame');
+    if (!modal || !frame) return;
+
+    const username = user ? user.username : 'asesor';
+    frame.src = `simulator.html?mode=onboarding&step=0&user=${encodeURIComponent(username)}&autologin=1&_t=${Date.now()}`;
+    modal.style.display = 'flex';
+  }
+
+  function closeOnboardingSimulator() {
+    const modal = document.getElementById('onboarding-simulator-modal');
+    const frame = document.getElementById('onboarding-simulador-frame');
+    if (modal) modal.style.display = 'none';
+    if (frame) frame.src = '';
+  }
+
   // 5. Base de Conocimiento (FAQs & Reglas de Negocio)
   let activeFaqsList = [];
   let activeRulesList = [];
@@ -2608,6 +2877,8 @@
     // Métodos de Capacitador Paso a Paso (Onboarding)
     toggleOnboardingTask: toggleOnboardingTask,
     startOnboardingExam: startOnboardingExam,
+    openOnboardingSimulator: openOnboardingSimulator,
+    closeOnboardingSimulator: closeOnboardingSimulator,
 
     // Métodos de Base de Conocimiento (FAQs y Reglas)
     switchKnowledgeSubtab: switchKnowledgeSubtab,

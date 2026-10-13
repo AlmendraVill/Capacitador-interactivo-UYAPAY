@@ -3406,12 +3406,170 @@
       } else if (state.currentCaseId === 'case-cp08' || state.currentCaseId === 'case-8') {
         goToVisitTask(2);
         navigateTo('s-cliente-inicio');
-      } else {
         goToVisitTask(0);
         navigateTo('s-visitas');
       }
     }
+
+    if (event.data.type === 'START_ONBOARDING') {
+      startOnboardingGuide(event.data.stepIndex || 0);
+    }
+
+    if (event.data.type === 'EXIT_ONBOARDING') {
+      exitOnboardingGuide();
+    }
   });
+
+  // ================= ONBOARDING GUIADO (7 HITOS OFICIALES PRDv2) =================
+  const ONBOARDING_HITOS = [
+    {
+      step: 1,
+      id: 'task-1',
+      title: 'Hito 1: Inicio de Sesión y Selección de Agencia',
+      text: 'Ingresa tu usuario y contraseña corporativa. Si cuentas con más de una agencia asignada (ej. Arequipa/Cusco), puedes seleccionarla desde el menú superior del drawer.',
+      onEnter: () => navigateTo('s-login')
+    },
+    {
+      step: 2,
+      id: 'task-2',
+      title: 'Hito 2: Reconocimiento de Interfaces y Tipo de Cambio',
+      text: 'Explora la barra inferior con sus 3 accesos (Inicio, Visitas, Pedidos). En la parte superior visualizas el Tipo de Cambio oficial del día para conversiones automáticas.',
+      onEnter: () => {
+        handleAppLogin();
+        selectNavTab('inicio');
+      }
+    },
+    {
+      step: 3,
+      id: 'task-3',
+      title: 'Hito 3: Menú Secundario / Drawer Lateral Completo',
+      text: 'Abre el menú lateral (☰) para consultar Mis Clientes, Estados de Cuenta oficiales en PDF, Historial de visitas y Documentos Electrónicos emitidos.',
+      onEnter: () => {
+        openSecondaryDrawer();
+      }
+    },
+    {
+      step: 4,
+      id: 'task-4',
+      title: 'Hito 4: Proyección de Ventas por Familia',
+      text: 'Ingresa a Proyección de Ventas y define tus metas comerciales por familias: Rimula Multigrado, Spirax, Shell Premium, Neumáticos y Repuestos Hyundai.',
+      onEnter: () => {
+        closeSecondaryDrawer();
+        showHint('Módulo de Metas: Avance de proyección de ventas por familia de producto.', false);
+      }
+    },
+    {
+      step: 5,
+      id: 'task-5',
+      title: 'Hito 5: Plan de Visitas, Geocerca y Contingencias',
+      text: 'Verifica el radio de 50 metros para visita presencial. Si estás lejos, puedes reajustar coordenadas con fotografía o gestionar una Visita Telefónica (máx. 5 al día).',
+      onEnter: () => {
+        closeSecondaryDrawer();
+        selectNavTab('visitas');
+      }
+    },
+    {
+      step: 6,
+      id: 'task-6',
+      title: 'Hito 6: Secuencia Operativa de Visita (T1 a T5)',
+      text: 'Recorre las 5 tareas en tienda: Perfil comercial, fotos antes/después, relevamiento de precios de competencia, toma de pedido con listas/promos y cobranza con voucher/retención.',
+      onEnter: () => {
+        goToVisitTask(0);
+        navigateTo('s-cliente-inicio');
+      }
+    },
+    {
+      step: 7,
+      id: 'task-7',
+      title: 'Hito 7: Cierre de Visita, Justificación y Seguimiento',
+      text: 'Finaliza formalmente la atención con "Finalizar visita". Si no pudiste realizar alguna tarea, justifícala formalmente. ¡Has culminado exitosamente la inducción!',
+      onEnter: () => {
+        goToVisitTask(4);
+        showHint('¡Felicitaciones! Has completado todos los hitos del Onboarding UYAPAY B2C.', false);
+      }
+    }
+  ];
+
+  let currentOnboardingIndex = 0;
+  let isOnboardingActive = false;
+
+  function startOnboardingGuide(startStepIndex = 0) {
+    isOnboardingActive = true;
+    currentOnboardingIndex = Math.max(0, Math.min(startStepIndex, ONBOARDING_HITOS.length - 1));
+    renderOnboardingHito();
+  }
+
+  function renderOnboardingHito() {
+    const overlay = document.getElementById('onboardingGuideOverlay');
+    if (!overlay) return;
+
+    const hito = ONBOARDING_HITOS[currentOnboardingIndex];
+    if (!hito) return;
+
+    overlay.style.display = 'flex';
+
+    const pill = document.getElementById('onb-step-pill');
+    const title = document.getElementById('onb-tooltip-title');
+    const text = document.getElementById('onb-tooltip-text');
+    const okBtn = document.getElementById('onb-ok-btn');
+    const dotsContainer = document.getElementById('onb-dots');
+
+    if (pill) pill.textContent = `Hito ${currentOnboardingIndex + 1} de 7`;
+    if (title) title.textContent = hito.title;
+    if (text) text.textContent = hito.text;
+
+    if (okBtn) {
+      if (currentOnboardingIndex === ONBOARDING_HITOS.length - 1) {
+        okBtn.textContent = '🎉 Finalizar Inducción';
+      } else {
+        okBtn.textContent = 'OK ➔';
+      }
+    }
+
+    if (dotsContainer) {
+      dotsContainer.innerHTML = ONBOARDING_HITOS.map((_, i) => {
+        let cls = 'onb-dot';
+        if (i < currentOnboardingIndex) cls += ' done';
+        else if (i === currentOnboardingIndex) cls += ' active';
+        return `<div class="${cls}"></div>`;
+      }).join('');
+    }
+
+    if (typeof hito.onEnter === 'function') {
+      try { hito.onEnter(); } catch (e) {}
+    }
+  }
+
+  function nextOnboardingHito() {
+    const currentHito = ONBOARDING_HITOS[currentOnboardingIndex];
+
+    // Notificar al portal que este paso se completó para guardar en SQLite
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'ONBOARDING_STEP_COMPLETED',
+        stepIndex: currentOnboardingIndex,
+        taskId: currentHito.id
+      }, '*');
+    }
+
+    if (currentOnboardingIndex < ONBOARDING_HITOS.length - 1) {
+      currentOnboardingIndex++;
+      renderOnboardingHito();
+    } else {
+      exitOnboardingGuide();
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'ONBOARDING_FINISHED'
+        }, '*');
+      }
+    }
+  }
+
+  function exitOnboardingGuide() {
+    isOnboardingActive = false;
+    const overlay = document.getElementById('onboardingGuideOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
 
   // Exponer métodos globales al simulador
   window.UyapaySimulator = {
@@ -3555,7 +3713,10 @@
     closeNoOrderModal: closeNoOrderModal,
     submitNoOrderReason: submitNoOrderReason,
     finish: finishSimulation,
-    hint: (msg) => showHint(msg, false)
+    hint: (msg) => showHint(msg, false),
+    startOnboardingGuide: startOnboardingGuide,
+    nextOnboardingHito: nextOnboardingHito,
+    exitOnboardingGuide: exitOnboardingGuide
   };
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -3564,6 +3725,13 @@
       input.value = state.advisorUsername;
     }
     initializeCaseEnvironment();
+
+    // Comprobar si se abre en modo Onboarding Guiado (7 Hitos PRDv2)
+    if (urlParams.get('mode') === 'onboarding') {
+      const startStep = parseInt(urlParams.get('step') || '0', 10);
+      startOnboardingGuide(startStep);
+      return;
+    }
 
     // Auto-login automático si se carga desde la arena de evaluación con usuario asignado
     const shouldAutoLogin = urlParams.get('autologin') === '1' || urlParams.get('case');

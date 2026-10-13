@@ -3221,6 +3221,22 @@
       </div>
     </div>
   </div>
+
+  <!-- ================= OVERLAY DE ONBOARDING GUIADO (7 HITOS OFICIALES PRDv2) ================= -->
+  <div id="onboardingGuideOverlay" class="onboarding-guide-overlay" style="display:none;">
+    <div class="onboarding-tooltip-card">
+      <div class="onboarding-tooltip-header">
+        <span class="onboarding-step-pill" id="onb-step-pill">Hito 1 de 7</span>
+        <button class="onboarding-close-btn" onclick="window.UyapaySimulator.exitOnboardingGuide()">✕</button>
+      </div>
+      <h4 class="onboarding-tooltip-title" id="onb-tooltip-title">Inicio de Sesión y Agencia</h4>
+      <p class="onboarding-tooltip-text" id="onb-tooltip-text">Ingresa con tus credenciales corporativas...</p>
+      <div class="onboarding-tooltip-footer">
+        <div class="onboarding-dots" id="onb-dots"></div>
+        <button class="onboarding-ok-btn" id="onb-ok-btn" onclick="window.UyapaySimulator.nextOnboardingHito()">OK ➔</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- NOTIFICACIÓN FLOTANTE (TOAST/HINT) -->

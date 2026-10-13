@@ -377,6 +377,51 @@ window.UyapayServices = window.UyapayServices || {};
       setLocalItem(KEYS.SESSION, null);
     },
 
+    // ---- PERSISTENCIA DE SESIÓN DEL SIMULADOR ANTE F5 (Flujo 6 PRDv2) ----
+    async getSimulatorSession() {
+      try {
+        const res = await fetch(resolveUrl('/api/evaluations/simulator/session'), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.hasActiveSession) {
+            setLocalItem('uyapay_simulator_session', data.session);
+            return data;
+          }
+        }
+      } catch (e) {}
+      const local = getLocalItem('uyapay_simulator_session', null);
+      return { hasActiveSession: Boolean(local), session: local };
+    },
+
+    async saveSimulatorSession(sessionData) {
+      setLocalItem('uyapay_simulator_session', sessionData);
+      try {
+        const res = await fetch(resolveUrl('/api/evaluations/simulator/session'), {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(sessionData)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return null;
+    },
+
+    async clearSimulatorSession() {
+      if (hasStorage) {
+        localStorage.removeItem('uyapay_simulator_session');
+      }
+      try {
+        await fetch(resolveUrl('/api/evaluations/simulator/session'), {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+      } catch (e) {}
+    },
+
     // ---- RESETEAR A DEMO ----
     async resetAll() {
       // 1. Limpiar y re-sembrar en Firebase Cloud Firestore (Nube)

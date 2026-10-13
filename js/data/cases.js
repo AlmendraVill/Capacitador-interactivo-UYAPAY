@@ -2704,6 +2704,29 @@ window.UyapayData.CASES = [
 }
 ];
 
+// ================= ESTRATIFICACIÓN EN 3 NIVELES DE DIFICULTAD (PRDv2) =================
+const LEVEL_MAPPING = {
+  // Nivel 1: Básico (Operativa Estándar y Venta Limpia)
+  'CP-01': 'basico', 'CP-02': 'basico', 'CP-04': 'basico', 'CP-05': 'basico',
+  'CP-06': 'basico', 'CP-10': 'basico', 'CP-12': 'basico', 'CP-15': 'basico',
+  'CP-20': 'basico', 'CP-25': 'basico',
+  // Nivel 2: Intermedio (Políticas Comerciales, Promociones y Depósitos Bancarios)
+  'CP-03': 'intermedio', 'CP-07': 'intermedio', 'CP-14': 'intermedio', 'CP-17': 'intermedio',
+  'CP-18': 'intermedio', 'CP-19': 'intermedio', 'CP-21': 'intermedio', 'CP-24': 'intermedio',
+  'CP-26': 'intermedio', 'CP-30': 'intermedio',
+  // Nivel 3: Avanzado (Excepciones, SUNAT, Casos Borde y Resolución de Conflictos)
+  'CP-08': 'avanzado', 'CP-09': 'avanzado', 'CP-11': 'avanzado', 'CP-13': 'avanzado',
+  'CP-16': 'avanzado', 'CP-22': 'avanzado', 'CP-23': 'avanzado', 'CP-27': 'avanzado',
+  'CP-28': 'avanzado', 'CP-29': 'avanzado'
+};
+
+window.UyapayData.CASES.forEach(c => {
+  const code = (c.code || '').toUpperCase();
+  const lvl = LEVEL_MAPPING[code] || 'basico';
+  c.level = lvl;
+  c.levelLabel = lvl === 'basico' ? 'Nivel 1: Básico' : (lvl === 'intermedio' ? 'Nivel 2: Intermedio' : 'Nivel 3: Avanzado');
+});
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = window.UyapayData;
 }
