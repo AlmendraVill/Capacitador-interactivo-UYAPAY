@@ -931,17 +931,21 @@ app.use('/api/evaluations', createEvaluationsRouter(db, authMiddleware, adminMid
 // Endpoint canónico directo para Gatekeeper (PRDv2 Algoritmo 3)
 app.get('/api/gatekeeper/status', (req, res) => {
   try {
-    const userId = req.query.userId || (req.user ? req.user.id : null);
+    const rawUserId = req.query.userId || (req.user ? req.user.id : null);
     const queryDate = req.query.date || new Date().toISOString().split('T')[0];
 
-    if (!userId) {
+    if (!rawUserId) {
       return res.status(400).json({ success: false, message: 'El parámetro userId es obligatorio.' });
     }
 
+    const userRow = db.prepare('SELECT id, username FROM users WHERE id = ? OR username = ?').get(rawUserId, rawUserId);
+    const resolvedId = userRow ? userRow.id : rawUserId;
+    const resolvedUsername = userRow ? userRow.username : rawUserId;
+
     const activeAssignments = db.prepare(`
       SELECT * FROM evaluation_assignments
-      WHERE user_id = ? AND scheduled_date = ?
-    `).all(userId, queryDate);
+      WHERE (user_id = ? OR user_id = ?) AND scheduled_date = ?
+    `).all(resolvedId, resolvedUsername, queryDate);
 
     for (const assign of activeAssignments) {
       if (assign.status === 'PENDIENTE' || assign.status === 'EN_CURSO') {

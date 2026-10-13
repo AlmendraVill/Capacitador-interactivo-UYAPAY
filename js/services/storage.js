@@ -422,6 +422,117 @@ window.UyapayServices = window.UyapayServices || {};
       } catch (e) {}
     },
 
+    // ---- CALENDARIO DE EVALUACIONES Y CUESTIONARIOS TEÓRICOS (Flujo 12 PRDv2) ----
+    async getCalendarEvents() {
+      try {
+        const res = await fetch(resolveUrl('/api/evaluations/calendar/events'), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return [];
+    },
+
+    async createCalendarEvent(eventData) {
+      try {
+        const res = await fetch(resolveUrl('/api/evaluations/calendar/events'), {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(eventData)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al crear evento' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
+    },
+
+    async deleteCalendarEvent(eventId) {
+      try {
+        const res = await fetch(resolveUrl(`/api/evaluations/calendar/events/${eventId}`), {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    async getQuestionnaires() {
+      try {
+        const res = await fetch(resolveUrl('/api/evaluations/questionnaires'), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return [];
+    },
+
+    async getQuestionnaireById(id) {
+      try {
+        const res = await fetch(resolveUrl(`/api/evaluations/questionnaires/${id}`), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return null;
+    },
+
+    async createQuestionnaire(questionnaireData) {
+      try {
+        const res = await fetch(resolveUrl('/api/evaluations/questionnaires'), {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(questionnaireData)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al guardar cuestionario' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
+    },
+
+    async submitQuestionnaire(id, userAnswers, durationSeconds = 0) {
+      try {
+        const res = await fetch(resolveUrl(`/api/evaluations/questionnaires/${id}/submit`), {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ userAnswers, durationSeconds })
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al enviar cuestionario' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
+    },
+
+    async getGatekeeperStatus(userId, date = null) {
+      try {
+        const qDate = date || new Date().toISOString().split('T')[0];
+        const res = await fetch(resolveUrl(`/api/gatekeeper/status?userId=${encodeURIComponent(userId)}&date=${encodeURIComponent(qDate)}`));
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return { has_blocking_evaluation: false, status: 'UNLOCKED' };
+    },
+
     // ---- RESETEAR A DEMO ----
     async resetAll() {
       // 1. Limpiar y re-sembrar en Firebase Cloud Firestore (Nube)

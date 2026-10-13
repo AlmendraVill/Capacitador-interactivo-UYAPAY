@@ -202,6 +202,7 @@
     if (user.role === 'admin') {
       setupNavigation([
         { id: 'admin-dashboard', label: 'Dashboard & Monitor en Vivo' },
+        { id: 'calendar-view', label: 'Calendario de Evaluaciones' },
         { id: 'admin-mgmt-view', label: 'Suite de Administración' },
         { id: 'training-view', label: 'Biblioteca de Capacitación' },
         { id: 'knowledge-view', label: 'Base de Conocimiento' },
@@ -214,6 +215,7 @@
       setupNavigation([
         { id: 'training-view', label: 'Capacitación & Videos' },
         { id: 'onboarding-view', label: 'Inducción Guiada' },
+        { id: 'calendar-view', label: 'Calendario & Mis Pruebas' },
         { id: 'asesor-eval-intro', label: 'Evaluación Práctica' },
         { id: 'knowledge-view', label: 'Base de Conocimiento' },
         { id: 'ranking-view', label: 'Ranking & Podio' },
@@ -225,6 +227,7 @@
 
     await updateNavbarProfileBadges(user);
     await renderLeaderboard();
+    await checkGatekeeperStatus(user);
 
     // Comprobar si hay una evaluación en curso activa (resiliencia ante F5)
     if (user.role !== 'admin') {
@@ -266,6 +269,7 @@
           (containerId === 'ranking-view' && text.includes('ranking')) ||
           (containerId === 'asesor-notas' && text.includes('calificaciones')) ||
           (containerId === 'asesor-eval-intro' && text.includes('evaluación')) ||
+          (containerId === 'calendar-view' && text.includes('calendario')) ||
           (containerId === 'admin-dashboard' && text.includes('dashboard')) ||
           (containerId === 'admin-historial' && text.includes('historial')) ||
           (containerId === 'training-view' && text.includes('capacitación')) ||
@@ -285,6 +289,8 @@
       renderLeaderboard();
     } else if (containerId === 'admin-dashboard') {
       renderAdminDashboard();
+    } else if (containerId === 'calendar-view') {
+      renderCalendarView();
     } else if (containerId === 'admin-historial' && currentUser) {
       renderResultsTable('admin-results-table');
     } else if (containerId === 'asesor-notas' && currentUser) {
@@ -2823,6 +2829,953 @@
     }
   }
 
+  // ================= 7. CALENDARIO DE EVALUACIONES Y CUESTIONARIOS TEÓRICOS (FLUJO 12 PRDv2) =================
+  let calendarCurrentYear = new Date().getFullYear();
+  let calendarCurrentMonth = new Date().getMonth();
+  let cachedCalendarEvents = [];
+  let cachedQuestionnaires = [];
+  let selectedCalendarEvent = null;
+  let builderQuestions = [];
+  let activeQuestionnaireExam = null;
+  let questionnaireTimerInterval = null;
+  let questionnaireElapsedSeconds = 0;
+  let questionnaireUserAnswers = {};
+  let activeGatekeeperBlock = null;
+
+  const MONTH_NAMES_ES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  // Verificación y actualización de estado de bloqueo Gatekeeper (Algoritmo 3 PRDv2)
+  async function checkGatekeeperStatus(user) {
+    const banner = document.getElementById('gatekeeper-status-banner');
+    if (!banner) return;
+    if (!user) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await Storage.getGatekeeperStatus(user.username || user.id);
+      if (res && res.status === 'LOCKED' && res.has_blocking_evaluation) {
+        activeGatekeeperBlock = res.evaluation;
+        banner.style.display = 'flex';
+        const titleEl = document.getElementById('gatekeeper-banner-title');
+        const msgEl = document.getElementById('gatekeeper-banner-msg');
+        if (titleEl) {
+          titleEl.textContent = `Bloqueo Operativo Activo (Gatekeeper) • ${res.evaluation.title || 'Evaluación Obligatoria'}`;
+        }
+        if (msgEl) {
+          msgEl.textContent = `Tienes una evaluación obligatoria programada para hoy (${res.evaluation.scheduledDate || 'hoy'}). Tus operaciones comerciales y rutas están restringidas hasta que rindas la prueba.`;
+        }
+      } else {
+        activeGatekeeperBlock = null;
+        banner.style.display = 'none';
+      }
+    } catch (e) {
+      console.warn('[Gatekeeper] Error al verificar estado:', e);
+      banner.style.display = 'none';
+    }
+  }
+
+  function handleGatekeeperAction() {
+    if (!activeGatekeeperBlock) {
+      switchTab('calendar-view');
+      return;
+    }
+
+    if (activeGatekeeperBlock.type === 'CUESTIONARIO') {
+      const evt = cachedCalendarEvents.find(e => e.id === activeGatekeeperBlock.eventId);
+      const qId = evt ? evt.questionnaireId : null;
+      if (qId) {
+        startQuestionnaireExam(qId);
+      } else {
+        switchTab('calendar-view');
+      }
+    } else {
+      // SIMULADOR
+      switchTab('asesor-eval-intro');
+    }
+  }
+
+  // Renderizado del Calendario Mensual
+  async function renderCalendarView(year = calendarCurrentYear, month = calendarCurrentMonth) {
+    calendarCurrentYear = year;
+    calendarCurrentMonth = month;
+
+    const titleEl = document.getElementById('calendar-month-title');
+    if (titleEl) {
+      titleEl.textContent = `${MONTH_NAMES_ES[calendarCurrentMonth]} ${calendarCurrentYear}`;
+    }
+
+    const currentUser = Auth.getCurrentUser();
+    const isStaff = currentUser && ['admin', 'editor'].includes(currentUser.role);
+
+    // Ajustar visibilidad de botones de creación para personal autorizado
+    const btnCreateQ = document.getElementById('btn-global-create-questionnaire');
+    const btnSchedule = document.getElementById('btn-schedule-new-eval');
+    if (btnCreateQ) btnCreateQ.style.display = isStaff ? 'inline-flex' : 'none';
+    if (btnSchedule) btnSchedule.style.display = isStaff ? 'inline-flex' : 'none';
+
+    try {
+      const [events, questionnaires] = await Promise.all([
+        Storage.getCalendarEvents(),
+        Storage.getQuestionnaires()
+      ]);
+
+      cachedCalendarEvents = Array.isArray(events) ? events : [];
+      cachedQuestionnaires = Array.isArray(questionnaires) ? questionnaires : [];
+
+      renderCalendarDaysGrid(calendarCurrentYear, calendarCurrentMonth, isStaff);
+      renderQuestionnairesBank(cachedQuestionnaires, isStaff);
+    } catch (e) {
+      console.error('[Calendario] Error al cargar datos:', e);
+    }
+  }
+
+  function renderCalendarDaysGrid(year, month, isStaff) {
+    const grid = document.getElementById('calendar-days-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Lunes = 0, Domingo = 6
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const totalCells = (firstDayIndex + daysInMonth > 35) ? 42 : 35;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    for (let i = 0; i < totalCells; i++) {
+      const cell = document.createElement('div');
+
+      if (i < firstDayIndex) {
+        // Días del mes previo
+        const dayNum = daysInPrevMonth - firstDayIndex + i + 1;
+        cell.className = 'calendar-day-cell other-month';
+        cell.innerHTML = `<div class="calendar-day-number">${dayNum}</div>`;
+      } else if (i < firstDayIndex + daysInMonth) {
+        // Días del mes corriente
+        const dayNum = i - firstDayIndex + 1;
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+
+        cell.className = `calendar-day-cell${isToday ? ' today' : ''}`;
+        cell.id = `cal-cell-${dateStr}`;
+
+        // Eventos en este día
+        const matchingEvents = cachedCalendarEvents.filter(evt => {
+          const s = evt.startDate;
+          const e = evt.endDate || evt.startDate;
+          return dateStr >= s && dateStr <= e;
+        });
+
+        let eventsHtml = '';
+        matchingEvents.forEach(evt => {
+          const isSim = evt.evaluationType === 'SIMULADOR';
+          const icon = isSim ? '📱' : '📝';
+          const pillClass = isSim ? 'simulator' : 'questionnaire';
+          eventsHtml += `
+            <div class="calendar-event-pill ${pillClass}" title="${escapeHtml(evt.title)} (${evt.completedCount}/${evt.totalAssigned} finalizados)" onclick="event.stopPropagation(); window.UyapayPortal.openEventDetailsModal('${evt.id}')">
+              ${icon} ${escapeHtml(evt.title)}
+            </div>
+          `;
+        });
+
+        cell.innerHTML = `
+          <div class="calendar-day-number">
+            <span>${dayNum}</span>
+            ${isToday ? '<span style="font-size:10px; color:var(--yellow-dark);">HOY</span>' : ''}
+          </div>
+          <div style="flex:1; overflow-y:auto;">${eventsHtml}</div>
+        `;
+
+        if (isStaff) {
+          cell.onclick = () => openScheduleModal(dateStr);
+        }
+      } else {
+        // Días del mes siguiente
+        const dayNum = i - (firstDayIndex + daysInMonth) + 1;
+        cell.className = 'calendar-day-cell other-month';
+        cell.innerHTML = `<div class="calendar-day-number">${dayNum}</div>`;
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderQuestionnairesBank(questionnaires, isStaff) {
+    const container = document.getElementById('questionnaires-list-container');
+    const badge = document.getElementById('questionnaires-count-badge');
+    if (!container) return;
+
+    if (badge) {
+      badge.textContent = `${questionnaires.length} Cuestionario${questionnaires.length === 1 ? '' : 's'}`;
+    }
+
+    if (questionnaires.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); padding:20px; grid-column:1/-1; text-align:center;">No hay cuestionarios teóricos registrados en el banco institucional.</div>';
+      return;
+    }
+
+    container.innerHTML = questionnaires.map(q => `
+      <div class="card" style="padding:16px; border:1px solid #e9d5ff; background:#faf5ff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <div style="font-size:24px;">📝</div>
+          <span class="badge" style="background:#ede9fe; color:#6d28d9; font-weight:700;">+${q.xpReward || 50} XP</span>
+        </div>
+        <h4 style="margin:0 0 6px 0; font-size:15px; color:#5b21b6;">${escapeHtml(q.title)}</h4>
+        <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 12px 0; line-height:1.4;">${escapeHtml(q.description || 'Evaluación de políticas comerciales y normativas operativas.')}</p>
+        <div style="display:flex; gap:12px; font-size:12px; color:#7c3aed; font-weight:600; margin-bottom:14px;">
+          <span>⏱️ ${q.durationMinutes || 20} min</span>
+          <span>❓ ${q.questionCount || 0} preguntas</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" style="flex:1; padding:7px 12px; font-size:12px; background:#7c3aed;" onclick="window.UyapayPortal.startQuestionnaireExam('${q.id}')">Rendir Examen ➔</button>
+          ${isStaff ? `<button class="btn-secondary" style="width:auto; padding:7px 10px; font-size:12px;" onclick="window.UyapayPortal.openScheduleModal(null, '${q.id}')">📅 Programar</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function changeCalendarMonth(delta) {
+    calendarCurrentMonth += delta;
+    if (calendarCurrentMonth > 11) {
+      calendarCurrentMonth = 0;
+      calendarCurrentYear++;
+    } else if (calendarCurrentMonth < 0) {
+      calendarCurrentMonth = 11;
+      calendarCurrentYear--;
+    }
+    renderCalendarView(calendarCurrentYear, calendarCurrentMonth);
+  }
+
+  function goToToday() {
+    const now = new Date();
+    calendarCurrentYear = now.getFullYear();
+    calendarCurrentMonth = now.getMonth();
+    renderCalendarView(calendarCurrentYear, calendarCurrentMonth);
+  }
+
+  // ================= MODAL DE PROGRAMACIÓN DE EVALUACIONES =================
+  async function openScheduleModal(initialDate = null, defaultQuestionnaireId = null) {
+    const modal = document.getElementById('schedule-eval-modal');
+    if (!modal) return;
+
+    const titleInput = document.getElementById('schedule-title-input');
+    const startInput = document.getElementById('schedule-start-date');
+    const endInput = document.getElementById('schedule-end-date');
+    const questSelect = document.getElementById('schedule-quest-select');
+    const advisorsContainer = document.getElementById('schedule-advisors-list');
+    const selectAllCb = document.getElementById('schedule-select-all');
+
+    if (titleInput) titleInput.value = '';
+    const today = new Date().toISOString().split('T')[0];
+    if (startInput) startInput.value = initialDate || today;
+    if (endInput) endInput.value = initialDate || today;
+    if (selectAllCb) selectAllCb.checked = false;
+
+    // Poblar cuestionarios en el selector
+    if (questSelect) {
+      questSelect.innerHTML = cachedQuestionnaires.map(q => `<option value="${q.id}">${escapeHtml(q.title)} (${q.durationMinutes} min - +${q.xpReward} XP)</option>`).join('');
+      if (defaultQuestionnaireId) {
+        questSelect.value = defaultQuestionnaireId;
+      }
+    }
+
+    // Ajustar radio y paneles según cuestionario por defecto
+    const simRadio = document.querySelector('input[name="schedule-type-radio"][value="SIMULADOR"]');
+    const questRadio = document.querySelector('input[name="schedule-type-radio"][value="CUESTIONARIO"]');
+    if (defaultQuestionnaireId && questRadio) {
+      questRadio.checked = true;
+    } else if (simRadio) {
+      simRadio.checked = true;
+    }
+    toggleScheduleTypeFields();
+
+    // Cargar asesores oficiales
+    if (advisorsContainer) {
+      advisorsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Cargando nómina de asesores...</div>';
+      try {
+        const res = await fetch('/api/users-mgmt', { headers: getAuthHeaders() });
+        let users = [];
+        if (res.ok) {
+          users = await res.json();
+        }
+        const advisors = users.filter(u => u.role === 'asesor' && u.active !== 0);
+        const listToRender = advisors.length > 0 ? advisors : [
+          { id: 'usr-edward', username: 'edward', name: 'Edward Quispe' },
+          { id: 'usr-almendra', username: 'almendra', name: 'Almendra Villafuerte' },
+          { id: 'usr-carlos', username: 'carlos', name: 'Carlos Mendoza' },
+          { id: 'usr-jorge', username: 'jorge', name: 'Jorge Huamán' },
+          { id: 'usr-maria', username: 'maria', name: 'María Paredes' }
+        ];
+
+        advisorsContainer.innerHTML = listToRender.map(adv => `
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; padding:2px 0;">
+            <input type="checkbox" name="schedule-advisor-cb" value="${adv.id || adv.username}">
+            <span><b>${escapeHtml(adv.name)}</b> <span style="color:var(--text-muted);">(@${escapeHtml(adv.username)})</span></span>
+          </label>
+        `).join('');
+      } catch (err) {
+        advisorsContainer.innerHTML = '<div style="color:var(--danger); font-size:12px;">Error al cargar nómina de asesores.</div>';
+      }
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function closeScheduleModal() {
+    const modal = document.getElementById('schedule-eval-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function toggleScheduleTypeFields() {
+    const selectedRadio = document.querySelector('input[name="schedule-type-radio"]:checked');
+    const type = selectedRadio ? selectedRadio.value : 'SIMULADOR';
+
+    const simOpts = document.getElementById('schedule-simulator-opts');
+    const questOpts = document.getElementById('schedule-quest-opts');
+
+    if (simOpts) simOpts.style.display = type === 'SIMULADOR' ? 'block' : 'none';
+    if (questOpts) questOpts.style.display = type === 'CUESTIONARIO' ? 'block' : 'none';
+  }
+
+  function toggleSelectAllAdvisors(checked) {
+    const cbs = document.querySelectorAll('input[name="schedule-advisor-cb"]');
+    cbs.forEach(cb => { cb.checked = checked; });
+  }
+
+  async function saveScheduledEvaluation() {
+    const typeRadio = document.querySelector('input[name="schedule-type-radio"]:checked');
+    const evaluationType = typeRadio ? typeRadio.value : 'SIMULADOR';
+    const title = (document.getElementById('schedule-title-input')?.value || '').trim();
+    const startDate = document.getElementById('schedule-start-date')?.value;
+    const endDate = document.getElementById('schedule-end-date')?.value || startDate;
+    const simLevel = document.getElementById('schedule-sim-level')?.value || 'basico';
+    const questionnaireId = evaluationType === 'CUESTIONARIO' ? document.getElementById('schedule-quest-select')?.value : null;
+
+    const checkedBoxes = document.querySelectorAll('input[name="schedule-advisor-cb"]:checked');
+    const assignedUsers = Array.from(checkedBoxes).map(cb => cb.value);
+
+    if (!title) {
+      showCustomAlert({ title: 'Campo Obligatorio', message: 'Por favor ingresa un título para la evaluación programada.', icon: '⚠️' });
+      return;
+    }
+    if (!startDate) {
+      showCustomAlert({ title: 'Fecha Requerida', message: 'Por favor selecciona la fecha de inicio.', icon: '⚠️' });
+      return;
+    }
+    if (evaluationType === 'CUESTIONARIO' && !questionnaireId) {
+      showCustomAlert({ title: 'Cuestionario Requerido', message: 'Selecciona un cuestionario para programar la prueba.', icon: '⚠️' });
+      return;
+    }
+    if (assignedUsers.length === 0) {
+      showCustomAlert({ title: 'Asesores Requeridos', message: 'Debes convocar al menos a un asesor comercial para esta evaluación.', icon: '⚠️' });
+      return;
+    }
+
+    try {
+      const payload = {
+        title,
+        evaluationType,
+        level: simLevel,
+        questionnaireId,
+        startDate,
+        endDate,
+        assignedUsers
+      };
+
+      const res = await Storage.createCalendarEvent(payload);
+      if (!res.success && res.message) {
+        throw new Error(res.message);
+      }
+
+      closeScheduleModal();
+      await showCustomAlert({
+        title: 'Programación Exitosa',
+        message: `✅ Se programó la evaluación "${title}" para ${assignedUsers.length} asesor(es).\nEl algoritmo Gatekeeper mantendrá el bloqueo operativo activo en las fechas asignadas hasta que cada asesor rinda la prueba.`,
+        icon: '✅'
+      });
+
+      await renderCalendarView();
+      await checkGatekeeperStatus(Auth.getCurrentUser());
+    } catch (e) {
+      showCustomAlert({ title: 'Error al Programar', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  // ================= MODAL DE DETALLES DE EVENTO =================
+  function openEventDetailsModal(eventId) {
+    const modal = document.getElementById('event-details-modal');
+    selectedCalendarEvent = cachedCalendarEvents.find(e => e.id === eventId);
+    if (!modal || !selectedCalendarEvent) return;
+
+    const currentUser = Auth.getCurrentUser();
+    const isStaff = currentUser && ['admin', 'editor'].includes(currentUser.role);
+
+    const titleEl = document.getElementById('event-detail-title');
+    const subEl = document.getElementById('event-detail-subtitle');
+    const typeBadge = document.getElementById('event-detail-type-badge');
+    const datesBadge = document.getElementById('event-detail-dates-badge');
+    const progressText = document.getElementById('event-detail-progress-text');
+    const progressBar = document.getElementById('event-detail-progress-bar');
+    const advisorsList = document.getElementById('event-detail-advisors-list');
+    const btnDelete = document.getElementById('btn-delete-event');
+    const btnTake = document.getElementById('btn-take-event-eval');
+
+    if (titleEl) titleEl.textContent = selectedCalendarEvent.title;
+    if (subEl) {
+      subEl.textContent = selectedCalendarEvent.evaluationType === 'SIMULADOR'
+        ? `Nivel: ${selectedCalendarEvent.level || 'Básico'}`
+        : `Cuestionario: ${selectedCalendarEvent.questionnaireTitle || selectedCalendarEvent.title}`;
+    }
+
+    const isSim = selectedCalendarEvent.evaluationType === 'SIMULADOR';
+    if (typeBadge) {
+      typeBadge.textContent = isSim ? '📱 Simulador Móvil' : '📝 Cuestionario Teórico';
+      typeBadge.style.background = isSim ? '#dbeafe' : '#f3e8ff';
+      typeBadge.style.color = isSim ? '#1e40af' : '#6b21a8';
+    }
+
+    if (datesBadge) {
+      datesBadge.textContent = `Vigencia: ${selectedCalendarEvent.startDate} al ${selectedCalendarEvent.endDate || selectedCalendarEvent.startDate}`;
+    }
+
+    const compCount = selectedCalendarEvent.completedCount || 0;
+    const totCount = selectedCalendarEvent.totalAssigned || 0;
+    const rate = selectedCalendarEvent.completionRate || 0;
+
+    if (progressText) progressText.textContent = `${compCount} de ${totCount} convocados (${rate}%)`;
+    if (progressBar) progressBar.style.width = `${rate}%`;
+
+    if (btnDelete) btnDelete.style.display = isStaff ? 'inline-block' : 'none';
+    if (btnTake) {
+      btnTake.style.display = 'inline-block';
+    }
+
+    if (advisorsList) {
+      const assigned = selectedCalendarEvent.assignedUsers || [];
+      if (assigned.length === 0) {
+        advisorsList.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Sin asesores asignados.</div>';
+      } else {
+        advisorsList.innerHTML = assigned.map(adv => `
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:4px 0; border-bottom:1px solid #f1f5f9;">
+            <span>👤 <b>${escapeHtml(adv.name || adv.username)}</b> <span style="color:var(--text-muted); font-size:11px;">(@${escapeHtml(adv.username)})</span></span>
+            <span class="badge" style="font-size:11px; background:#f1f5f9; color:#475569;">Convocado</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function closeEventDetailsModal() {
+    const modal = document.getElementById('event-details-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function deleteCurrentEvent() {
+    if (!selectedCalendarEvent) return;
+    const confirmed = await showCustomConfirm({
+      title: '¿Eliminar Convocatoria?',
+      message: `¿Estás seguro de eliminar "${selectedCalendarEvent.title}" del calendario?\nSe eliminarán las asignaciones y se liberará el bloqueo Gatekeeper asociado.`,
+      icon: '🗑️',
+      confirmText: 'Sí, Eliminar',
+      confirmDanger: true
+    });
+
+    if (confirmed) {
+      await Storage.deleteCalendarEvent(selectedCalendarEvent.id);
+      closeEventDetailsModal();
+      await renderCalendarView();
+      await checkGatekeeperStatus(Auth.getCurrentUser());
+    }
+  }
+
+  function takeEvaluationFromEvent() {
+    if (!selectedCalendarEvent) return;
+    const evt = selectedCalendarEvent;
+    closeEventDetailsModal();
+
+    if (evt.evaluationType === 'CUESTIONARIO' && evt.questionnaireId) {
+      startQuestionnaireExam(evt.questionnaireId);
+    } else {
+      switchTab('asesor-eval-intro');
+    }
+  }
+
+  // ================= CREADOR DE CUESTIONARIOS TEÓRICOS (ESTILO GOOGLE FORMS) =================
+  function openQuestionnaireBuilderModal() {
+    const modal = document.getElementById('questionnaire-builder-modal');
+    if (!modal) return;
+
+    const titleInput = document.getElementById('builder-title');
+    const descInput = document.getElementById('builder-desc');
+    const durInput = document.getElementById('builder-duration');
+    const xpInput = document.getElementById('builder-xp');
+
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
+    if (durInput) durInput.value = 20;
+    if (xpInput) xpInput.value = 50;
+
+    builderQuestions = [];
+    addBuilderQuestion(); // 1 pregunta inicial por defecto
+
+    modal.style.display = 'flex';
+  }
+
+  function closeQuestionnaireBuilderModal() {
+    const modal = document.getElementById('questionnaire-builder-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function addBuilderQuestion() {
+    const qId = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    builderQuestions.push({
+      id: qId,
+      text: '',
+      type: 'single', // 'single', 'multiple', 'boolean'
+      options: ['Alternativa 1', 'Alternativa 2'],
+      correctAnswers: ['Alternativa 1'],
+      explanation: ''
+    });
+    renderBuilderQuestions();
+  }
+
+  function removeBuilderQuestion(qIndex) {
+    if (builderQuestions.length <= 1) {
+      showCustomAlert({ title: 'Mínimo de Preguntas', message: 'El cuestionario debe contener al menos 1 pregunta.', icon: 'ℹ️' });
+      return;
+    }
+    builderQuestions.splice(qIndex, 1);
+    renderBuilderQuestions();
+  }
+
+  function setBuilderQuestionType(qIndex, type) {
+    const q = builderQuestions[qIndex];
+    if (!q) return;
+    q.type = type;
+
+    if (type === 'boolean') {
+      q.options = ['Verdadero', 'Falso'];
+      q.correctAnswers = ['Verdadero'];
+    } else if (type === 'single') {
+      if (q.options.length < 2) q.options = ['Alternativa 1', 'Alternativa 2'];
+      q.correctAnswers = [q.options[0]];
+    } else if (type === 'multiple') {
+      if (q.options.length < 2) q.options = ['Alternativa 1', 'Alternativa 2'];
+      q.correctAnswers = [q.options[0]];
+    }
+    renderBuilderQuestions();
+  }
+
+  function addBuilderOption(qIndex) {
+    const q = builderQuestions[qIndex];
+    if (!q || q.type === 'boolean') return;
+    const newOpt = `Alternativa ${q.options.length + 1}`;
+    q.options.push(newOpt);
+    renderBuilderQuestions();
+  }
+
+  function removeBuilderOption(qIndex, optIndex) {
+    const q = builderQuestions[qIndex];
+    if (!q || q.type === 'boolean') return;
+    if (q.options.length <= 2) {
+      showCustomAlert({ title: 'Mínimo de Alternativas', message: 'Debe haber al menos 2 alternativas por pregunta.', icon: 'ℹ️' });
+      return;
+    }
+    const removedOpt = q.options.splice(optIndex, 1)[0];
+    q.correctAnswers = q.correctAnswers.filter(ca => ca !== removedOpt);
+    if (q.correctAnswers.length === 0 && q.options.length > 0) {
+      q.correctAnswers = [q.options[0]];
+    }
+    renderBuilderQuestions();
+  }
+
+  function toggleBuilderCorrectAnswer(qIndex, optValue) {
+    const q = builderQuestions[qIndex];
+    if (!q) return;
+
+    if (q.type === 'single' || q.type === 'boolean') {
+      q.correctAnswers = [optValue];
+    } else if (q.type === 'multiple') {
+      if (q.correctAnswers.includes(optValue)) {
+        if (q.correctAnswers.length > 1) {
+          q.correctAnswers = q.correctAnswers.filter(ca => ca !== optValue);
+        }
+      } else {
+        q.correctAnswers.push(optValue);
+      }
+    }
+    renderBuilderQuestions();
+  }
+
+  function updateBuilderQuestionField(qIndex, field, value) {
+    if (builderQuestions[qIndex]) {
+      builderQuestions[qIndex][field] = value;
+    }
+  }
+
+  function updateBuilderOptionValue(qIndex, optIndex, newValue) {
+    const q = builderQuestions[qIndex];
+    if (!q) return;
+    const oldVal = q.options[optIndex];
+    q.options[optIndex] = newValue;
+    const caIdx = q.correctAnswers.indexOf(oldVal);
+    if (caIdx !== -1) {
+      q.correctAnswers[caIdx] = newValue;
+    }
+  }
+
+  function renderBuilderQuestions() {
+    const container = document.getElementById('builder-questions-container');
+    if (!container) return;
+
+    container.innerHTML = builderQuestions.map((q, qIndex) => {
+      const isBoolean = q.type === 'boolean';
+      const isMultiple = q.type === 'multiple';
+
+      const optionsHtml = q.options.map((opt, optIndex) => {
+        const isCorrect = q.correctAnswers.includes(opt);
+        return `
+          <div class="builder-option-row">
+            <input type="${isMultiple ? 'checkbox' : 'radio'}" name="correct-marker-${qIndex}" ${isCorrect ? 'checked' : ''} onchange="window.UyapayPortal.toggleBuilderCorrectAnswer(${qIndex}, '${escapeHtml(opt)}')" title="Marcar como respuesta correcta">
+            <input type="text" class="input" style="flex:1; padding:6px 10px; font-size:13px;" value="${escapeHtml(opt)}" ${isBoolean ? 'readonly' : ''} oninput="window.UyapayPortal.updateBuilderOptionValue(${qIndex}, ${optIndex}, this.value)">
+            ${!isBoolean ? `<button class="btn-secondary" style="width:28px; height:28px; padding:0; line-height:1; font-size:12px; color:#ef4444;" onclick="window.UyapayPortal.removeBuilderOption(${qIndex}, ${optIndex})" title="Eliminar opción">✕</button>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="builder-question-item">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <b style="font-size:13.5px; color:#6d28d9;">Pregunta #${qIndex + 1}</b>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select class="input" style="width:auto; padding:4px 8px; font-size:12px;" onchange="window.UyapayPortal.setBuilderQuestionType(${qIndex}, this.value)">
+                <option value="single" ${q.type === 'single' ? 'selected' : ''}>Opción Única</option>
+                <option value="multiple" ${q.type === 'multiple' ? 'selected' : ''}>Varias Respuestas</option>
+                <option value="boolean" ${q.type === 'boolean' ? 'selected' : ''}>Verdadero / Falso</option>
+              </select>
+              <button class="btn-secondary" style="width:auto; padding:4px 8px; font-size:11px; color:#ef4444;" onclick="window.UyapayPortal.removeBuilderQuestion(${qIndex})">🗑️</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <input type="text" class="input" placeholder="Enunciado de la pregunta..." value="${escapeHtml(q.text)}" oninput="window.UyapayPortal.updateBuilderQuestionField(${qIndex}, 'text', this.value)">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Alternativas y Respuesta Correcta:</div>
+            ${optionsHtml}
+            ${!isBoolean ? `<button class="btn-secondary" style="width:auto; padding:4px 10px; font-size:11.5px; margin-top:4px;" onclick="window.UyapayPortal.addBuilderOption(${qIndex})">+ Agregar Alternativa</button>` : ''}
+          </div>
+
+          <div>
+            <label style="font-size:11.5px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px; text-transform:uppercase;">Justificación Pedagógica (Feedback didáctico):</label>
+            <input type="text" class="input" placeholder="Explicación que verá el asesor tras finalizar la prueba..." value="${escapeHtml(q.explanation)}" oninput="window.UyapayPortal.updateBuilderQuestionField(${qIndex}, 'explanation', this.value)">
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function saveTheoreticalQuestionnaire() {
+    const title = (document.getElementById('builder-title')?.value || '').trim();
+    const description = (document.getElementById('builder-desc')?.value || '').trim();
+    const durationMinutes = parseInt(document.getElementById('builder-duration')?.value || '20', 10);
+    const xpReward = parseInt(document.getElementById('builder-xp')?.value || '50', 10);
+
+    if (!title) {
+      showCustomAlert({ title: 'Título Requerido', message: 'Por favor ingresa un título para el cuestionario.', icon: '⚠️' });
+      return;
+    }
+    if (builderQuestions.length === 0) {
+      showCustomAlert({ title: 'Preguntas Requeridas', message: 'Debes incluir al menos una pregunta.', icon: '⚠️' });
+      return;
+    }
+
+    for (let i = 0; i < builderQuestions.length; i++) {
+      const q = builderQuestions[i];
+      if (!q.text.trim()) {
+        showCustomAlert({ title: 'Pregunta Incompleta', message: `La Pregunta #${i + 1} no tiene enunciado.`, icon: '⚠️' });
+        return;
+      }
+      if (!q.correctAnswers || q.correctAnswers.length === 0) {
+        showCustomAlert({ title: 'Respuesta Faltante', message: `La Pregunta #${i + 1} no tiene marcada ninguna respuesta correcta.`, icon: '⚠️' });
+        return;
+      }
+    }
+
+    try {
+      const payload = {
+        title,
+        description,
+        durationMinutes,
+        xpReward,
+        questions: builderQuestions
+      };
+
+      const res = await Storage.createQuestionnaire(payload);
+      if (!res.success && res.message) {
+        throw new Error(res.message);
+      }
+
+      closeQuestionnaireBuilderModal();
+      await showCustomAlert({
+        title: 'Cuestionario Creado',
+        message: `✅ El cuestionario "${title}" fue registrado con éxito en el catálogo institucional.`,
+        icon: '✅'
+      });
+
+      await renderCalendarView();
+    } catch (e) {
+      showCustomAlert({ title: 'Error al Guardar', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  // ================= RESOLUCIÓN DE CUESTIONARIOS TEÓRICOS =================
+  async function startQuestionnaireExam(questionnaireId) {
+    const modal = document.getElementById('take-questionnaire-modal');
+    if (!modal) return;
+
+    try {
+      const q = await Storage.getQuestionnaireById(questionnaireId);
+      if (!q) {
+        throw new Error('No se pudo cargar la información del cuestionario.');
+      }
+
+      activeQuestionnaireExam = q;
+      questionnaireElapsedSeconds = 0;
+      questionnaireUserAnswers = {};
+
+      const examView = document.getElementById('take-quest-exam-view');
+      const resultView = document.getElementById('take-quest-result-view');
+      if (examView) examView.style.display = 'block';
+      if (resultView) resultView.style.display = 'none';
+
+      const titleEl = document.getElementById('take-quest-title');
+      const descEl = document.getElementById('take-quest-desc');
+      if (titleEl) titleEl.textContent = q.title;
+      if (descEl) descEl.textContent = q.description || 'Evaluación de conocimientos teóricos y normativas oficiales.';
+
+      renderTakeQuestions(q.questions);
+
+      // Iniciar cronómetro regresivo
+      const totalSeconds = (q.durationMinutes || 20) * 60;
+      startQuestionnaireTimer(totalSeconds);
+
+      modal.style.display = 'flex';
+    } catch (e) {
+      showCustomAlert({ title: 'Error al Iniciar Examen', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  function startQuestionnaireTimer(totalSeconds) {
+    if (questionnaireTimerInterval) clearInterval(questionnaireTimerInterval);
+    const timerEl = document.getElementById('take-quest-timer');
+
+    function updateDisplay() {
+      const remaining = Math.max(0, totalSeconds - questionnaireElapsedSeconds);
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      if (timerEl) {
+        timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        if (remaining <= 60) {
+          timerEl.style.color = '#dc2626';
+          timerEl.style.background = '#fee2e2';
+        } else {
+          timerEl.style.color = '#7c3aed';
+          timerEl.style.background = '#ede9fe';
+        }
+      }
+      if (remaining <= 0) {
+        clearInterval(questionnaireTimerInterval);
+        showCustomAlert({ title: 'Tiempo Agotado', message: 'El tiempo límite ha concluido. El cuestionario se enviará automáticamente.', icon: '⏱️' });
+        submitQuestionnaireExam(true);
+      }
+    }
+
+    updateDisplay();
+    questionnaireTimerInterval = setInterval(() => {
+      questionnaireElapsedSeconds++;
+      updateDisplay();
+    }, 1000);
+  }
+
+  function renderTakeQuestions(questions = []) {
+    const container = document.getElementById('take-quest-questions-container');
+    if (!container) return;
+
+    container.innerHTML = questions.map((qu, qIdx) => {
+      const isMultiple = qu.type === 'multiple';
+      const typeLabel = isMultiple ? 'Varias Respuestas' : (qu.type === 'boolean' ? 'Verdadero o Falso' : 'Opción Única');
+
+      const optionsHtml = (qu.options || []).map((opt, optIdx) => `
+        <div class="take-option-item" id="take-opt-${qIdx}-${optIdx}" onclick="window.UyapayPortal.onTakeOptionSelected(${qIdx}, '${qu.id}', '${escapeHtml(opt)}', ${isMultiple})">
+          <div style="width:20px; height:20px; border-radius:${isMultiple ? '4px' : '50%'}; border:2px solid #cbd5e1; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;" class="take-opt-indicator"></div>
+          <span style="flex:1;">${escapeHtml(opt)}</span>
+        </div>
+      `).join('');
+
+      return `
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:18px; margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:11px;">Pregunta ${qIdx + 1} de ${questions.length}</span>
+            <span style="font-size:11px; color:var(--text-muted);">${typeLabel}</span>
+          </div>
+          <h4 style="margin:0 0 14px 0; font-size:14.5px; color:var(--text-dark);">${escapeHtml(qu.text)}</h4>
+          <div>${optionsHtml}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function onTakeOptionSelected(qIdx, quId, optionValue, isMultiple) {
+    if (!isMultiple) {
+      questionnaireUserAnswers[quId] = optionValue;
+    } else {
+      let current = questionnaireUserAnswers[quId];
+      if (!Array.isArray(current)) current = [];
+      if (current.includes(optionValue)) {
+        current = current.filter(v => v !== optionValue);
+      } else {
+        current.push(optionValue);
+      }
+      questionnaireUserAnswers[quId] = current;
+    }
+
+    // Actualizar estilos en UI
+    const qu = activeQuestionnaireExam.questions[qIdx];
+    (qu.options || []).forEach((opt, optIdx) => {
+      const el = document.getElementById(`take-opt-${qIdx}-${optIdx}`);
+      if (!el) return;
+      const isSelected = isMultiple
+        ? (questionnaireUserAnswers[quId] || []).includes(opt)
+        : questionnaireUserAnswers[quId] === opt;
+
+      if (isSelected) {
+        el.classList.add('selected');
+        const ind = el.querySelector('.take-opt-indicator');
+        if (ind) {
+          ind.style.borderColor = '#7c3aed';
+          ind.style.background = '#7c3aed';
+          ind.style.color = '#fff';
+          ind.textContent = '✓';
+        }
+      } else {
+        el.classList.remove('selected');
+        const ind = el.querySelector('.take-opt-indicator');
+        if (ind) {
+          ind.style.borderColor = '#cbd5e1';
+          ind.style.background = 'transparent';
+          ind.style.color = 'transparent';
+          ind.textContent = '';
+        }
+      }
+    });
+  }
+
+  async function submitQuestionnaireExam(force = false) {
+    if (!activeQuestionnaireExam) return;
+
+    const totalQuestions = activeQuestionnaireExam.questions.length;
+    const answeredCount = Object.keys(questionnaireUserAnswers).filter(k => {
+      const val = questionnaireUserAnswers[k];
+      return Array.isArray(val) ? val.length > 0 : Boolean(val);
+    }).length;
+
+    if (!force && answeredCount < totalQuestions) {
+      const proceed = await showCustomConfirm({
+        title: 'Preguntas Sin Responder',
+        message: `Has respondido ${answeredCount} de ${totalQuestions} preguntas.\n¿Deseas enviar el cuestionario de todas formas?`,
+        icon: '⚠️',
+        confirmText: 'Sí, Enviar',
+        cancelText: 'Seguir Respondiendo'
+      });
+      if (!proceed) return;
+    }
+
+    if (questionnaireTimerInterval) clearInterval(questionnaireTimerInterval);
+
+    try {
+      const res = await Storage.submitQuestionnaire(
+        activeQuestionnaireExam.id,
+        questionnaireUserAnswers,
+        questionnaireElapsedSeconds
+      );
+
+      if (!res.success && res.message) {
+        throw new Error(res.message);
+      }
+
+      // Mostrar vista de resultados
+      const examView = document.getElementById('take-quest-exam-view');
+      const resultView = document.getElementById('take-quest-result-view');
+      if (examView) examView.style.display = 'none';
+      if (resultView) resultView.style.display = 'block';
+
+      const iconEl = document.getElementById('take-result-icon');
+      const titleEl = document.getElementById('take-result-status-title');
+      const msgEl = document.getElementById('take-result-msg');
+      const scoreEl = document.getElementById('take-result-score');
+      const badgeEl = document.getElementById('take-result-badge');
+      const xpEl = document.getElementById('take-result-xp');
+      const breakdownEl = document.getElementById('take-result-breakdown');
+
+      if (iconEl) iconEl.textContent = res.passed ? '🎉' : '⚠️';
+      if (titleEl) titleEl.textContent = res.passed ? '¡Evaluación Aprobada!' : 'Evaluación Desaprobada';
+      if (msgEl) {
+        msgEl.textContent = res.passed
+          ? 'Has superado satisfactoriamente los criterios teóricos de UYAPAY B2C.'
+          : 'La nota mínima aprobatoria es 12.0 / 20. Revisa la justificación didáctica a continuación para reforzar tus conocimientos.';
+      }
+      if (scoreEl) scoreEl.textContent = `${res.numericScore} / 20`;
+      if (badgeEl) {
+        badgeEl.textContent = res.status;
+        badgeEl.style.color = res.passed ? 'var(--success)' : 'var(--danger)';
+      }
+      if (xpEl) xpEl.textContent = `+${res.xpEarned} XP`;
+
+      if (breakdownEl && Array.isArray(res.feedback)) {
+        breakdownEl.innerHTML = res.feedback.map(fb => `
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <b style="font-size:13px;">${escapeHtml(fb.text)}</b>
+              <span class="badge" style="font-size:11px; ${fb.isCorrect ? 'background:#dcfce7; color:#15803d;' : 'background:#fee2e2; color:#b91c1c;'}">
+                ${fb.isCorrect ? '✓ Correcto' : '✗ Incorrecto'}
+              </span>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">
+              Tu respuesta: <b style="color:${fb.isCorrect ? '#15803d' : '#b91c1c'};">${escapeHtml(Array.isArray(fb.givenAnswer) ? fb.givenAnswer.join(', ') : (fb.givenAnswer || 'Sin responder'))}</b>
+              ${!fb.isCorrect ? ` • Respuesta correcta: <b style="color:#15803d;">${escapeHtml(fb.correctAnswers.join(', '))}</b>` : ''}
+            </div>
+            <div style="font-size:11.5px; color:#4338ca; background:#eef2ff; padding:6px 10px; border-radius:6px;">
+              💡 <b>Justificación Didáctica:</b> ${escapeHtml(fb.explanation)}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Auto-desbloquear Gatekeeper si correspondía
+      const currentUser = Auth.getCurrentUser();
+      await checkGatekeeperStatus(currentUser);
+      await updateNavbarProfileBadges(currentUser);
+    } catch (e) {
+      showCustomAlert({ title: 'Error al Enviar', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  function closeTakeQuestionnaireModal() {
+    if (questionnaireTimerInterval) clearInterval(questionnaireTimerInterval);
+    const modal = document.getElementById('take-questionnaire-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
   window.UyapayPortal = {
     logout: () => Auth.logout(),
     startExam: startExam,
@@ -2861,6 +3814,42 @@
     handleDialogConfirm: handleDialogConfirm,
     handleDialogCancel: handleDialogCancel,
     dismissDialog: dismissDialog,
+
+    // Métodos de Gatekeeper
+    handleGatekeeperAction: handleGatekeeperAction,
+
+    // Métodos de Calendario de Evaluaciones
+    renderCalendarView: renderCalendarView,
+    changeCalendarMonth: changeCalendarMonth,
+    goToToday: goToToday,
+    openScheduleModal: openScheduleModal,
+    closeScheduleModal: closeScheduleModal,
+    toggleScheduleTypeFields: toggleScheduleTypeFields,
+    toggleSelectAllAdvisors: toggleSelectAllAdvisors,
+    saveScheduledEvaluation: saveScheduledEvaluation,
+    openEventDetailsModal: openEventDetailsModal,
+    closeEventDetailsModal: closeEventDetailsModal,
+    deleteCurrentEvent: deleteCurrentEvent,
+    takeEvaluationFromEvent: takeEvaluationFromEvent,
+
+    // Métodos de Creador de Cuestionarios (Google Forms)
+    openQuestionnaireBuilderModal: openQuestionnaireBuilderModal,
+    closeQuestionnaireBuilderModal: closeQuestionnaireBuilderModal,
+    addBuilderQuestion: addBuilderQuestion,
+    removeBuilderQuestion: removeBuilderQuestion,
+    setBuilderQuestionType: setBuilderQuestionType,
+    addBuilderOption: addBuilderOption,
+    removeBuilderOption: removeBuilderOption,
+    toggleBuilderCorrectAnswer: toggleBuilderCorrectAnswer,
+    updateBuilderQuestionField: updateBuilderQuestionField,
+    updateBuilderOptionValue: updateBuilderOptionValue,
+    saveTheoreticalQuestionnaire: saveTheoreticalQuestionnaire,
+
+    // Métodos de Resolución de Cuestionarios
+    startQuestionnaireExam: startQuestionnaireExam,
+    onTakeOptionSelected: onTakeOptionSelected,
+    closeTakeQuestionnaireModal: closeTakeQuestionnaireModal,
+    submitQuestionnaireExam: submitQuestionnaireExam,
 
     // Métodos de Capacitación y Videos
     renderTrainingByModule: renderTrainingView,

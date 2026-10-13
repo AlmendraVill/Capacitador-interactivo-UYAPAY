@@ -204,6 +204,46 @@ function initDatabaseSchema(db) {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    -- Eventos del Calendario de Evaluaciones (Flujo 12 PRDv2)
+    CREATE TABLE IF NOT EXISTS calendar_events (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      evaluation_type TEXT NOT NULL DEFAULT 'SIMULADOR', -- 'SIMULADOR' o 'CUESTIONARIO'
+      level TEXT DEFAULT 'basico', -- 'basico', 'intermedio', 'avanzado'
+      questionnaire_id TEXT,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      assigned_users_json TEXT NOT NULL DEFAULT '[]',
+      created_by TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    -- Banco Institucional de Cuestionarios Teóricos (Google Forms Style - Flujo 12 PRDv2)
+    CREATE TABLE IF NOT EXISTS theoretical_questionnaires (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      duration_minutes INTEGER DEFAULT 20,
+      xp_reward INTEGER DEFAULT 50,
+      questions_json TEXT NOT NULL DEFAULT '[]',
+      created_by TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    -- Sumisiones y Auditoría Forense de Cuestionarios Teóricos
+    CREATE TABLE IF NOT EXISTS theoretical_submissions (
+      id TEXT PRIMARY KEY,
+      questionnaire_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      numeric_score REAL NOT NULL,
+      passed INTEGER NOT NULL,
+      xp_earned INTEGER NOT NULL,
+      answers_json TEXT NOT NULL DEFAULT '[]',
+      duration_seconds INTEGER DEFAULT 0,
+      submitted_at TEXT NOT NULL
+    );
   `);
 
   // 3. Sembrado de datos iniciales esenciales (Seed Data)
@@ -522,6 +562,149 @@ function seedInitialData(db) {
 
     const insertBadge = db.prepare('INSERT INTO badges (id, code, name, description, icon, criteria) VALUES (?, ?, ?, ?, ?, ?)');
     badges.forEach(b => insertBadge.run(b.id, b.code, b.name, b.description, b.icon, b.criteria));
+  }
+
+  // H. Cuestionarios Teóricos Institucionales (Flujo 12 PRDv2)
+  const questCount = db.prepare('SELECT COUNT(*) as count FROM theoretical_questionnaires').get().count;
+  if (questCount === 0) {
+    const questionnaires = [
+      {
+        id: 'quest-sunat-01',
+        title: 'Evaluación de Políticas de Cobranza y Facturación SUNAT',
+        description: 'Evaluación teórica institucional sobre emisión de comprobantes, retenciones tributarias del 3% y liquidación diaria de cobranzas.',
+        duration_minutes: 20,
+        xp_reward: 50,
+        created_by: 'admin',
+        questions_json: JSON.stringify([
+          {
+            id: 'q1',
+            text: '¿Cuál es el porcentaje y el monto mínimo a partir del cual aplica la retención de SUNAT en comprobantes electrónicos emitidos en soles?',
+            type: 'single',
+            options: [
+              '3% en montos mayores a S/. 700.00',
+              '5% en montos mayores a S/. 1,000.00',
+              '1.5% en cualquier monto sin importar el total',
+              'No aplica retención en transacciones comerciales B2C'
+            ],
+            correctAnswers: ['3% en montos mayores a S/. 700.00'],
+            explanation: 'Según normativa SUNAT y la regla oficial UYAPAY, los comprobantes en soles que superen S/. 700 están sujetos al 3% de retención tributaria.'
+          },
+          {
+            id: 'q2',
+            text: '¿Qué acción debe realizar obligatoriamente el asesor si un cliente presenta deudas vencidas mayores a 40 días?',
+            type: 'single',
+            options: [
+              'Amortizar la deuda vencida antes de emitir nuevo pedido a crédito o solicitar autorización excepcional',
+              'Emitir el pedido aplicando una lista especial de descuento sin consultar',
+              'Proceder con la venta normal pues la línea de crédito nunca se suspende',
+              'Cancelar la cuenta del cliente de forma inmediata y definitiva'
+            ],
+            correctAnswers: ['Amortizar la deuda vencida antes de emitir nuevo pedido a crédito o solicitar autorización excepcional'],
+            explanation: 'Clientes con mora superior a 40 días entran en tramo dudoso; para otorgar más crédito es indispensable amortizar o contar con excepción aprobada.'
+          },
+          {
+            id: 'q3',
+            text: '¿Cuáles de los siguientes componentes deben registrarse y cuadrar exactamente en la Liquidación de Cobranza Diaria?',
+            type: 'multiple',
+            options: [
+              'Efectivo en Soles (billetes y monedas)',
+              'Efectivo en Dólares americanos',
+              'Vouchers de Depósito / Transferencia Bancaria',
+              'Pagarés informales sin firma'
+            ],
+            correctAnswers: [
+              'Efectivo en Soles (billetes y monedas)',
+              'Efectivo en Dólares americanos',
+              'Vouchers de Depósito / Transferencia Bancaria'
+            ],
+            explanation: 'El arqueo diario consolida soles, dólares y transferencias bancarias verificadas con número de operación bancaria.'
+          }
+        ])
+      },
+      {
+        id: 'quest-michelin-02',
+        title: 'Examen de Reglas Comerciales, Promociones y Escalas Michelin',
+        description: 'Verificación de conocimientos sobre aplicación de listas de precios B2C/B2B y escalas de volumen.',
+        duration_minutes: 15,
+        xp_reward: 40,
+        created_by: 'admin',
+        questions_json: JSON.stringify([
+          {
+            id: 'qm1',
+            text: 'En la jerarquía de precios de UYAPAY B2C, ¿cuál es la lista base sugerida para ventas regulares en ruta?',
+            type: 'single',
+            options: [
+              'Lista Oficina (OF)',
+              'Lista Especial Corporativa (EC)',
+              'Lista 8 Mayorista',
+              'Lista de Remate'
+            ],
+            correctAnswers: ['Lista Oficina (OF)'],
+            explanation: 'La lista Oficina (OF) es el precio base sugerido para clientes minoristas en el canal B2C.'
+          },
+          {
+            id: 'qm2',
+            text: '¿Puede un asesor aplicar un descuento estratégico mayor al valor total del producto sin autorización previa?',
+            type: 'true_false',
+            options: [
+              'Falso',
+              'Verdadero'
+            ],
+            correctAnswers: ['Falso'],
+            explanation: 'Un descuento que exceda el valor unitario es considerado una trampa/error grave y el sistema lo rechaza de inmediato.'
+          }
+        ])
+      }
+    ];
+
+    const now = new Date().toISOString();
+    const insertQuest = db.prepare(`
+      INSERT INTO theoretical_questionnaires (id, title, description, duration_minutes, xp_reward, questions_json, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    questionnaires.forEach(q => {
+      insertQuest.run(q.id, q.title, q.description, q.duration_minutes, q.xp_reward, q.questions_json, q.created_by, now);
+    });
+  }
+
+  // I. Eventos Iniciales del Calendario de Evaluaciones (Flujo 12 PRDv2)
+  const eventCount = db.prepare('SELECT COUNT(*) as count FROM calendar_events').get().count;
+  if (eventCount === 0) {
+    const today = new Date().toISOString().split('T')[0];
+    const events = [
+      {
+        id: 'evt-cal-01',
+        title: 'Evaluación Práctica Mensual B2C - Simulador',
+        evaluation_type: 'SIMULADOR',
+        level: 'intermedio',
+        questionnaire_id: null,
+        start_date: today,
+        end_date: today,
+        assigned_users_json: JSON.stringify(['usr-edward', 'usr-henry', 'usr-alvaro', 'usr-lruiz']),
+        created_by: 'admin'
+      },
+      {
+        id: 'evt-cal-02',
+        title: 'Cuestionario de Políticas de Cobranza SUNAT',
+        evaluation_type: 'CUESTIONARIO',
+        level: 'basico',
+        questionnaire_id: 'quest-sunat-01',
+        start_date: today,
+        end_date: today,
+        assigned_users_json: JSON.stringify(['usr-edward', 'usr-alvaro', 'usr-percy']),
+        created_by: 'admin'
+      }
+    ];
+
+    const now = new Date().toISOString();
+    const insertEvt = db.prepare(`
+      INSERT INTO calendar_events (id, title, evaluation_type, level, questionnaire_id, start_date, end_date, assigned_users_json, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    events.forEach(e => {
+      insertEvt.run(e.id, e.title, e.evaluation_type, e.level, e.questionnaire_id, e.start_date, e.end_date, e.assigned_users_json, e.created_by, now);
+    });
   }
 }
 

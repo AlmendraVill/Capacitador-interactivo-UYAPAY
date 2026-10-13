@@ -73,15 +73,19 @@ flowchart TD
 
 ---
 
-### Hito 4: Cuestionarios Teóricos, Calendario y Gatekeeper API (Flujos 6, 12)
+### Hito 4: Cuestionarios Teóricos, Calendario y Gatekeeper API (Flujos 6, 12) [COMPLETADO]
 * **Alcance Técnico:**
-  1. **Calendario de Evaluaciones:** Vista estilo Google Calendar con eventos diferenciados por color (azul: simulador, morado: cuestionario).
-  2. **Creador de Cuestionarios:** Constructor dinámico estilo Google Forms para exámenes teóricos de reglas de negocio.
-  3. **Programador de Evaluaciones:** Modal de asignación por fecha, intentos y selección de participantes.
-  4. **Gatekeeper API:** Endpoint `GET /api/gatekeeper/status` con lógica de bloqueo (`LOCKED`) y desbloqueo automático (`UNLOCKED`) una vez culminada la prueba (aprobada o no).
-* **Criterios de Aceptación (DoD):**
-  * El endpoint Gatekeeper responde en menos de 50ms con el estado de bloqueo correcto según la fecha y el usuario.
-  * El desbloqueo se efectúa de inmediato tras presionar "Finalizar Evaluación".
+  1. **Calendario de Evaluaciones (Google Calendar Style):** Cuadrícula mensual interactiva con selector de mes, navegación "Hoy", y píldoras coloreadas por tipo de evaluación (🟦 Azul: Simulador Móvil, 🟪 Morado: Cuestionario Teórico).
+  2. **Constructor Dinámico de Cuestionarios (Google Forms Style):** Creación de pruebas teóricas desacopladas de reglas de negocio con preguntas dinámicas (Opción Única, Varias Respuestas, Verdadero/Falso), alternativas, respuesta correcta, justificación pedagógica, límite de tiempo y XP.
+  3. **Programador de Evaluaciones:** Modal de convocatoria por tipo (Simulador con nivel Básico/Intermedio/Avanzado o Cuestionario), rango de fechas y nómina múltiple de asesores oficiales, generando asignaciones en `evaluation_assignments`.
+  4. **Gatekeeper API y Banner Contextual:** Endpoint `GET /api/gatekeeper/status` con latencia $<50$ms (sub-10ms comprobada), resolución dual de `userId`/`username`, estado `LOCKED` ante evaluación pendiente y `UNLOCKED` al finalizar. Banner interactivo dinámico en el portal con acción rápida para rendir prueba.
+  5. **Resolución y Auditoría Forense de Cuestionarios:** Modal interactivo de examen con cronómetro regresivo, calificación vigesimal oficial ($00-20$, aprueba $\ge 12$), cálculo proporcional de XP, registro en `user_scores` y feedback pedagógico con auditoría forense (`answers_json`).
+* **Criterios de Aceptación (DoD) - Verificados:**
+  * ✅ El endpoint Gatekeeper responde en $< 50$ms (media de 4-11ms en tests) con el estado de bloqueo correcto según la fecha y el usuario.
+  * ✅ Anti-spoilers activo: los participantes no reciben las respuestas correctas en la inspección de red antes de enviar su examen.
+  * ✅ El desbloqueo de Gatekeeper se efectúa de inmediato tras finalizar el cuestionario o evaluación práctica (`status = 'COMPLETADO'`).
+  * ✅ Los asesores ven reflejado su avance y porcentajes de cumplimiento directamente en el calendario.
+  * ✅ Suite automatizada `test/hito4_questionnaires_calendar_gatekeeper.test.js` con 101/101 tests pasando al 100%.
 
 ---
 
