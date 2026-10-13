@@ -14,8 +14,8 @@ const Evaluator = require('../js/services/evaluator.js');
 const { calculateCaseScore } = Evaluator;
 
 describe('1. Catálogo Oficial de Casos y Productos UYAPAY', () => {
-  test('El catálogo contiene exactamente los 21 casos oficiales de capacitación B2C', () => {
-    assert.strictEqual(CASES.length, 21, `Se esperaban 21 casos pero se encontraron ${CASES.length}`);
+  test('El catálogo contiene exactamente los 30 casos oficiales de capacitación B2C', () => {
+    assert.strictEqual(CASES.length, 30, `Se esperaban 30 casos pero se encontraron ${CASES.length}`);
   });
 
   test('Todos los casos poseen estructura requerida (id, code, client, rules, solutionFlow)', () => {
@@ -208,11 +208,11 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
   // Implementación fiel de la lógica de portal.js
   function selectFiveEvaluationCases(catalog, usedCodes = []) {
     const strata = [
-      ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'], // 1: Ventas básicas
-      ['B2C-02', 'B2C-05', 'B2C-17', 'B2C-18'],           // 2: Condiciones comerciales
-      ['B2C-03', 'B2C-07', 'B2C-14', 'B2C-19'],           // 3: Promociones
-      ['B2C-08', 'B2C-09', 'B2C-10', 'B2C-22'],           // 4: Ruta y visitas
-      ['B2C-11', 'B2C-16', 'B2C-21', 'B2C-23']            // 5: Cobranzas y liquidación
+      ['CP-01', 'B2C-01', 'CP-04', 'B2C-04', 'CP-06', 'B2C-06', 'CP-12', 'B2C-12', 'CP-15', 'B2C-15', 'CP-20', 'B2C-20', 'CP-25', 'B2C-25'], // 1: Ventas básicas y regulares
+      ['CP-02', 'B2C-02', 'CP-05', 'B2C-05', 'CP-13', 'B2C-13', 'CP-17', 'B2C-17', 'CP-18', 'B2C-18', 'CP-24', 'B2C-24', 'CP-28', 'B2C-28'], // 2: Condiciones comerciales y políticas
+      ['CP-03', 'B2C-03', 'CP-07', 'B2C-07', 'CP-14', 'B2C-14', 'CP-19', 'B2C-19', 'CP-30', 'B2C-30'],                                      // 3: Promociones y escalas
+      ['CP-08', 'B2C-08', 'CP-09', 'B2C-09', 'CP-10', 'B2C-10', 'CP-22', 'B2C-22', 'CP-27', 'B2C-27'],                                      // 4: Ruta, visitas y GPS
+      ['CP-11', 'B2C-11', 'CP-16', 'B2C-16', 'CP-21', 'B2C-21', 'CP-23', 'B2C-23', 'CP-26', 'B2C-26', 'CP-29', 'B2C-29']                     // 5: Cobranzas y liquidación
     ];
 
     const selected = [];
@@ -244,11 +244,11 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
 
   test('La selección cubre los 5 estratos pedagógicos requeridos', () => {
     const strata = [
-      ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'],
-      ['B2C-02', 'B2C-05', 'B2C-17', 'B2C-18'],
-      ['B2C-03', 'B2C-07', 'B2C-14', 'B2C-19'],
-      ['B2C-08', 'B2C-09', 'B2C-10', 'B2C-22'],
-      ['B2C-11', 'B2C-16', 'B2C-21', 'B2C-23']
+      ['CP-01', 'B2C-01', 'CP-04', 'B2C-04', 'CP-06', 'B2C-06', 'CP-12', 'B2C-12', 'CP-15', 'B2C-15', 'CP-20', 'B2C-20', 'CP-25', 'B2C-25'],
+      ['CP-02', 'B2C-02', 'CP-05', 'B2C-05', 'CP-13', 'B2C-13', 'CP-17', 'B2C-17', 'CP-18', 'B2C-18', 'CP-24', 'B2C-24', 'CP-28', 'B2C-28'],
+      ['CP-03', 'B2C-03', 'CP-07', 'B2C-07', 'CP-14', 'B2C-14', 'CP-19', 'B2C-19', 'CP-30', 'B2C-30'],
+      ['CP-08', 'B2C-08', 'CP-09', 'B2C-09', 'CP-10', 'B2C-10', 'CP-22', 'B2C-22', 'CP-27', 'B2C-27'],
+      ['CP-11', 'B2C-11', 'CP-16', 'B2C-16', 'CP-21', 'B2C-21', 'CP-23', 'B2C-23', 'CP-26', 'B2C-26', 'CP-29', 'B2C-29']
     ];
 
     const selected = selectFiveEvaluationCases(CASES, []);
@@ -259,11 +259,12 @@ describe('4. Selección Estratificada Balanceada de 5 Casos', () => {
   });
 
   test('El filtro anti-repetición prioriza casos no evaluados previamente', () => {
-    // Si el usuario ya vio CP-01/B2C-01, B2C-04, B2C-06, B2C-15 del Estrato 1, debe escoger B2C-20
-    const usedCodes = ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15'];
+    // Si el usuario ya vio todos excepto CP-20 del Estrato 1, debe escoger CP-20
+    const usedCodes = ['CP-01', 'B2C-01', 'CP-04', 'B2C-04', 'CP-06', 'B2C-06', 'CP-12', 'B2C-12', 'CP-15', 'B2C-15', 'CP-25', 'B2C-25'];
     const selected = selectFiveEvaluationCases(CASES, usedCodes);
-    const stratum1Pick = selected.find(c => ['CP-01', 'B2C-01', 'B2C-04', 'B2C-06', 'B2C-15', 'B2C-20'].includes(c.code));
-    assert.strictEqual(stratum1Pick.code, 'B2C-20', 'Debe seleccionar el único caso no repetido del estrato 1');
+    const stratum1Codes = ['CP-01', 'B2C-01', 'CP-04', 'B2C-04', 'CP-06', 'B2C-06', 'CP-12', 'B2C-12', 'CP-15', 'B2C-15', 'CP-20', 'B2C-20', 'CP-25', 'B2C-25'];
+    const stratum1Pick = selected.find(c => stratum1Codes.includes(c.code));
+    assert.strictEqual(stratum1Pick.code, 'CP-20', 'Debe seleccionar el único caso no repetido del estrato 1 (CP-20)');
   });
 });
 
@@ -960,5 +961,81 @@ describe('10. Reglas y Flujos de Solución de los 5 Casos de Evaluación Oficial
   });
 });
 
+describe('11. Verificación de Integridad de los Nuevos Casos CP-12, CP-13 y CP-24 a CP-30', () => {
+  test('CP-12: Venta de repuestos automotrices Hyundai sin beneficio de promociones', () => {
+    const cp12 = CASES.find(c => c.code === 'CP-12');
+    assert.ok(cp12, 'Caso CP-12 debe existir');
+    assert.strictEqual(cp12.client, 'Frenos y Repuestos El Chaski');
+    assert.strictEqual(cp12.line, 'repuestos');
+    assert.strictEqual(cp12.brand, 'hyundai');
+    assert.strictEqual(cp12.rules.length, 6);
+    assert.strictEqual(cp12.rules[0].validate({ clientName: 'Frenos y Repuestos El Chaski' }), true);
+    assert.strictEqual(cp12.rules[3].validate({ paymentCondition: 'contado', line: 'repuestos', brand: 'hyundai' }), true);
+    assert.strictEqual(cp12.rules[4].validate({ product: 'Pastillas de Freno Elantra Genuine', quantity: 3 }), true);
+  });
 
+  test('CP-13: [TRAMPA] Intento de venta a crédito a cliente con línea crediticia suspendida', () => {
+    const cp13 = CASES.find(c => c.code === 'CP-13');
+    assert.ok(cp13, 'Caso CP-13 debe existir');
+    assert.strictEqual(cp13.client, 'Servicentro Las Vegas');
+    assert.strictEqual(cp13.paymentCondition, 'contado');
+    assert.strictEqual(cp13.rules.length, 6);
+    assert.strictEqual(cp13.rules[3].validate({ paymentCondition: 'contado', line: 'lubricantes', brand: 'shell' }), true);
+    assert.strictEqual(cp13.rules[3].validate({ paymentCondition: 'credito_30', line: 'lubricantes', brand: 'shell' }), false, 'Debe rechazar crédito');
+  });
 
+  test('CP-24: Venta B2B con Lista Especial Corporativa (EC) a Crédito 45 días', () => {
+    const cp24 = CASES.find(c => c.code === 'CP-24');
+    assert.ok(cp24, 'Caso CP-24 debe existir');
+    assert.strictEqual(cp24.client, 'Transportes Pesados del Altiplano SAC');
+    assert.strictEqual(cp24.priceList, 'EC');
+    assert.strictEqual(cp24.paymentCondition, 'credito_45');
+    assert.strictEqual(cp24.rules[3].validate({ paymentCondition: 'credito_45', priceList: 'EC', line: 'neumaticos', brand: 'michelin' }), true);
+  });
+
+  test('CP-25: Venta multi-ítem de repuestos Hyundai para kit de frenos al contado', () => {
+    const cp25 = CASES.find(c => c.code === 'CP-25');
+    assert.ok(cp25, 'Caso CP-25 debe existir');
+    assert.strictEqual(cp25.client, 'Taller Automotriz San Antonio');
+    assert.strictEqual(cp25.rules[3].validate({ paymentCondition: 'contado', line: 'repuestos', brand: 'hyundai' }), true);
+    assert.strictEqual(cp25.rules[4].validate({ quantity: 4 }), true);
+  });
+
+  test('CP-26: Cobranza fraccionada multimoneda (Soles + Dólares + Depósito Bancario)', () => {
+    const cp26 = CASES.find(c => c.code === 'CP-26');
+    assert.ok(cp26, 'Caso CP-26 debe existir');
+    assert.strictEqual(cp26.client, 'Comercial El Triunfo');
+    assert.strictEqual(cp26.rules[2].validate({ paymentMethod: 'multiple', voucherAttached: true, amount: 600 }), true);
+  });
+
+  test('CP-27: [GPS] Inicio asistido por falla de cobertura satelital en zona remota', () => {
+    const cp27 = CASES.find(c => c.code === 'CP-27');
+    assert.ok(cp27, 'Caso CP-27 debe existir');
+    assert.strictEqual(cp27.client, 'Minera Los Nevados');
+    assert.strictEqual(cp27.rules[1].validate({ reason: 'sin_senal_gps', justified: true }), true);
+    assert.strictEqual(cp27.rules[2].validate({ initialPhoto: 'foto.jpg' }), true);
+  });
+
+  test('CP-28: [TRAMPA] Rechazo de descuento estratégico excesivo mayor al monto del producto', () => {
+    const cp28 = CASES.find(c => c.code === 'CP-28');
+    assert.ok(cp28, 'Caso CP-28 debe existir');
+    assert.strictEqual(cp28.client, 'Lubricentro El Veloz');
+    assert.strictEqual(cp28.rules[4].validate({ product: 'Shell Helix HX7 10W/40', strategicDiscount: 3 }), true);
+    assert.strictEqual(cp28.rules[4].validate({ product: 'Shell Helix HX7 10W/40', strategicDiscount: 25 }), false, 'Debe rechazar descuento de $25 en ítem de $22');
+  });
+
+  test('CP-29: Cobranza con aplicación de retención de SUNAT (3%) en comprobante > S/. 700', () => {
+    const cp29 = CASES.find(c => c.code === 'CP-29');
+    assert.ok(cp29, 'Caso CP-29 debe existir');
+    assert.strictEqual(cp29.client, 'Constructora Andina SRL');
+    assert.strictEqual(cp29.rules[2].validate({ hasRetention: true, retentionAmount: 12, amount: 388 }), true);
+  });
+
+  test('CP-30: Venta mayorista con escala escalonada de descuento por tramos Michelin', () => {
+    const cp30 = CASES.find(c => c.code === 'CP-30');
+    assert.ok(cp30, 'Caso CP-30 debe existir');
+    assert.strictEqual(cp30.client, 'Lubricantes y Filtros San Pedro');
+    assert.strictEqual(cp30.rules[4].validate({ product: 'Michelin Energy XM2+ 195/60 R15', quantity: 10, promoDiscount: true }), true);
+    assert.strictEqual(cp30.rules[4].validate({ product: 'Michelin Energy XM2+ 195/60 R15', quantity: 4, promoDiscount: true }), false);
+  });
+});

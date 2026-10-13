@@ -10,6 +10,13 @@ const os = require('os');
 const crypto = require('crypto');
 const { DatabaseSync } = require('node:sqlite');
 
+const { initDatabaseSchema } = require('./src/database/schema.js');
+const { createUsersRouter } = require('./src/routes/users.js');
+const { createTrainingRouter } = require('./src/routes/training.js');
+const { createKnowledgeRouter } = require('./src/routes/knowledge.js');
+const { createGamificationRouter } = require('./src/routes/gamification.js');
+const { createIntegrationRouter } = require('./src/routes/integration.js');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -216,6 +223,13 @@ if (!podiumRow) {
   db.prepare("INSERT INTO settings (key, value) VALUES ('podium_visible', '0')").run();
 }
 
+// Inicializar esquema relacional de las 16 entidades (Requisitos.pdf)
+try {
+  initDatabaseSchema(db);
+} catch (e) {
+  console.warn('[DB Warning] Inicializando esquema expandido:', e.message);
+}
+
 // Catálogo oficial de 1 administrador y 14 asesores comerciales oficiales UYAPAY
 const INITIAL_USERS = [
   // Administrador
@@ -311,11 +325,22 @@ app.post('/api/auth/login', (req, res) => {
     }
   }
 
+  // Consultar roles asignados (multi-rol ACC-03, RF-006)
+  let userRoles = [];
+  try {
+    userRoles = db.prepare(`
+      SELECT r.code FROM roles r
+      JOIN user_roles ur ON r.id = ur.role_id
+      WHERE ur.user_id = ?
+    `).all(user.id).map(r => r.code);
+  } catch (e) {}
+
   const sessionUser = {
     id: user.id,
     username: user.username,
     name: user.name,
-    role: user.role
+    role: user.role,
+    roles: userRoles.length > 0 ? userRoles : [user.role]
   };
 
   const token = generateSessionToken(sessionUser);
@@ -883,6 +908,13 @@ app.get('/api/admin/export', adminMiddleware, (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// ================= RUTAS DE MÓDULOS EXPANDIDOS (REQUISITOS.PDF) =================
+app.use('/api/users-mgmt', createUsersRouter(db, authMiddleware, adminMiddleware));
+app.use('/api/training', createTrainingRouter(db, authMiddleware, adminMiddleware));
+app.use('/api/knowledge', createKnowledgeRouter(db, authMiddleware, adminMiddleware));
+app.use('/api/gamification', createGamificationRouter(db, authMiddleware));
+app.use('/api/integration', createIntegrationRouter(db));
 
 // Función para obtener dinámicamente la IP de la red local (Wi-Fi / Ethernet)
 function getLocalNetworkIp() {

@@ -16,7 +16,7 @@ Capacitador-interactivo-UYAPAY/
 ├── js/
 │   ├── data/
 │   │   ├── users.js         # Nómina oficial de usuarios y perfiles
-│   │   └── cases.js         # Catálogo de los 21 casos oficiales, productos Shell/Michelin y reglas desacopladas
+│   │   └── cases.js         # Catálogo de los 30 casos oficiales, productos Shell/Michelin/Hyundai y reglas desacopladas
 │   ├── services/
 │   │   ├── storage.js       # Servicio de persistencia híbrida (SQLite REST API + localStorage)
 │   │   ├── evaluator.js     # Motor de evaluación desacoplado, cronómetro global y consolidador de notas
@@ -30,7 +30,7 @@ Capacitador-interactivo-UYAPAY/
 ├── simulator.html           # Vista del simulador de la aplicación móvil UYAPAY
 ├── server.js                # Servidor backend Node.js con SQLite (WAL mode), SSE en vivo y exportación
 ├── uyapay.sqlite            # Base de datos persistente SQLite centralizada
-├── Casos de Prueba...md     # Especificación de los 21 casos de negocio reales
+├── Casos de Prueba...md     # Especificación de los 30 casos de negocio reales
 ├── Flujos de Resolución...md# Secuencia paso a paso según el Manual de Usuario UYAPAY
 ├── FLUJOS_DEL_SISTEMA.md    # Documentación técnica de flujos del sistema y arquitectura multi-tab
 ├── REQUISITOS DEL MVP.md    # Especificación formal de requisitos funcionales y no funcionales
@@ -103,17 +103,17 @@ Capacitador-interactivo-UYAPAY/
 
 ---
 
-## 🧩 Catálogo Oficial de 21 Casos de Negocio
+## 🧩 Catálogo Oficial de 30 Casos de Negocio
 
-El sistema cuenta con la batería oficial de **21 casos activos** (Casos 1 al 11 y 14 al 23; los casos 12 y 13 fueron removidos por obsolescencia de proceso), organizados en **5 estratos pedagógicos**:
+El sistema cuenta con la batería oficial de **30 casos activos** (`CP-01` al `CP-30`), cubriendo el 100% de las especificaciones operativas y organizados en **5 estratos pedagógicos**:
 
 | Estrato | Área Temática | Casos Incluidos | Competencias Evaluadas |
 |---|---|---|---|
-| **1** | Venta Regular y Catálogo Base | `B2C-01`, `B2C-02`, `B2C-03`, `B2C-04` | Registro de pedidos contado/crédito, bonificaciones por volumen, casos trampa de foto de competencia. |
-| **2** | Condiciones Especiales, Listas y Moneda | `B2C-06`, `B2C-08`, `B2C-09`, `B2C-10`, `B2C-11`, `B2C-14` | Listas de precio diferenciadas (Oficina, 1, 2, 3), crédito extendido (45/60 días), pedidos mixtos y clientes nuevos. |
-| **3** | Políticas Promocionales y Descuentos | `B2C-07`, `B2C-20`, `B2C-21` | Consulta de estados de cuenta, exclusión mutua de promociones combo y priorización de cobranza en ruta. |
-| **4** | Gestión de Ruta, Historial y Excepciones | `B2C-15`, `B2C-16`, `B2C-17`, `B2C-22` | Historial de visitas, bypass GPS para visitas telefónicas, justificación formal de tareas y visitas fuera de ruta. |
-| **5** | Cobranzas, Cotizaciones y Cierre | `B2C-05`, `B2C-18`, `B2C-19`, `B2C-23` | Casos trampa de cobranza no consolidada, cotizaciones Tipo 3, cobranza mixta (efectivo + voucher) y arqueo de liquidación. |
+| **1** | Venta Regular y Catálogo Base | `CP-01`, `CP-04`, `CP-06`, `CP-12`, `CP-15`, `CP-20`, `CP-25` | Registro de pedidos contado/crédito, bonificaciones por volumen, repuestos Hyundai sin promo, ventas multi-ítem de mantenimiento y casos trampa de competencia. |
+| **2** | Condiciones Especiales, Políticas y B2B | `CP-02`, `CP-05`, `CP-13`, `CP-17`, `CP-18`, `CP-24`, `CP-28` | Listas de precio diferenciadas (Oficina, 1, 2, 3, EC), crédito corporativo (45/60 días), trampas de línea suspendida y control de descuento estratégico excesivo. |
+| **3** | Políticas Promocionales, Bonificaciones y Escalas | `CP-03`, `CP-07`, `CP-14`, `CP-19`, `CP-30` | Escalas escalonadas de descuento por tramos volumétricos (Michelin), exclusión mutua de promociones combo y consulta de documentos electrónicos. |
+| **4** | Gestión de Ruta, Visitas, GPS y Contingencias | `CP-08`, `CP-09`, `CP-10`, `CP-22`, `CP-27` | Historial de visitas, bypass GPS para visitas telefónicas, contingencia por falla de satélite en zonas remotas y alta de clientes fuera de ruta. |
+| **5** | Cobranzas, SUNAT, Liquidación y Cierre | `CP-11`, `CP-16`, `CP-21`, `CP-23`, `CP-26`, `CP-29` | Cobranza multimoneda fraccionada (Soles + Dólares + Depósito), retención de SUNAT (3%) en facturas > S/. 700, auditoría morosa y balance de liquidación diaria. |
 
 ---
 

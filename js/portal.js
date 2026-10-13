@@ -202,6 +202,9 @@
     if (user.role === 'admin') {
       setupNavigation([
         { id: 'admin-dashboard', label: 'Dashboard & Monitor en Vivo' },
+        { id: 'admin-mgmt-view', label: 'Suite de Administración' },
+        { id: 'training-view', label: 'Biblioteca de Capacitación' },
+        { id: 'knowledge-view', label: 'Base de Conocimiento' },
         { id: 'ranking-view', label: 'Ranking General & Podio' },
         { id: 'admin-historial', label: 'Historial de Calificaciones' }
       ]);
@@ -209,13 +212,18 @@
       await renderResultsTable('admin-results-table');
     } else {
       setupNavigation([
+        { id: 'training-view', label: 'Capacitación & Videos' },
+        { id: 'onboarding-view', label: 'Inducción Guiada' },
         { id: 'asesor-eval-intro', label: 'Evaluación Práctica' },
-        { id: 'ranking-view', label: 'Ranking General & Podio' },
+        { id: 'knowledge-view', label: 'Base de Conocimiento' },
+        { id: 'ranking-view', label: 'Ranking & Podio' },
+        { id: 'profile-view', label: 'Mi Perfil & Insignias' },
         { id: 'asesor-notas', label: 'Mis Calificaciones' }
       ]);
       await renderResultsTable('asesor-results-table', user.username);
     }
 
+    await updateNavbarProfileBadges(user);
     await renderLeaderboard();
   }
 
@@ -254,7 +262,12 @@
           (containerId === 'asesor-notas' && text.includes('calificaciones')) ||
           (containerId === 'asesor-eval-intro' && text.includes('evaluación')) ||
           (containerId === 'admin-dashboard' && text.includes('dashboard')) ||
-          (containerId === 'admin-historial' && text.includes('historial'))
+          (containerId === 'admin-historial' && text.includes('historial')) ||
+          (containerId === 'training-view' && text.includes('capacitación')) ||
+          (containerId === 'onboarding-view' && text.includes('inducción')) ||
+          (containerId === 'knowledge-view' && text.includes('conocimiento')) ||
+          (containerId === 'profile-view' && text.includes('perfil')) ||
+          (containerId === 'admin-mgmt-view' && text.includes('administración'))
         ) {
           item.classList.add('active');
         }
@@ -271,6 +284,16 @@
       renderResultsTable('admin-results-table');
     } else if (containerId === 'asesor-notas' && currentUser) {
       renderResultsTable('asesor-results-table', currentUser.username);
+    } else if (containerId === 'training-view') {
+      renderTrainingView();
+    } else if (containerId === 'onboarding-view') {
+      renderOnboardingView();
+    } else if (containerId === 'knowledge-view') {
+      renderKnowledgeView();
+    } else if (containerId === 'profile-view' && currentUser) {
+      renderProfileView(currentUser);
+    } else if (containerId === 'admin-mgmt-view') {
+      renderAdminMgmtView();
     }
   }
 
@@ -862,12 +885,12 @@
   let currentActiveTab = 0;
 
   /**
-   * Selección balanceada de 5 casos estratificados por áreas de competencia:
-   * 1. Venta Regular & Catálogo Base (B2C-01, B2C-02, B2C-03, B2C-04)
-   * 2. Reglas Comerciales, Listas de Precio & Moneda (B2C-06, B2C-08, B2C-09, B2C-10, B2C-11, B2C-14)
-   * 3. Promociones, Bonificaciones & Exclusión Mutua (B2C-07, B2C-20, B2C-21)
-   * 4. Gestión de Ruta, Historial & Justificaciones (B2C-15, B2C-16, B2C-17, B2C-22)
-   * 5. Cobranzas, Cotizaciones & Cierre Operativo (B2C-05, B2C-18, B2C-19, B2C-23)
+   * Selección balanceada de 5 casos estratificados por áreas de competencia (Catálogo de 30 Casos Oficiales):
+   * 1. Venta Regular & Catálogo Base (CP-01, CP-04, CP-06, CP-12, CP-15, CP-20, CP-25)
+   * 2. Reglas Comerciales, Listas de Precio & Moneda (CP-02, CP-05, CP-13, CP-17, CP-18, CP-24, CP-28)
+   * 3. Promociones, Bonificaciones & Exclusión Mutua (CP-03, CP-07, CP-14, CP-19, CP-30)
+   * 4. Gestión de Ruta, Historial, GPS & Justificaciones (CP-08, CP-09, CP-10, CP-22, CP-27)
+   * 5. Cobranzas, Liquidación & Cierre Operativo (CP-11, CP-16, CP-21, CP-23, CP-26, CP-29)
    * 
    * Incluye filtro anti-repetición respecto al último intento del asesor.
    */
@@ -890,7 +913,7 @@
     const user = Auth.getCurrentUser();
     if (!user) return;
 
-    // 1. Cargar 5 de los 21 casos disponibles
+    // 1. Cargar 5 de los 30 casos disponibles
     evaluationCases = selectFiveEvaluationCases();
     currentActiveTab = 0;
 
@@ -1520,6 +1543,965 @@
     }
   }
 
+  // =========================================================================
+  // MÓDULOS DE REQUISITOS.PDF (CAPACITACIÓN, KAHOOT, ONBOARDING, CONOCIMIENTO, PERFIL, ADMIN)
+  // =========================================================================
+
+  // Helper para cabeceras con token de autenticación
+  function getAuthHeaders() {
+    const user = Auth.getCurrentUser();
+    const headers = { 'Content-Type': 'application/json' };
+    if (user && user.token) {
+      headers['Authorization'] = 'Bearer ' + user.token;
+    }
+    if (user && user.role) {
+      headers['x-user-role'] = user.role;
+    }
+    return headers;
+  }
+
+  // 1. Actualizar insignias y XP en el Navbar
+  async function updateNavbarProfileBadges(user) {
+    if (!user) return;
+    try {
+      const res = await fetch('/api/gamification/my-profile', { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        const xpBadge = document.getElementById('user-xp-badge');
+        const badgeDisplay = document.getElementById('user-badge-display');
+        if (xpBadge && data.stats) {
+          xpBadge.textContent = `⚡ ${data.stats.globalPoints || 0} XP`;
+          xpBadge.style.display = 'inline-flex';
+        }
+        if (badgeDisplay && data.badges && data.badges.length > 0) {
+          const topBadge = data.badges[0];
+          badgeDisplay.textContent = `${topBadge.icon} ${topBadge.name}`;
+          badgeDisplay.style.display = 'inline-flex';
+        } else if (badgeDisplay) {
+          badgeDisplay.textContent = '🌟 Asesor B2C';
+          badgeDisplay.style.display = 'inline-flex';
+        }
+      }
+    } catch (e) {
+      console.warn('[Navbar] No se pudo cargar perfil de gamificación:', e.message);
+    }
+  }
+
+  // 2. Módulo de Capacitación y Biblioteca de Videos
+  let activeVideosList = [];
+  let currentVideoForModal = null;
+
+  async function renderTrainingView(selectedModuleId = null) {
+    const pillsContainer = document.getElementById('training-module-pills');
+    const videosContainer = document.getElementById('training-videos-grid');
+    if (!pillsContainer || !videosContainer) return;
+
+    pillsContainer.innerHTML = '<div style="color:var(--text-muted); padding:10px;">Cargando módulos...</div>';
+    videosContainer.innerHTML = '<div style="color:var(--text-muted); padding:20px;">Cargando catálogo audiovisual...</div>';
+
+    try {
+      const [modulesRes, videosRes] = await Promise.all([
+        fetch('/api/training/modules', { headers: getAuthHeaders() }),
+        fetch(`/api/training/videos${selectedModuleId ? '?moduleId=' + encodeURIComponent(selectedModuleId) : ''}`, { headers: getAuthHeaders() })
+      ]);
+
+      const modules = await modulesRes.json();
+      const videos = await videosRes.json();
+      activeVideosList = videos;
+
+      // Renderizar píldoras de módulo
+      let pillsHtml = `
+        <button class="training-pill ${!selectedModuleId ? 'active' : ''}" onclick="window.UyapayPortal.renderTrainingByModule(null)">
+          🌐 Todos los Módulos
+        </button>
+      `;
+      modules.forEach(m => {
+        const isActive = selectedModuleId === m.id;
+        pillsHtml += `
+          <button class="training-pill ${isActive ? 'active' : ''}" onclick="window.UyapayPortal.renderTrainingByModule('${m.id}')">
+            ${m.icon || '📁'} ${escapeHtml(m.title)}
+          </button>
+        `;
+      });
+      pillsContainer.innerHTML = pillsHtml;
+
+      // Renderizar tarjetas de videos
+      if (videos.length === 0) {
+        videosContainer.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align:center; padding:40px 20px; color:var(--text-muted);">
+            No hay videos registrados en este módulo.
+          </div>
+        `;
+        return;
+      }
+
+      let videosHtml = '';
+      videos.forEach(v => {
+        const mins = Math.floor((v.duration_seconds || 180) / 60);
+        const secs = (v.duration_seconds || 180) % 60;
+        const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs} min`;
+
+        let quizBadgeHtml = '';
+        if (v.userPassed) {
+          quizBadgeHtml = `<span class="badge badge-success" style="font-size:11px;">✓ Quiz Aprobado (${v.userBestScore}/20)</span>`;
+        } else if (v.quizId) {
+          quizBadgeHtml = `<span class="badge badge-warning" style="font-size:11px;">⚡ Quiz Disponible</span>`;
+        }
+
+        videosHtml += `
+          <div class="video-card">
+            <div class="video-thumb-wrapper" onclick="window.UyapayPortal.openVideoModal('${v.id}')">
+              <div class="video-play-btn">▶</div>
+              <span class="video-duration-tag">⏱️ ${durationStr}</span>
+            </div>
+            <div class="video-card-body">
+              <div style="font-size:11px; font-weight:700; color:var(--yellow-dark); text-transform:uppercase; margin-bottom:4px;">
+                ${escapeHtml(v.module_title || 'Capacitación')}
+              </div>
+              <h3 class="video-card-title">${escapeHtml(v.title)}</h3>
+              <p class="video-card-desc">${escapeHtml(v.description || 'Cápsula formativa oficial.')}</p>
+              <div class="video-card-footer">
+                <div>${quizBadgeHtml}</div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="window.UyapayPortal.openVideoModal('${v.id}')">Ver Video</button>
+                  ${v.quizId ? `<button class="btn-primary" style="font-size:12px; padding:6px 14px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="window.UyapayPortal.startKahootQuiz('${v.id}')">🎮 Quiz</button>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      videosContainer.innerHTML = videosHtml;
+
+    } catch (e) {
+      pillsContainer.innerHTML = '';
+      videosContainer.innerHTML = `<div class="error-msg" style="display:block;">Error cargando módulos de capacitación: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function openVideoModal(videoId) {
+    const video = activeVideosList.find(v => v.id === videoId);
+    if (!video) return;
+    currentVideoForModal = video;
+
+    const modal = document.getElementById('video-player-modal');
+    const titleEl = document.getElementById('modal-video-title');
+    const subtitleEl = document.getElementById('modal-video-subtitle');
+    const descEl = document.getElementById('modal-video-desc');
+    const videoEl = document.getElementById('modal-video-element');
+    const btnQuiz = document.getElementById('btn-launch-quiz-from-video');
+
+    if (titleEl) titleEl.textContent = video.title;
+    if (subtitleEl) subtitleEl.textContent = video.module_title || 'Módulo UYAPAY B2C';
+    if (descEl) descEl.textContent = video.description || '';
+    if (videoEl) {
+      videoEl.src = video.video_url;
+      videoEl.load();
+    }
+    if (btnQuiz) {
+      btnQuiz.style.display = video.quizId ? 'inline-flex' : 'none';
+    }
+
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+  }
+
+  function closeVideoModal() {
+    const modal = document.getElementById('video-player-modal');
+    const videoEl = document.getElementById('modal-video-element');
+    if (videoEl) {
+      videoEl.pause();
+      videoEl.removeAttribute('src');
+      videoEl.load();
+    }
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+  }
+
+  function launchQuizFromCurrentVideo() {
+    if (!currentVideoForModal) return;
+    const vidId = currentVideoForModal.id;
+    closeVideoModal();
+    startKahootQuiz(vidId);
+  }
+
+  // 3. Arena de Quiz estilo Kahoot!
+  let currentKahootQuiz = null;
+  let currentKahootIndex = 0;
+  let currentKahootAnswers = {};
+  let kahootTimerInterval = null;
+  let kahootSecondsLeft = 20;
+  let kahootStreak = 0;
+
+  async function startKahootQuiz(videoId) {
+    try {
+      const res = await fetch(`/api/training/videos/${videoId}/quiz`, { headers: getAuthHeaders() });
+      if (!res.ok) {
+        showCustomAlert({
+          title: 'Quiz No Disponible',
+          message: 'Este video no tiene un cuestionario de refuerzo configurado todavía.',
+          icon: 'ℹ️'
+        });
+        return;
+      }
+
+      currentKahootQuiz = await res.json();
+      currentKahootIndex = 0;
+      currentKahootAnswers = {};
+      kahootStreak = 0;
+
+      // Ocultar otras vistas y mostrar arena
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      const arena = document.getElementById('kahoot-quiz-arena');
+      if (arena) {
+        arena.style.display = 'block';
+        arena.classList.add('active');
+      }
+
+      const titleEl = document.getElementById('kahoot-quiz-title');
+      if (titleEl) titleEl.textContent = currentKahootQuiz.title || 'Desafío de Microaprendizaje';
+
+      renderKahootQuestion(0);
+    } catch (e) {
+      showCustomAlert({ title: 'Error', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  function renderKahootQuestion(index) {
+    if (!currentKahootQuiz || !currentKahootQuiz.questions || index >= currentKahootQuiz.questions.length) {
+      finishKahootQuiz();
+      return;
+    }
+
+    currentKahootIndex = index;
+    const q = currentKahootQuiz.questions[index];
+
+    // Actualizar contadores
+    const counterEl = document.getElementById('kahoot-question-counter');
+    if (counterEl) counterEl.textContent = `Pregunta ${index + 1} de ${currentKahootQuiz.questions.length}`;
+
+    const streakBadge = document.getElementById('kahoot-streak-badge');
+    if (streakBadge) streakBadge.textContent = `🔥 Racha: ${kahootStreak}`;
+
+    const questionBox = document.getElementById('kahoot-question-box');
+    if (questionBox) questionBox.textContent = q.questionText;
+
+    // Configuración estética de las 4 opciones de colores estilo Kahoot
+    const shapes = [
+      { class: 'kahoot-red', icon: '▲', label: 'Triángulo' },
+      { class: 'kahoot-blue', icon: '◆', label: 'Rombo' },
+      { class: 'kahoot-yellow', icon: '●', label: 'Círculo' },
+      { class: 'kahoot-green', icon: '■', label: 'Cuadrado' }
+    ];
+
+    const answersGrid = document.getElementById('kahoot-answers-grid');
+    if (answersGrid) {
+      answersGrid.innerHTML = '';
+      q.options.forEach((opt, optIdx) => {
+        const shape = shapes[optIdx % shapes.length];
+        const btn = document.createElement('button');
+        btn.className = `kahoot-btn ${shape.class}`;
+        btn.innerHTML = `
+          <span class="kahoot-shape">${shape.icon}</span>
+          <span style="flex:1;">${escapeHtml(opt.option_text)}</span>
+        `;
+        btn.onclick = () => selectKahootOption(q.id, opt.id, opt.option_text);
+        answersGrid.appendChild(btn);
+      });
+    }
+
+    // Iniciar temporizador regresivo de 20 segundos
+    kahootSecondsLeft = 20;
+    const timerEl = document.getElementById('kahoot-timer');
+    if (timerEl) {
+      timerEl.textContent = kahootSecondsLeft;
+      timerEl.classList.remove('warning');
+    }
+
+    if (kahootTimerInterval) clearInterval(kahootTimerInterval);
+    kahootTimerInterval = setInterval(() => {
+      kahootSecondsLeft--;
+      if (timerEl) {
+        timerEl.textContent = kahootSecondsLeft;
+        if (kahootSecondsLeft <= 5) timerEl.classList.add('warning');
+      }
+      if (kahootSecondsLeft <= 0) {
+        clearInterval(kahootTimerInterval);
+        handleKahootTimeout(q.id);
+      }
+    }, 1000);
+  }
+
+  function selectKahootOption(questionId, optionId, optionText) {
+    if (kahootTimerInterval) clearInterval(kahootTimerInterval);
+    currentKahootAnswers[questionId] = optionId;
+
+    // Feedback inmediato de respuesta (RF-010)
+    showKahootFeedback(true, 'Opción seleccionada con éxito.');
+  }
+
+  function handleKahootTimeout(questionId) {
+    currentKahootAnswers[questionId] = null;
+    kahootStreak = 0;
+    showKahootFeedback(false, '¡Tiempo agotado! Responde dentro del límite de 20 segundos para obtener bonos de velocidad.');
+  }
+
+  function showKahootFeedback(hasAnswered, customMsg) {
+    const modal = document.getElementById('kahoot-feedback-modal');
+    const iconEl = document.getElementById('kahoot-feedback-icon');
+    const titleEl = document.getElementById('kahoot-feedback-title');
+    const textEl = document.getElementById('kahoot-feedback-text');
+    const ruleBox = document.getElementById('kahoot-feedback-rule-box');
+    const ruleText = document.getElementById('kahoot-feedback-rule-text');
+
+    if (hasAnswered) {
+      kahootStreak++;
+      if (iconEl) iconEl.textContent = '🎉';
+      if (titleEl) titleEl.textContent = '¡Respuesta Registrada!';
+      if (textEl) textEl.textContent = `Has respondido a tiempo. ¡Racha actual de ${kahootStreak} aciertos!`;
+      if (ruleBox) ruleBox.style.display = 'none';
+    } else {
+      if (iconEl) iconEl.textContent = '⏰';
+      if (titleEl) titleEl.textContent = '¡Tiempo Finalizado!';
+      if (textEl) textEl.textContent = customMsg;
+      if (ruleBox) {
+        ruleBox.style.display = 'block';
+        if (ruleText) ruleText.textContent = 'Las reglas de UYAPAY B2C requieren precisión en la selección de productos y listas de precios.';
+      }
+    }
+
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+  }
+
+  function nextKahootQuestion() {
+    const modal = document.getElementById('kahoot-feedback-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+
+    renderKahootQuestion(currentKahootIndex + 1);
+  }
+
+  async function finishKahootQuiz() {
+    if (kahootTimerInterval) clearInterval(kahootTimerInterval);
+
+    try {
+      const res = await fetch(`/api/training/quizzes/${currentKahootQuiz.id}/submit`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ answers: currentKahootAnswers })
+      });
+
+      const result = await res.json();
+
+      const modal = document.getElementById('kahoot-summary-modal');
+      const scoreEl = document.getElementById('kahoot-summary-score');
+      const statusBadge = document.getElementById('kahoot-summary-status-badge');
+      const xpEl = document.getElementById('kahoot-summary-xp');
+      const correctEl = document.getElementById('kahoot-summary-correct');
+
+      if (scoreEl) scoreEl.textContent = result.formattedScore || `${result.score} / 20`;
+      if (statusBadge) {
+        statusBadge.innerHTML = result.passed
+          ? `<span class="badge badge-success" style="font-size:13px; padding:4px 14px;">✓ Aprobado</span>`
+          : `<span class="badge badge-danger" style="font-size:13px; padding:4px 14px;">Desaprobado</span>`;
+      }
+      if (xpEl) xpEl.textContent = result.passed ? `+${result.score} XP` : '0 XP';
+      if (correctEl) correctEl.textContent = `${result.correctAnswers} de ${result.totalQuestions}`;
+
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+      }
+
+      // Actualizar medalla y XP en navbar
+      const currentUser = Auth.getCurrentUser();
+      if (currentUser) updateNavbarProfileBadges(currentUser);
+
+    } catch (e) {
+      showCustomAlert({ title: 'Error al enviar Quiz', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  function closeKahootSummary() {
+    const modal = document.getElementById('kahoot-summary-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+    exitKahootQuiz();
+  }
+
+  function exitKahootQuiz() {
+    if (kahootTimerInterval) clearInterval(kahootTimerInterval);
+    const arena = document.getElementById('kahoot-quiz-arena');
+    if (arena) {
+      arena.classList.remove('active');
+      arena.style.display = 'none';
+    }
+    // Regresar a la vista de capacitación
+    switchTab('training-view');
+  }
+
+  // 4. Capacitador Paso a Paso e Inducción (Onboarding)
+  const ONBOARDING_TASKS = [
+    {
+      id: 'task-1',
+      code: 'T1',
+      title: 'Geocerca GPS y Comprobación de Punto',
+      desc: 'Verifica la distancia al cliente (radio de 50m). Si estás lejos, utiliza Visita Telefónica justificada.',
+      icon: '📍'
+    },
+    {
+      id: 'task-2',
+      code: 'T2',
+      title: 'Registro de Fotos de Exhibición',
+      desc: 'Toma la foto inicial de góndola/estantería y la foto final de cierre de visita obligatorias.',
+      icon: '📸'
+    },
+    {
+      id: 'task-3',
+      code: 'T3',
+      title: 'Tracking de Precios de Competencia',
+      desc: 'Registra el precio numérico y foto de cotización observada o selecciona motivo de no registro.',
+      icon: '🏷️'
+    },
+    {
+      id: 'task-4',
+      code: 'T4',
+      title: 'Toma de Pedido y Cobranza Mixta',
+      desc: 'Aplica condición de pago, lista de precios autorizada, promociones combo y arqueo de cobranzas.',
+      icon: '🛒'
+    },
+    {
+      id: 'task-5',
+      code: 'T5',
+      title: 'Cierre de Visita y Liquidación Diaria',
+      desc: 'Completa la visita con o sin pedido justificado y genera el comprobante consolidado de ruta.',
+      icon: '🏁'
+    }
+  ];
+
+  function getOnboardingState() {
+    const user = Auth.getCurrentUser();
+    const key = `uyapay_onboarding_${user ? user.username : 'guest'}`;
+    try {
+      return JSON.parse(localStorage.getItem(key)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveOnboardingState(state) {
+    const user = Auth.getCurrentUser();
+    const key = `uyapay_onboarding_${user ? user.username : 'guest'}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function renderOnboardingView() {
+    const container = document.getElementById('onboarding-tasks-list');
+    const progressBar = document.getElementById('onboarding-progress-bar');
+    const progressText = document.getElementById('onboarding-progress-text');
+    const statusPill = document.getElementById('onboarding-status-pill');
+    const btnExam = document.getElementById('btn-start-onboarding-exam');
+    if (!container) return;
+
+    const state = getOnboardingState();
+    let completedCount = 0;
+
+    let html = '';
+    ONBOARDING_TASKS.forEach((task, idx) => {
+      const isDone = Boolean(state[task.id]);
+      if (isDone) completedCount++;
+
+      html += `
+        <div class="onboarding-task-card ${isDone ? 'completed' : ''}">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div class="onboarding-task-icon">${task.icon}</div>
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tarea ${idx + 1} de 5 • ${task.code}</div>
+              <h4 style="margin:2px 0 4px 0; font-size:15px; color:var(--text-dark);">${escapeHtml(task.title)}</h4>
+              <p style="margin:0; font-size:12.5px; color:var(--text-muted); line-height:1.4;">${escapeHtml(task.desc)}</p>
+            </div>
+          </div>
+          <div>
+            <button class="btn-${isDone ? 'secondary' : 'primary'}" style="width:auto; font-size:12.5px; padding:8px 16px;" onclick="window.UyapayPortal.toggleOnboardingTask('${task.id}')">
+              ${isDone ? '✓ Completada' : 'Completar Tarea'}
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+
+    const pct = Math.round((completedCount / ONBOARDING_TASKS.length) * 100);
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (progressText) progressText.textContent = `${pct}% Completado (${completedCount} de 5 tareas)`;
+    if (statusPill) {
+      if (pct === 100) {
+        statusPill.textContent = '🌟 Listo para Evaluación';
+        statusPill.style.background = '#dcfce7';
+        statusPill.style.color = '#16a34a';
+      } else {
+        statusPill.textContent = 'En progreso';
+        statusPill.style.background = '#fef3c7';
+        statusPill.style.color = '#b45309';
+      }
+    }
+
+    if (btnExam) {
+      if (pct === 100) {
+        btnExam.disabled = false;
+        btnExam.textContent = '🚀 Iniciar Evaluación de Onboarding ➔';
+        btnExam.style.background = 'var(--success)';
+      } else {
+        btnExam.disabled = true;
+        btnExam.textContent = `🔒 Bloqueado (Faltan ${5 - completedCount} tareas)`;
+        btnExam.style.background = 'var(--yellow)';
+      }
+    }
+  }
+
+  function toggleOnboardingTask(taskId) {
+    const state = getOnboardingState();
+    state[taskId] = !state[taskId];
+    saveOnboardingState(state);
+    renderOnboardingView();
+  }
+
+  function startOnboardingExam() {
+    showCustomAlert({
+      title: 'Evaluación de Onboarding',
+      message: '¡Felicitaciones por completar el recorrido guiado!\n\nSe iniciará una sesión práctica en el simulador móvil para validar tu inducción y desbloquear tu insignia Pionero UYAPAY.',
+      icon: '🎓'
+    }).then(() => {
+      startExam();
+    });
+  }
+
+  // 5. Base de Conocimiento (FAQs & Reglas de Negocio)
+  let activeFaqsList = [];
+  let activeRulesList = [];
+  let currentKnowledgeSubtab = 'faqs';
+
+  async function renderKnowledgeView() {
+    try {
+      const [faqsRes, rulesRes] = await Promise.all([
+        fetch('/api/knowledge/faqs', { headers: getAuthHeaders() }),
+        fetch('/api/knowledge/rules', { headers: getAuthHeaders() })
+      ]);
+
+      activeFaqsList = await faqsRes.json();
+      activeRulesList = await rulesRes.json();
+      filterKnowledge();
+    } catch (e) {
+      console.error('[Conocimiento] Error:', e.message);
+    }
+  }
+
+  function switchKnowledgeSubtab(subtab) {
+    currentKnowledgeSubtab = subtab;
+    const btnFaqs = document.getElementById('btn-tab-faqs');
+    const btnRules = document.getElementById('btn-tab-rules');
+    const faqsContainer = document.getElementById('knowledge-faqs-container');
+    const rulesContainer = document.getElementById('knowledge-rules-container');
+
+    if (btnFaqs) btnFaqs.className = `training-pill ${subtab === 'faqs' ? 'active' : ''}`;
+    if (btnRules) btnRules.className = `training-pill ${subtab === 'rules' ? 'active' : ''}`;
+
+    if (faqsContainer) faqsContainer.style.display = subtab === 'faqs' ? 'block' : 'none';
+    if (rulesContainer) rulesContainer.style.display = subtab === 'rules' ? 'block' : 'none';
+  }
+
+  function filterKnowledge() {
+    const searchInput = document.getElementById('knowledge-search');
+    const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+    const faqsContainer = document.getElementById('knowledge-faqs-container');
+    const rulesContainer = document.getElementById('knowledge-rules-container');
+
+    // Filtrar FAQs
+    const filteredFaqs = activeFaqsList.filter(f =>
+      !query || f.question.toLowerCase().includes(query) || f.answer.toLowerCase().includes(query) || f.category.toLowerCase().includes(query)
+    );
+
+    if (faqsContainer) {
+      if (filteredFaqs.length === 0) {
+        faqsContainer.innerHTML = '<div style="color:var(--text-muted); padding:20px; text-align:center;">No se encontraron preguntas frecuentes con esa búsqueda.</div>';
+      } else {
+        faqsContainer.innerHTML = filteredFaqs.map((f, i) => `
+          <div class="faq-accordion-item" id="faq-item-${i}">
+            <div class="faq-header" onclick="window.UyapayPortal.toggleFaqAccordion(${i})">
+              <span>❓ ${escapeHtml(f.question)}</span>
+              <span style="font-size:12px; color:var(--text-muted);">▼</span>
+            </div>
+            <div class="faq-content">
+              <div style="font-size:11px; font-weight:700; color:var(--yellow-dark); text-transform:uppercase; margin-bottom:6px;">Categoría: ${escapeHtml(f.category)}</div>
+              ${escapeHtml(f.answer)}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Filtrar Reglas
+    const filteredRules = activeRulesList.filter(r =>
+      !query || r.title.toLowerCase().includes(query) || r.content.toLowerCase().includes(query) || r.category.toLowerCase().includes(query)
+    );
+
+    if (rulesContainer) {
+      if (filteredRules.length === 0) {
+        rulesContainer.innerHTML = '<div style="color:var(--text-muted); padding:20px; text-align:center;">No se encontraron reglas de negocio con esa búsqueda.</div>';
+      } else {
+        rulesContainer.innerHTML = filteredRules.map(r => `
+          <div class="business-rule-card">
+            <div style="font-size:11px; font-weight:700; color:var(--yellow-dark); text-transform:uppercase; margin-bottom:4px;">${escapeHtml(r.category)}</div>
+            <h4 class="business-rule-title">${escapeHtml(r.title)}</h4>
+            <div class="business-rule-content">${escapeHtml(r.content)}</div>
+          </div>
+        `).join('');
+      }
+    }
+  }
+
+  function toggleFaqAccordion(idx) {
+    const item = document.getElementById(`faq-item-${idx}`);
+    if (item) item.classList.toggle('open');
+  }
+
+  // 6. Perfil del Asesor & Vitrina de Insignias
+  async function renderProfileView(user) {
+    try {
+      const [profileRes, recsRes] = await Promise.all([
+        fetch('/api/gamification/my-profile', { headers: getAuthHeaders() }),
+        fetch(`/api/integration/recommendations/${user.username}`, { headers: getAuthHeaders() })
+      ]);
+
+      const profile = await profileRes.json();
+      const recs = await recsRes.json();
+
+      // Rellenar datos del Hero
+      const nameEl = document.getElementById('profile-name');
+      const userEl = document.getElementById('profile-username');
+      const roleEl = document.getElementById('profile-role');
+      const xpEl = document.getElementById('profile-xp');
+      const bestScoreEl = document.getElementById('profile-best-score');
+      const badgesCountEl = document.getElementById('profile-badges-count');
+
+      if (nameEl) nameEl.textContent = profile.user ? profile.user.name : user.name;
+      if (userEl) userEl.textContent = '@' + (profile.user ? profile.user.username : user.username);
+      if (roleEl) roleEl.textContent = (profile.user ? profile.user.role : user.role).toUpperCase();
+
+      if (xpEl && profile.stats) xpEl.textContent = `${profile.stats.globalPoints || 0} XP`;
+      if (bestScoreEl && profile.stats) bestScoreEl.textContent = `${profile.stats.bestScore || 0} / 20`;
+      if (badgesCountEl && profile.stats) badgesCountEl.textContent = `${profile.stats.badgesUnlockedCount || 0} / ${profile.stats.totalBadgesCount || 6}`;
+
+      // Renderizar vitrina de insignias
+      const badgesGrid = document.getElementById('profile-badges-grid');
+      if (badgesGrid && profile.badges) {
+        badgesGrid.innerHTML = profile.badges.map(b => `
+          <div class="badge-item-card ${b.unlocked ? 'unlocked' : 'locked'}">
+            <div class="badge-big-icon">${b.icon || '🏅'}</div>
+            <div class="badge-item-name">${escapeHtml(b.name)}</div>
+            <div class="badge-item-desc">${escapeHtml(b.description)}</div>
+            <div style="font-size:10.5px; margin-top:8px; font-weight:700; color:${b.unlocked ? 'var(--success)' : 'var(--text-muted)'};">
+              ${b.unlocked ? '✓ Desbloqueada' : '🔒 Bloqueada'}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Renderizar temas sugeridos
+      const recsList = document.getElementById('profile-recommendations-list');
+      if (recsList) {
+        if (!recs.hasRecommendations || (!recs.detectedWeaknesses || recs.detectedWeaknesses.length === 0)) {
+          recsList.innerHTML = `
+            <div style="font-size:13px; color:#059669; font-weight:600;">
+              ✨ ¡Excelente desempeño! No se detectan debilidades operativas críticas en tus evaluaciones recientes.
+            </div>
+          `;
+        } else {
+          let recsHtml = '<div style="display:flex; flex-direction:column; gap:10px;">';
+          (recs.recommendedVideos || []).forEach(rv => {
+            recsHtml += `
+              <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:#ea580c; text-transform:uppercase;">Video Sugerido</div>
+                  <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);">${escapeHtml(rv.title)}</div>
+                </div>
+                <button class="btn-primary" style="width:auto; padding:6px 14px; font-size:12px;" onclick="window.UyapayPortal.openVideoModal('${rv.id}')">Ver Video</button>
+              </div>
+            `;
+          });
+          (recs.recommendedRules || []).forEach(rr => {
+            recsHtml += `
+              <div style="background:#ffffff; border:1px solid #fed7aa; border-radius:8px; padding:10px 14px;">
+                <div style="font-size:11px; font-weight:700; color:#ea580c; text-transform:uppercase;">Regla de Negocio a Reforzar</div>
+                <div style="font-size:13.5px; font-weight:700; color:var(--text-dark);">${escapeHtml(rr.title)}</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${escapeHtml(rr.content)}</div>
+              </div>
+            `;
+          });
+          recsHtml += '</div>';
+          recsList.innerHTML = recsHtml;
+        }
+      }
+
+    } catch (e) {
+      console.warn('[Perfil] Error al renderizar perfil:', e.message);
+    }
+  }
+
+  // 7. Suite Administrativa (CRUD Usuarios, Roles y Casos)
+  async function renderAdminMgmtView() {
+    renderAdminUsersTable();
+    renderAdminCasesTable();
+  }
+
+  function switchAdminTab(tab) {
+    const btnUsers = document.getElementById('btn-adm-tab-users');
+    const btnCases = document.getElementById('btn-adm-tab-cases');
+    const panelUsers = document.getElementById('admin-users-panel');
+    const panelCases = document.getElementById('admin-cases-panel');
+
+    if (btnUsers) btnUsers.className = `admin-subtab ${tab === 'users' ? 'active' : ''}`;
+    if (btnCases) btnCases.className = `admin-subtab ${tab === 'cases' ? 'active' : ''}`;
+
+    if (panelUsers) panelUsers.style.display = tab === 'users' ? 'block' : 'none';
+    if (panelCases) panelCases.style.display = tab === 'cases' ? 'block' : 'none';
+  }
+
+  async function renderAdminUsersTable() {
+    const tbody = document.getElementById('admin-users-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Cargando nómina de usuarios...</td></tr>';
+
+    try {
+      const res = await fetch('/api/users-mgmt', { headers: getAuthHeaders() });
+      const users = await res.json();
+
+      tbody.innerHTML = users.map(u => {
+        const isActive = u.status === 'active';
+        const rolePills = (u.roles || [u.role]).map(r => `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:10.5px; margin-right:4px;">${escapeHtml(r)}</span>`).join('');
+
+        return `
+          <tr>
+            <td><b>${escapeHtml(u.username)}</b></td>
+            <td>${escapeHtml(u.name)}</td>
+            <td>${escapeHtml(u.email || '-')}</td>
+            <td>${rolePills}</td>
+            <td>
+              <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}" style="font-size:11px;">
+                ${isActive ? 'Activo' : 'Inactivo'}
+              </span>
+            </td>
+            <td style="text-align:center;">
+              <div style="display:inline-flex; gap:6px;">
+                <button class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="window.UyapayPortal.openEditUserModal('${u.id}', '${escapeHtml(u.username)}', '${escapeHtml(u.name)}', '${escapeHtml(u.email || '')}', '${u.role}')">Editar</button>
+                <button class="btn-${isActive ? 'secondary' : 'primary'}" style="font-size:11px; padding:5px 10px; ${isActive ? 'color:#dc2626;' : ''}" onclick="window.UyapayPortal.toggleUserStatus('${u.id}')">
+                  ${isActive ? 'Inactivar' : 'Activar'}
+                </button>
+                <button class="btn-secondary" style="font-size:11px; padding:5px 10px;" onclick="window.UyapayPortal.openAdminRolesModal('${u.id}', '${escapeHtml(u.name)}')">Roles</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="error-msg" style="display:table-cell;">Error: ${escapeHtml(e.message)}</td></tr>`;
+    }
+  }
+
+  function renderAdminCasesTable() {
+    const tbody = document.getElementById('admin-cases-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = Cases.map(c => `
+      <tr>
+        <td><b>${escapeHtml(c.code)}</b></td>
+        <td>${escapeHtml(c.title)}</td>
+        <td><span class="badge badge-warning" style="font-size:11px;">${escapeHtml(c.module || 'Ventas B2C')}</span></td>
+        <td>${escapeHtml(c.client || '-')}</td>
+        <td><span class="badge badge-success" style="font-size:11px;">Activo en Simulador</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function openCreateUserModal() {
+    const modal = document.getElementById('admin-user-modal');
+    document.getElementById('admin-user-modal-title').textContent = 'Crear Nuevo Usuario';
+    document.getElementById('modal-user-id').value = '';
+    document.getElementById('modal-user-username').value = '';
+    document.getElementById('modal-user-username').disabled = false;
+    document.getElementById('modal-user-fullname').value = '';
+    document.getElementById('modal-user-email').value = '';
+    document.getElementById('modal-user-role-select').value = 'asesor';
+    document.getElementById('modal-user-password').value = '123';
+    document.getElementById('modal-user-pass-group').style.display = 'block';
+
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+  }
+
+  function openEditUserModal(id, username, name, email, role) {
+    const modal = document.getElementById('admin-user-modal');
+    document.getElementById('admin-user-modal-title').textContent = 'Editar Usuario';
+    document.getElementById('modal-user-id').value = id;
+    document.getElementById('modal-user-username').value = username;
+    document.getElementById('modal-user-username').disabled = true;
+    document.getElementById('modal-user-fullname').value = name;
+    document.getElementById('modal-user-email').value = email;
+    document.getElementById('modal-user-role-select').value = role;
+    document.getElementById('modal-user-pass-group').style.display = 'none';
+
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+  }
+
+  function closeAdminUserModal() {
+    const modal = document.getElementById('admin-user-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+  }
+
+  async function saveAdminUser() {
+    const id = document.getElementById('modal-user-id').value;
+    const username = document.getElementById('modal-user-username').value.trim();
+    const name = document.getElementById('modal-user-fullname').value.trim();
+    const email = document.getElementById('modal-user-email').value.trim();
+    const role = document.getElementById('modal-user-role-select').value;
+    const password = document.getElementById('modal-user-password').value.trim();
+
+    if (!name || (!id && !username)) {
+      showCustomAlert({ title: 'Campos requeridos', message: 'Nombre y usuario son obligatorios.', icon: '⚠️' });
+      return;
+    }
+
+    try {
+      let res;
+      if (id) {
+        // Editar usuario existente
+        res = await fetch(`/api/users-mgmt/${id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name, email, role })
+        });
+      } else {
+        // Crear nuevo usuario
+        res = await fetch('/api/users-mgmt', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ username, name, email, role, password })
+        });
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error guardando usuario');
+
+      closeAdminUserModal();
+      showCustomAlert({ title: 'Éxito', message: data.message || 'Usuario guardado correctamente.', icon: '✅' });
+      renderAdminUsersTable();
+    } catch (e) {
+      showCustomAlert({ title: 'Error', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  async function toggleUserStatus(userId) {
+    try {
+      const res = await fetch(`/api/users-mgmt/${userId}/toggle-status`, {
+        method: 'PATCH',
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      renderAdminUsersTable();
+    } catch (e) {
+      showCustomAlert({ title: 'Error', message: e.message, icon: '⚠️' });
+    }
+  }
+
+  async function openAdminRolesModal(userId, userName) {
+    const modal = document.getElementById('admin-roles-modal');
+    document.getElementById('modal-roles-user-id').value = userId;
+    document.getElementById('modal-roles-subtitle').textContent = `Usuario: ${userName}`;
+
+    // Resetear checkboxes
+    ['participante', 'facilitador', 'editor', 'admin'].forEach(r => {
+      const chk = document.getElementById(`chk-role-${r}`);
+      if (chk) chk.checked = false;
+    });
+
+    try {
+      const res = await fetch(`/api/users-mgmt/${userId}/roles`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const roles = await res.json();
+        roles.forEach(r => {
+          const chk = document.getElementById(`chk-role-${r.code}`);
+          if (chk) chk.checked = true;
+        });
+      }
+    } catch (e) {}
+
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
+  }
+
+  function closeAdminRolesModal() {
+    const modal = document.getElementById('admin-roles-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+  }
+
+  async function saveUserRoles() {
+    const userId = document.getElementById('modal-roles-user-id').value;
+    const selectedRoles = [];
+    ['participante', 'facilitador', 'editor', 'admin'].forEach(r => {
+      const chk = document.getElementById(`chk-role-${r}`);
+      if (chk && chk.checked) selectedRoles.push(chk.value);
+    });
+
+    if (selectedRoles.length === 0) {
+      showCustomAlert({ title: 'Atención', message: 'Debes asignar al menos un rol al usuario.', icon: '⚠️' });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users-mgmt/${userId}/roles`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ roleIds: selectedRoles })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      closeAdminRolesModal();
+      showCustomAlert({ title: 'Éxito', message: 'Roles actualizados correctamente.', icon: '✅' });
+      renderAdminUsersTable();
+    } catch (e) {
+      showCustomAlert({ title: 'Error', message: e.message, icon: '⚠️' });
+    }
+  }
+
   window.UyapayPortal = {
     logout: () => Auth.logout(),
     startExam: startExam,
@@ -1557,7 +2539,39 @@
     },
     handleDialogConfirm: handleDialogConfirm,
     handleDialogCancel: handleDialogCancel,
-    dismissDialog: dismissDialog
+    dismissDialog: dismissDialog,
+
+    // Métodos de Capacitación y Videos
+    renderTrainingByModule: renderTrainingView,
+    openVideoModal: openVideoModal,
+    closeVideoModal: closeVideoModal,
+    launchQuizFromCurrentVideo: launchQuizFromCurrentVideo,
+
+    // Métodos de Quiz estilo Kahoot
+    startKahootQuiz: startKahootQuiz,
+    nextKahootQuestion: nextKahootQuestion,
+    closeKahootSummary: closeKahootSummary,
+    exitKahootQuiz: exitKahootQuiz,
+
+    // Métodos de Capacitador Paso a Paso (Onboarding)
+    toggleOnboardingTask: toggleOnboardingTask,
+    startOnboardingExam: startOnboardingExam,
+
+    // Métodos de Base de Conocimiento (FAQs y Reglas)
+    switchKnowledgeSubtab: switchKnowledgeSubtab,
+    filterKnowledge: filterKnowledge,
+    toggleFaqAccordion: toggleFaqAccordion,
+
+    // Métodos de Suite Administrativa
+    switchAdminTab: switchAdminTab,
+    openCreateUserModal: openCreateUserModal,
+    openEditUserModal: openEditUserModal,
+    closeAdminUserModal: closeAdminUserModal,
+    saveAdminUser: saveAdminUser,
+    toggleUserStatus: toggleUserStatus,
+    openAdminRolesModal: openAdminRolesModal,
+    closeAdminRolesModal: closeAdminRolesModal,
+    saveUserRoles: saveUserRoles
   };
 })();
 

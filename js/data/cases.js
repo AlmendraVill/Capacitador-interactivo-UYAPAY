@@ -213,10 +213,36 @@ window.UyapayData.PRODUCTS = [
     promoType: 'none',
     promoLabel: 'Repuestos no participan de promociones',
     promoDiscountAmount: 0.0
+  },
+  {
+    id: 'prod-hyundai-pastillas',
+    sku: '58101-2VA00',
+    name: 'Pastillas de Freno Elantra Genuine',
+    line: 'repuestos',
+    brand: 'hyundai',
+    format: 'Juego',
+    unitPrice: 42.0,
+    hasPromo: false,
+    promoType: 'none',
+    promoLabel: 'Repuestos no participan de promociones',
+    promoDiscountAmount: 0.0
+  },
+  {
+    id: 'prod-hyundai-discotucson',
+    sku: '51712-2S000',
+    name: 'Disco de Freno Tucson Frontal',
+    line: 'repuestos',
+    brand: 'hyundai',
+    format: 'Unidad',
+    unitPrice: 58.0,
+    hasPromo: false,
+    promoType: 'none',
+    promoLabel: 'Repuestos no participan de promociones',
+    promoDiscountAmount: 0.0
   }
 ];
 
-// ================= BATERÍA DE 21 CASOS PRÁCTICOS OFICIALES =================
+// ================= BATERÍA DE 30 CASOS PRÁCTICOS OFICIALES =================
 window.UyapayData.CASES = [
 {
   "id": "case-1",
@@ -329,7 +355,7 @@ window.UyapayData.CASES = [
   "id": "case-2",
   "code": "CP-02",
   "aliases": ["B2C-02"],
-  "title": "Caso 2: CP-02 Cotización a crédito con promoción por volumen",
+  "title": "CP-02: Cotización a crédito con promoción por volumen",
   "module": "Ventas B2C",
   "client": "Distribuidora Kanchis EIRL",
   "clientAddress": "AV. INDUSTRIAL 104",
@@ -451,8 +477,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-3",
-  "code": "B2C-03",
-  "title": "Caso 3: Cliente corporativo B2B, crédito 60 días",
+  "code": "CP-03",
+  "aliases": ["B2C-03"],
+  "title": "CP-03: Cliente corporativo B2B, crédito 60 días",
   "module": "Ventas B2B",
   "client": "Transportes del Sur SAC",
   "clientAddress": "KM 12 VARIANTE DE UCHUMAYO",
@@ -536,8 +563,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-4",
-  "code": "B2C-04",
-  "title": "Caso 4: [TRAMPA] Tracking de precio de competencia solo con foto",
+  "code": "CP-04",
+  "aliases": ["B2C-04"],
+  "title": "CP-04: [TRAMPA] Tracking de precio de competencia solo con foto",
   "module": "Precios y Competencia",
   "client": "Ferretería Los Andes S.A.C.",
   "clientAddress": "AV. TOMAS TUYRUTUPAC 412",
@@ -1016,8 +1044,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-10",
-  "code": "B2C-10",
-  "title": "Caso 10: Pedido corporativo grande a crédito 45 días",
+  "code": "CP-10",
+  "aliases": ["B2C-10"],
+  "title": "CP-10: Pedido corporativo grande a crédito 45 días",
   "module": "Ventas B2B",
   "client": "Minera Andina Contratistas SAC",
   "clientAddress": "PARQUE INDUSTRIAL MZ. C LOTE 4",
@@ -1102,8 +1131,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-11",
-  "code": "B2C-11",
-  "title": "Caso 11: Cliente nuevo, primera compra con lista Oficina",
+  "code": "CP-11",
+  "aliases": ["B2C-11"],
+  "title": "CP-11: Cliente nuevo, primera compra con lista Oficina",
   "module": "Ventas B2C",
   "client": "Repuestos Central Chincha",
   "clientAddress": "CALLE COMERCIO 120 - CHINCHA",
@@ -1188,9 +1218,186 @@ window.UyapayData.CASES = [
   ]
 },
 {
+  "id": "case-12",
+  "code": "CP-12",
+  "aliases": ["B2C-12"],
+  "title": "CP-12: Venta de repuestos automotrices Hyundai sin beneficio de promociones",
+  "module": "Ventas B2C",
+  "client": "Frenos y Repuestos El Chaski",
+  "clientAddress": "AV. LOS INCAS 950",
+  "paymentCondition": "contado",
+  "paymentConditionLabel": "Contado (5% desc.)",
+  "priceList": "1",
+  "line": "repuestos",
+  "brand": "hyundai",
+  "product": "Pastillas de Freno Elantra Genuine",
+  "unitPrice": 42,
+  "expectedQty": 3,
+  "promoDiscount": false,
+  "promoType": "none",
+  "promoLabel": "Repuestos no participan de promociones",
+  "publicTitle": "Venta de Repuestos Automotrices Hyundai",
+  "instructions": "En Frenos y Repuestos El Chaski, el cliente solicita 3 juegos de Pastillas de Freno Elantra Genuine a precio de lista oficial ($42.00 c/u). Recuerda que la línea de repuestos Hyundai no participa de beneficios promocionales de lubricantes o neumáticos, pero sí goza del descuento por pago al Contado (5%). Genera el pedido y confirma la orden.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Comercializar repuestos originales Hyundai con descuento financiero de Contado (5%) reconociendo que no aplican promociones de regalo o volumen.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Frenos y Repuestos El Chaski' en el Plan de Visitas e Iniciar visita.",
+      "2. Registrar fotos de fachada y punto de venta.",
+      "3. En Pedidos configurar: Condición = Contado, Lista = 1, Línea = Repuestos, Marca = Hyundai.",
+      "4. Agregar 3 unidades de Pastillas de Freno Elantra Genuine a $42.00 c/u.",
+      "5. Verificar que no se aplique ninguna promoción de regalo/volumen.",
+      "6. Verificar cálculo neto: 3 × $42.00 = $126.00 menos 5% Contado ($6.30) = USD 119.70.",
+      "7. Confirmar la orden de compra."
+    ],
+    "reglaNegocio": "La línea de repuestos Hyundai no cuenta con programas de regalos ni descuentos por escala de volumen, aplicando únicamente la tasa financiera de contado (5%).",
+    "decisionClave": "Configurar Línea Repuestos Hyundai y verificar que el subtotal aplique 5% sin promociones.",
+    "resultadoEsperado": "Orden emitida por USD 119.70 en repuestos Hyundai."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Frenos y Repuestos El Chaski",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('chaski') || (p.clientName || '').toLowerCase().includes('frenos'),
+      "errorMessage": "Selecciona a Frenos y Repuestos El Chaski."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SELECT_ACTION",
+      "description": "Iniciar visita",
+      "validate": (p) => p.action === 'iniciar',
+      "errorMessage": "Inicia la visita presencial."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Fotos obligatorias",
+      "validate": (p) => p.initialPhoto && p.finalPhoto,
+      "errorMessage": "Registra las fotos obligatorias de visita."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Contado Repuestos Hyundai",
+      "validate": (p) => p.paymentCondition === 'contado' && p.line === 'repuestos' && p.brand === 'hyundai',
+      "errorMessage": "Configura Condición Contado, Línea Repuestos, Marca Hyundai."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 3 juegos de pastillas",
+      "validate": (p) => (p.product || '').toLowerCase().includes('pastilla') && Number(p.quantity) === 3,
+      "errorMessage": "Agrega 3 juegos de Pastillas de Freno Elantra Genuine."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden de compra."
+    }
+  ]
+},
+{
+  "id": "case-13",
+  "code": "CP-13",
+  "aliases": ["B2C-13"],
+  "title": "CP-13: [TRAMPA] Intento de venta a crédito a cliente con línea crediticia suspendida",
+  "module": "Políticas Comerciales",
+  "client": "Servicentro Las Vegas",
+  "clientAddress": "AV. INDUSTRIAL 1040",
+  "paymentCondition": "contado",
+  "paymentConditionLabel": "Contado (5% desc.)",
+  "priceList": "1",
+  "line": "lubricantes",
+  "brand": "shell",
+  "product": "Shell Rimula R4 X 15W-40",
+  "unitPrice": 28,
+  "expectedQty": 2,
+  "promoDiscount": false,
+  "promoType": "none",
+  "promoLabel": "Sin promoción aplicable",
+  "publicTitle": "Gestión Comercial ante Bloqueo por Línea Suspendida",
+  "instructions": "Visitas al cliente Servicentro Las Vegas, quien solicita 2 baldes de Shell Rimula R4 X 15W-40 a Crédito 30 días. Al intentar configurar crédito, el sistema de riesgo crediticio de SOLAR indica que su línea está SUSPENDIDA por letras en cobranza judicial. Identifica el bloqueo, asesora al cliente y concreta la venta migrándola a pago al Contado.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Identificar el bloqueo comercial por línea de crédito suspendida (IsNotSuspendedCreditLine) y reconducir la operación a Contado.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Servicentro Las Vegas' e Iniciar visita.",
+      "2. Registrar fotos de visita.",
+      "3. Identificar que el cliente tiene la línea crediticia suspendida por mora judicial.",
+      "4. Rechazar el pedido a crédito y configurar la orden en condición Contado (Lista 1, Lubricantes Shell).",
+      "5. Agregar 2 baldes de Shell Rimula R4 X a $28.00 c/u.",
+      "6. Verificar cálculo: 2 × $28 = $56.00 - 5% Contado ($2.80) = USD 53.20.",
+      "7. Confirmar y enviar la orden de compra."
+    ],
+    "reglaNegocio": "La regla IsNotSuspendedCreditLine del backend bloquea cualquier intento de pedido a crédito si suspended_credit_line == true. Solo se autorizan pedidos al contado.",
+    "decisionClave": "Reconducir la condición de pago a Contado para permitir la emisión de la orden.",
+    "resultadoEsperado": "Orden emitida al Contado por USD 53.20 evadiendo el bloqueo de crédito."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Servicentro Las Vegas",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('vegas') || (p.clientName || '').toLowerCase().includes('servicentro'),
+      "errorMessage": "Selecciona a Servicentro Las Vegas."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SELECT_ACTION",
+      "description": "Iniciar visita",
+      "validate": (p) => p.action === 'iniciar',
+      "errorMessage": "Inicia la visita presencial."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Fotos obligatorias",
+      "validate": (p) => p.initialPhoto && p.finalPhoto,
+      "errorMessage": "Registra las fotos de visita."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Reconducir a Contado por bloqueo",
+      "validate": (p) => p.paymentCondition === 'contado' && p.line === 'lubricantes' && p.brand === 'shell',
+      "errorMessage": "El cliente tiene línea suspendida: debes configurar condición Contado con Lubricantes Shell."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 2 baldes Rimula",
+      "validate": (p) => (p.product || '').toLowerCase().includes('rimula') && Number(p.quantity) === 2,
+      "errorMessage": "Agrega 2 baldes de Shell Rimula R4 X 15W-40."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden al contado."
+    }
+  ]
+},
+{
   "id": "case-14",
-  "code": "B2C-14",
-  "title": "Caso 14: Venta B2B con descuento por volumen y crédito 60 días",
+  "code": "CP-14",
+  "aliases": ["B2C-14"],
+  "title": "CP-14: Venta B2B con descuento por volumen y crédito 60 días",
   "module": "Ventas B2B",
   "client": "Constructora Vial Perú SAC",
   "clientAddress": "AV. ALFONSO UGARTE 780",
@@ -1275,8 +1482,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-15",
-  "code": "B2C-15",
-  "title": "Caso 15: Revisión de historial de visitas antes de nueva venta",
+  "code": "CP-15",
+  "aliases": ["B2C-15"],
+  "title": "CP-15: Revisión de historial de visitas antes de nueva venta",
   "module": "Historial y Visitas",
   "client": "Bodega y Ferretería Dos Hermanos",
   "clientAddress": "AV. TOMAS TUYRUTUPAC 820",
@@ -1368,8 +1576,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-16",
-  "code": "B2C-16",
-  "title": "Caso 16: [GPS] Intento de inicio presencial a >50m y bypass por visita telefónica",
+  "code": "CP-16",
+  "aliases": ["B2C-16"],
+  "title": "CP-16: [GPS] Intento de inicio presencial a >50m y bypass por visita telefónica",
   "module": "Visitas y Georreferenciación",
   "client": "Distribuidora Kanchis EIRL",
   "clientAddress": "AV. INDUSTRIAL 104 - SOCABAYA",
@@ -1451,8 +1660,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-17",
-  "code": "B2C-17",
-  "title": "Caso 17: [Tareas] Cierre de visita con justificación formal de no emisión de pedido (T5)",
+  "code": "CP-17",
+  "aliases": ["B2C-17"],
+  "title": "CP-17: [Tareas] Cierre de visita con justificación formal de no emisión de pedido (T5)",
   "module": "Visitas y Tareas",
   "client": "Comercial Vega Hnos.",
   "clientAddress": "CALLE MERCADERES 301",
@@ -1518,8 +1728,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-18",
-  "code": "B2C-18",
-  "title": "Caso 18: [Cotización] Registro de propuesta comercial formal como Cotización (Tipo 3)",
+  "code": "CP-18",
+  "aliases": ["B2C-18"],
+  "title": "CP-18: [Cotización] Registro de propuesta comercial formal como Cotización (Tipo 3)",
   "module": "Pedidos y Cotizaciones",
   "client": "Grupo Ferretero Miraflores",
   "clientAddress": "AV. SAN JERONIMO 210",
@@ -1600,8 +1811,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-19",
-  "code": "B2C-19",
-  "title": "Caso 19: [Cobranzas] Cobranza mixta de facturas (Efectivo + Depósito con voucher)",
+  "code": "CP-19",
+  "aliases": ["B2C-19"],
+  "title": "CP-19: [Cobranzas] Cobranza mixta de facturas (Efectivo + Depósito con voucher)",
   "module": "Cobranzas",
   "client": "Taller Hyundai Express",
   "clientAddress": "AV. PARRA 314",
@@ -1667,8 +1879,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-20",
-  "code": "B2C-20",
-  "title": "Caso 20: [Promociones] Exclusión mutua de promociones del mismo combo (Condición 4000)",
+  "code": "CP-20",
+  "aliases": ["B2C-20"],
+  "title": "CP-20: [Promociones] Exclusión mutua de promociones del mismo combo (Condición 4000)",
   "module": "Ventas B2C",
   "client": "Servicentro El Faro",
   "clientAddress": "AV. DOLORES 880",
@@ -1751,8 +1964,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-21",
-  "code": "B2C-21",
-  "title": "Caso 21: [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día",
+  "code": "CP-21",
+  "aliases": ["B2C-21"],
+  "title": "CP-21: [Ruta] Consulta y priorización de clientes con deuda vencida en el plan del día",
   "module": "Plan de Visitas",
   "client": "Distribuidora Kanchis EIRL",
   "clientAddress": "AV. INDUSTRIAL 104 - SOCABAYA",
@@ -1803,8 +2017,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-22",
-  "code": "B2C-22",
-  "title": "Caso 22: [Fuera de Ruta] Alta de visita fuera de ruta para despacho urgente en zona",
+  "code": "CP-22",
+  "aliases": ["B2C-22"],
+  "title": "CP-22: [Fuera de Ruta] Alta de visita fuera de ruta para despacho urgente en zona",
   "module": "Plan de Visitas",
   "client": "Autopartes El Rápido",
   "clientAddress": "JR. PIEROLA 540",
@@ -1885,8 +2100,9 @@ window.UyapayData.CASES = [
 },
 {
   "id": "case-23",
-  "code": "B2C-23",
-  "title": "Caso 23: [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada",
+  "code": "CP-23",
+  "aliases": ["B2C-23"],
+  "title": "CP-23: [Liquidación] Arqueo y cierre de liquidación de cobranza al término de la jornada",
   "module": "Liquidación de Ventas",
   "client": "Liquidación General de Ruta",
   "publicTitle": "Cierre y Liquidación de Jornada",
@@ -1925,9 +2141,570 @@ window.UyapayData.CASES = [
       "errorMessage": "Genera el consolidado y finaliza la liquidación."
     }
   ]
+},
+{
+  "id": "case-24",
+  "code": "CP-24",
+  "aliases": ["B2C-24"],
+  "title": "CP-24: Venta B2B con Lista Especial Corporativa (EC) a Crédito 45 días sin descuento financiero",
+  "module": "Ventas B2B",
+  "client": "Transportes Pesados del Altiplano SAC",
+  "clientAddress": "CARRETERA INDUSTRIAL KM 4.5",
+  "paymentCondition": "credito_45",
+  "paymentConditionLabel": "Crédito 45 días",
+  "priceList": "EC",
+  "line": "neumaticos",
+  "brand": "michelin",
+  "product": "Michelin XZE2 215/75R17.5",
+  "unitPrice": 240,
+  "expectedQty": 4,
+  "promoDiscount": false,
+  "promoType": "none",
+  "promoLabel": "Sin promoción aplicable",
+  "publicTitle": "Venta Flotas B2B en Lista Especial Corporativa",
+  "instructions": "Atiende la solicitud de Transportes Pesados del Altiplano SAC para 4 unidades de neumáticos Michelin XZE2 a Crédito 45 días. Al tratarse de una cuenta corporativa en Lista Especial (EC), las condiciones financieras pactadas no contemplan descuento pronto pago. Configura la operación con la lista correspondiente y genera la orden.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Configurar una venta B2B de neumáticos pesados con lista pactada EC a Crédito 45 días verificando que no se aplique descuento financiero minorista.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Transportes Pesados del Altiplano SAC' e Iniciar visita.",
+      "2. Registrar fotos de control de flota.",
+      "3. Configurar: Condición = Crédito 45 días, Lista = EC, Línea = Neumáticos, Marca = Michelin.",
+      "4. Agregar 4 unidades de Michelin XZE2 a $240.00 c/u.",
+      "5. Verificar que en Lista EC no aplique descuento por pronto pago (Subtotal $960.00 = Total $960.00).",
+      "6. Confirmar la orden de compra."
+    ],
+    "reglaNegocio": "Los clientes B2B con Lista Especial EC cuentan con precios netos corporativos prenegociados; las condiciones de crédito a 45 días no otorgan descuento financiero adicional.",
+    "decisionClave": "Seleccionar Lista EC a Crédito 45 días sin intentar aplicar descuentos B2C.",
+    "resultadoEsperado": "Orden emitida por USD 960.00 exactos."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Transportes Pesados",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('pesados') || (p.clientName || '').toLowerCase().includes('altiplano'),
+      "errorMessage": "Selecciona a Transportes Pesados del Altiplano SAC."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SELECT_ACTION",
+      "description": "Iniciar visita",
+      "validate": (p) => p.action === 'iniciar',
+      "errorMessage": "Inicia la visita presencial."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Fotos obligatorias",
+      "validate": (p) => p.initialPhoto && p.finalPhoto,
+      "errorMessage": "Registra las fotos de visita."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Crédito 45d Lista EC",
+      "validate": (p) => p.paymentCondition === 'credito_45' && p.priceList === 'EC' && p.line === 'neumaticos' && p.brand === 'michelin',
+      "errorMessage": "Configura Crédito 45 días, Lista EC, Neumáticos Michelin."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 4 neumáticos XZE2",
+      "validate": (p) => (p.product || '').toLowerCase().includes('xze2') && Number(p.quantity) === 4,
+      "errorMessage": "Agrega 4 neumáticos Michelin XZE2."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden de compra."
+    }
+  ]
+},
+{
+  "id": "case-25",
+  "code": "CP-25",
+  "aliases": ["B2C-25"],
+  "title": "CP-25: Venta multi-ítem de repuestos Hyundai para kit de frenos al contado",
+  "module": "Ventas B2C",
+  "client": "Taller Automotriz San Antonio",
+  "clientAddress": "AV. MARISCAL CASTILLA 320",
+  "paymentCondition": "contado",
+  "paymentConditionLabel": "Contado (5% desc.)",
+  "priceList": "1",
+  "line": "repuestos",
+  "brand": "hyundai",
+  "product": "Kit Frenos Hyundai (Discos + Pastillas)",
+  "unitPrice": 50,
+  "expectedQty": 4,
+  "promoDiscount": false,
+  "promoType": "none",
+  "promoLabel": "Repuestos no participan de promociones",
+  "publicTitle": "Venta Multi-Producto de Repuestos Originales",
+  "instructions": "En Taller Automotriz San Antonio se requiere un kit de mantenimiento de frenos al contado (Lista 1): 2 Discos de Freno HD35 ($40.00 c/u) y 2 Juegos de Pastillas de Freno Elantra ($42.00 c/u). Carga ambos ítems en la misma orden, verifica el consolidado financiero con 5% de descuento al contado y confirma el pedido.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Cargar múltiples ítems de la línea de repuestos en una misma orden aplicando correctamente el 5% de contado sobre el subtotal acumulado.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Taller Automotriz San Antonio' e Iniciar visita.",
+      "2. Tomar y guardar fotos de fachada y taller.",
+      "3. En Pedidos configurar: Condición = Contado, Lista = 1, Línea = Repuestos, Marca = Hyundai.",
+      "4. Agregar primer ítem: Discos de freno (2 unidades).",
+      "5. Agregar segundo ítem: Pastillas de freno (2 unidades).",
+      "6. Verificar que el subtotal sume ambos productos y el descuento del 5% aplique globalmente.",
+      "7. Confirmar y enviar la orden consolidada."
+    ],
+    "reglaNegocio": "El carrito de compras permite consolidar múltiples ítems de una misma línea y marca calculando el descuento de condición de pago sobre el subtotal acumulado.",
+    "decisionClave": "Agregar ambos productos antes de pulsar Completar orden.",
+    "resultadoEsperado": "Orden multi-ítem emitida con éxito con descuento del 5% al contado."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Taller San Antonio",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('antonio') || (p.clientName || '').toLowerCase().includes('taller'),
+      "errorMessage": "Selecciona a Taller Automotriz San Antonio."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SELECT_ACTION",
+      "description": "Iniciar visita",
+      "validate": (p) => p.action === 'iniciar',
+      "errorMessage": "Inicia la visita presencial."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Fotos obligatorias",
+      "validate": (p) => p.initialPhoto && p.finalPhoto,
+      "errorMessage": "Registra las fotos de visita."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Contado Repuestos",
+      "validate": (p) => p.paymentCondition === 'contado' && p.line === 'repuestos' && p.brand === 'hyundai',
+      "errorMessage": "Configura Condición Contado, Línea Repuestos Hyundai."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar productos de mantenimiento",
+      "validate": (p) => Number(p.quantity) >= 2,
+      "errorMessage": "Agrega los productos requeridos al carrito."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden consolidada",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden multi-ítem."
+    }
+  ]
+},
+{
+  "id": "case-26",
+  "code": "CP-26",
+  "aliases": ["B2C-26"],
+  "title": "CP-26: Cobranza fraccionada multimoneda (Soles + Dólares + Depósito Bancario)",
+  "module": "Gestión de Cobranzas",
+  "client": "Comercial El Triunfo",
+  "clientAddress": "AV. EJÉRCITO 415",
+  "publicTitle": "Cobranza Fraccionada Tripartita Multimoneda",
+  "instructions": "En Comercial El Triunfo cobras una factura pendiente de USD 600.00 mediante pago fraccionado: el cliente entrega S/. 375.00 en efectivo soles (T/C 3.75 = $100 USD), $200.00 en efectivo dólares y $300.00 mediante depósito en cuenta BBVA con voucher bancario. Registra los 3 métodos de recaudación, adjunta el voucher y emite el recibo oficial.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Registrar una cobranza multimoneda fraccionada en soles, dólares y transferencia bancaria con validación fotográfica de voucher.",
+    "pasoAPaso": [
+      "1. En el Plan de Visitas seleccionar la opción 'Cobranzas' o acceder a 'Comercial El Triunfo'.",
+      "2. Consultar el estado de cuenta y seleccionar la factura F001-00049210 por USD 600.00.",
+      "3. Registrar Cobro Fraccionado: Efectivo PEN S/. 375.00 (equivale a $100.00 a T/C 3.75) + Efectivo USD $200.00 + Depósito Bancario BBVA USD $300.00.",
+      "4. Adjuntar fotografía legible del voucher bancario BBVA.",
+      "5. Verificar que la sumatoria cubra los USD 600.00 y presionar 'Confirmar Cobranza'."
+    ],
+    "reglaNegocio": "La cobranza multimoneda convierte soles a dólares al tipo de cambio oficial del día (T/C 3.75). Los depósitos exigen obligatoriamente comprobante/voucher y número de operación.",
+    "decisionClave": "Desglosar los tres medios de pago verificando el cuadre exacto de los USD 600.00.",
+    "resultadoEsperado": "Recibo electrónico emitido por USD 600.00 con voucher adjunto."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Comercial El Triunfo",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('triunfo') || (p.clientName || '').toLowerCase().includes('comercial'),
+      "errorMessage": "Selecciona a Comercial El Triunfo."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "VIEW_DEBTS",
+      "description": "Consultar factura por cobrar",
+      "validate": (p) => p.verified === true || p.viewed === true,
+      "errorMessage": "Consulta la factura pendiente del cliente."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "COLLECT_DEBT",
+      "description": "Registrar cobro multimoneda con voucher",
+      "validate": (p) => Boolean(p.paymentMethod === 'multiple' || p.voucherAttached === true || p.amount >= 300),
+      "errorMessage": "Registra el cobro fraccionado multimoneda adjuntando el voucher del depósito bancario."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "SUBMIT_COLLECTION",
+      "description": "Confirmar y emitir recibo",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la cobranza y emite el recibo electrónico."
+    }
+  ]
+},
+{
+  "id": "case-27",
+  "code": "CP-27",
+  "aliases": ["B2C-27"],
+  "title": "CP-27: [GPS] Inicio asistido por falla de cobertura satelital en zona remota",
+  "module": "Plan de Visitas",
+  "client": "Minera Los Nevados",
+  "clientAddress": "CARRETERA A YURA KM 28",
+  "paymentCondition": "contado",
+  "priceList": "1",
+  "line": "lubricantes",
+  "brand": "shell",
+  "product": "Shell Retinax HD2",
+  "unitPrice": 320,
+  "expectedQty": 1,
+  "promoDiscount": false,
+  "promoType": "none",
+  "promoLabel": "Sin promoción aplicable",
+  "publicTitle": "Inicio de Visita por Contingencia Satelital (GPS Offline)",
+  "instructions": "Visitas al cliente Minera Los Nevados en la Carretera a Yura Km 28. Al intentar iniciar la visita, el teléfono pierde la señal GPS debido a la geografía de la zona montañosa. Aplica la opción de contingencia 'canStartVisitWhitoutValidations' justificando falla de satélite con foto de fachada y procesa el pedido de 1 cilindro de Shell Retinax HD2.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Ejecutar la excepción técnica canStartVisitWhitoutValidations cuando el dispositivo no logra fijar coordenadas GPS en zonas remotas.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Minera Los Nevados' en el Plan de Visitas.",
+      "2. Ante el error de 'Señal GPS no disponible / Precisión insuficiente', seleccionar 'Iniciar con Justificación / Falla GPS'.",
+      "3. Capturar fotografía de fachada como evidencia física in situ.",
+      "4. Completar el inicio asistido de la visita.",
+      "5. En Pedidos configurar: Contado, Lubricantes Shell, 1 cilindro de Shell Retinax HD2.",
+      "6. Confirmar la orden de compra."
+    ],
+    "reglaNegocio": "Cuando la señal satelital GPS cae o la precisión es >50m en zonas de baja cobertura, el asesor puede usar el bypass de contingencia respaldado por foto in situ.",
+    "decisionClave": "Justificar la imposibilidad de señal GPS con foto de fachada para habilitar la visita.",
+    "resultadoEsperado": "Visita iniciada por excepción GPS y pedido registrado con éxito."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Minera Los Nevados",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('nevados') || (p.clientName || '').toLowerCase().includes('minera'),
+      "errorMessage": "Selecciona a Minera Los Nevados."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "GPS_JUSTIFY",
+      "description": "Bypass por falla de cobertura GPS",
+      "validate": (p) => Boolean(p.reason === 'sin_senal_gps' || p.justified === true || p.action === 'iniciar_contingencia'),
+      "errorMessage": "Aplica la justificación por contingencia de señal GPS."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Foto de evidencia física",
+      "validate": (p) => Boolean(p.initialPhoto),
+      "errorMessage": "Captura la foto obligatoria de fachada en el punto de atención."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Lubricantes Shell Contado",
+      "validate": (p) => p.paymentCondition === 'contado' && p.line === 'lubricantes',
+      "errorMessage": "Configura Condición Contado y Lubricantes Shell."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 1 cilindro Retinax",
+      "validate": (p) => (p.product || '').toLowerCase().includes('retinax') && Number(p.quantity) === 1,
+      "errorMessage": "Agrega 1 cilindro Shell Retinax HD2."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden de compra."
+    }
+  ]
+},
+{
+  "id": "case-28",
+  "code": "CP-28",
+  "aliases": ["B2C-28"],
+  "title": "CP-28: [TRAMPA] Rechazo de descuento estratégico excesivo mayor al monto del producto",
+  "module": "Políticas Comerciales",
+  "client": "Lubricentro El Veloz",
+  "clientAddress": "AV. EJÉRCITO 1102",
+  "paymentCondition": "contado",
+  "priceList": "1",
+  "line": "lubricantes",
+  "brand": "shell",
+  "product": "Shell Helix HX7 10W/40",
+  "unitPrice": 22,
+  "expectedQty": 1,
+  "promoDiscount": false,
+  "promoType": "none",
+  "promoLabel": "Sin promoción aplicable",
+  "publicTitle": "Validación de Descuento Estratégico Autorizado",
+  "instructions": "En Lubricentro El Veloz el cliente solicita un descuento estratégico especial. Inicialmente intentas ingresar un descuento estratégico de $25.00 USD sobre una botella de $22.00 USD. El backend de SOLAR rechaza la transacción por regla de negocio (el descuento estratégico no puede igualar ni superar el total del ítem). Rectifica el valor al descuento autorizado de $3.00 USD y procesa el pedido.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Verificar la regla del backend OrderCustomerController.cs donde strategic_discount_amount debe ser estrictamente menor al total del ítem.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Lubricentro El Veloz' e Iniciar visita.",
+      "2. Registrar fotos de control.",
+      "3. Configurar pedido a Contado (Lista 1, Lubricantes Shell).",
+      "4. Agregar Shell Helix HX7 ($22.00).",
+      "5. Ante el error de validación de SOLAR por descuento estratégico >= monto del ítem ($25 > $22), corregir el descuento estratégico al monto autorizado ($3.00 USD).",
+      "6. Verificar cálculo: $22.00 - $3.00 = $19.00 menos 5% Contado ($0.95) = USD 18.05.",
+      "7. Confirmar y enviar la orden."
+    ],
+    "reglaNegocio": "El backend SOLAR valida que strategic_discount_amount < order_detail.total. Cualquier valor igual o superior arroja Bad Request (código 400).",
+    "decisionClave": "Corregir el descuento estratégico a un valor autorizado inferior al total del producto.",
+    "resultadoEsperado": "Orden aprobada por USD 18.05 con descuento estratégico corregido."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Lubricentro El Veloz",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('veloz') || (p.clientName || '').toLowerCase().includes('lubricentro'),
+      "errorMessage": "Selecciona a Lubricentro El Veloz."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SELECT_ACTION",
+      "description": "Iniciar visita",
+      "validate": (p) => p.action === 'iniciar',
+      "errorMessage": "Inicia la visita presencial."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Fotos obligatorias",
+      "validate": (p) => p.initialPhoto && p.finalPhoto,
+      "errorMessage": "Registra las fotos de visita."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Contado Lubricantes",
+      "validate": (p) => p.paymentCondition === 'contado' && p.line === 'lubricantes' && p.brand === 'shell',
+      "errorMessage": "Configura Contado y Lubricantes Shell."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar HX7 con descuento rectificado",
+      "validate": (p) => (p.product || '').toLowerCase().includes('hx7') && (p.strategicDiscount === undefined || Number(p.strategicDiscount) < 22),
+      "errorMessage": "El descuento estratégico debe ser inferior al precio del producto (máximo $3.00 USD autorizado)."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden corregida",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden de compra con el valor corregido."
+    }
+  ]
+},
+{
+  "id": "case-29",
+  "code": "CP-29",
+  "aliases": ["B2C-29"],
+  "title": "CP-29: Cobranza con aplicación de retención de SUNAT (3%) en comprobante > S/. 700",
+  "module": "Gestión de Cobranzas",
+  "client": "Constructora Andina SRL",
+  "clientAddress": "CALLE LOS PINOS 108",
+  "publicTitle": "Cobranza con Retención de SUNAT (3%)",
+  "instructions": "En Constructora Andina SRL debes cobrar la Factura F001-00058100 por USD 400.00 (equivalente a S/. 1,500.00 al T/C 3.75). Al superar el umbral legal de S/. 700.00, el cliente es agente de retención y deduce el 3% de SUNAT (USD 12.00). Ingresa el comprobante de retención oficial por USD 12.00 y cobra el saldo neto en efectivo (USD 388.00).",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Aplicar la deducción fiscal obligatoria por retención de IGV SUNAT (3%) en facturas cuyo monto supera el umbral de S/. 700.00.",
+    "pasoAPaso": [
+      "1. Seleccionar 'Constructora Andina SRL' en cobranzas.",
+      "2. Seleccionar la factura F001-00058100 por USD 400.00.",
+      "3. Identificar que el monto en soles supera S/. 700.00 y activar el check 'Aplica Retención SUNAT 3%'.",
+      "4. Ingresar número de comprobante de retención SUNAT y monto retenido (USD 12.00).",
+      "5. Registrar el saldo neto a percibir en efectivo (USD 388.00).",
+      "6. Confirmar la cobranza y emitir el recibo de cancelación."
+    ],
+    "reglaNegocio": "Según la normativa SUNAT y el sistema UYAPAY, en facturas superiores a S/. 700.00 los agentes de retención retienen el 3% del importe facturado, cancelando el saldo neto restante.",
+    "decisionClave": "Activar la retención SUNAT del 3% ($12.00 USD) y cuadrar el efectivo neto en $388.00 USD.",
+    "resultadoEsperado": "Recibo emitido por USD 400.00 desglosado en $388 efectivo + $12 comprobante de retención."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Constructora Andina",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('andina') || (p.clientName || '').toLowerCase().includes('constructora'),
+      "errorMessage": "Selecciona a Constructora Andina SRL."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "VIEW_DEBTS",
+      "description": "Consultar factura > S/. 700",
+      "validate": (p) => p.verified === true || p.viewed === true,
+      "errorMessage": "Consulta la factura pendiente de pago."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "COLLECT_DEBT",
+      "description": "Registrar retención SUNAT 3% y neto",
+      "validate": (p) => Boolean(p.hasRetention || p.retentionAmount || p.amount >= 388),
+      "errorMessage": "Aplica la retención SUNAT del 3% (USD 12.00) y registra el cobro neto (USD 388.00)."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "SUBMIT_COLLECTION",
+      "description": "Confirmar recibo con retención",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la cobranza y emite el recibo oficial."
+    }
+  ]
+},
+{
+  "id": "case-30",
+  "code": "CP-30",
+  "aliases": ["B2C-30"],
+  "title": "CP-30: Venta mayorista con escala escalonada de descuento por tramos Michelin",
+  "module": "Promociones y Escalas",
+  "client": "Lubricantes y Filtros San Pedro",
+  "clientAddress": "AV. AREQUIPA 850",
+  "paymentCondition": "contado",
+  "paymentConditionLabel": "Contado (5% desc.)",
+  "priceList": "1",
+  "line": "neumaticos",
+  "brand": "michelin",
+  "product": "Michelin Energy XM2+ 195/60 R15",
+  "unitPrice": 55,
+  "expectedQty": 10,
+  "promoDiscount": true,
+  "promoType": "discount",
+  "promoDiscountAmount": 20,
+  "promoLabel": "🎁 Escala Mayorista: USD 10 de descuento por cada 5 unidades (10 unid = -$20 USD)",
+  "publicTitle": "Venta Mayorista con Escala Escalonada de Descuento",
+  "instructions": "En Lubricantes y Filtros San Pedro el cliente solicita 10 unidades de neumáticos Michelin Energy XM2+ al contado (Lista 1). La promoción escalonada otorga $10.00 USD de descuento por cada 5 unidades adquiridas (alcanzando -$20.00 USD por las 10 unidades). Asegura la aplicación del tramo completo y calcula el total neto con el 5% de descuento al contado.",
+  "active": true,
+  "scoring": {
+    "maxScore": 20,
+    "penaltyPerError": 4,
+    "maxErrorsAllowed": 2,
+    "scale": "vigesimal"
+  },
+  "solutionFlow": {
+    "objetivo": "Aplicar correctamente la escala mayorista por tramos acumulativos ($10 USD cada 5 unidades) junto con la tasa de contado (5%).",
+    "pasoAPaso": [
+      "1. Seleccionar 'Lubricantes y Filtros San Pedro' e Iniciar visita.",
+      "2. Registrar fotos de visita.",
+      "3. Configurar: Condición = Contado, Lista = 1, Línea = Neumáticos, Marca = Michelin.",
+      "4. Agregar 10 unidades de Michelin Energy XM2+ ($55.00 c/u).",
+      "5. Verificar que el beneficio promocional active el tramo de 10 unidades: -$20.00 USD.",
+      "6. Verificar el balance: 10 × $55 = $550.00 - $20.00 (escala) = $530.00; menos 5% Contado ($26.50) = USD 503.50.",
+      "7. Confirmar y enviar la orden de compra."
+    ],
+    "reglaNegocio": "Las promociones de escala escalonada en SOLAR calculan tramos: floor(cantidad / 5) * 10 USD. El 5% de contado se liquida sobre el subtotal resultante tras aplicar el beneficio por escala.",
+    "decisionClave": "Activar el beneficio de escala verificando el doble tramo (-$20.00 USD) para 10 unidades.",
+    "resultadoEsperado": "Orden emitida por USD 503.50."
+  },
+  "rules": [
+    {
+      "stepIndex": 0,
+      "eventName": "SELECT_CLIENT",
+      "description": "Seleccionar Lubricantes San Pedro",
+      "validate": (p) => (p.clientName || '').toLowerCase().includes('pedro') || (p.clientName || '').toLowerCase().includes('filtros'),
+      "errorMessage": "Selecciona a Lubricantes y Filtros San Pedro."
+    },
+    {
+      "stepIndex": 1,
+      "eventName": "SELECT_ACTION",
+      "description": "Iniciar visita",
+      "validate": (p) => p.action === 'iniciar',
+      "errorMessage": "Inicia la visita presencial."
+    },
+    {
+      "stepIndex": 2,
+      "eventName": "SAVE_PHOTOS",
+      "description": "Fotos obligatorias",
+      "validate": (p) => p.initialPhoto && p.finalPhoto,
+      "errorMessage": "Registra las fotos de visita."
+    },
+    {
+      "stepIndex": 3,
+      "eventName": "CREATE_ORDER_CONFIG",
+      "description": "Configurar Contado Neumáticos",
+      "validate": (p) => p.paymentCondition === 'contado' && p.line === 'neumaticos' && p.brand === 'michelin',
+      "errorMessage": "Configura Condición Contado y Neumáticos Michelin."
+    },
+    {
+      "stepIndex": 4,
+      "eventName": "ADD_PRODUCT",
+      "description": "Agregar 10 neumáticos con escala -$20",
+      "validate": (p) => (p.product || '').toLowerCase().includes('xm2') && Number(p.quantity) === 10 && Boolean(p.promoDiscount),
+      "errorMessage": "Agrega 10 unidades de Michelin Energy XM2+ con el descuento de escala activo."
+    },
+    {
+      "stepIndex": 5,
+      "eventName": "SUBMIT_ORDER",
+      "description": "Confirmar orden",
+      "validate": (p) => p.confirmed === true,
+      "errorMessage": "Confirma la orden de compra."
+    }
+  ]
 }
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = window.UyapayData;
 }
+

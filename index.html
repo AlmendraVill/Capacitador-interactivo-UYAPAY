@@ -34,6 +34,8 @@
       <div class="nav-brand">UYAPAY B2C</div>
       <div class="nav-user">
         <span class="nav-badge" id="firebase-cloud-badge" style="display:none; background:#ecfdf5; color:#059669; border-color:#a7f3d0; font-weight:700;" title="Sincronización en la nube con Firebase">☁️ Nube Activa</span>
+        <span class="nav-badge" id="user-xp-badge" style="display:none; background:#fef3c7; color:#b45309; border-color:#fde68a; font-weight:700;" title="Puntaje Global Acumulado">⚡ 0 XP</span>
+        <span class="nav-badge" id="user-badge-display" style="display:none; background:#ede9fe; color:#6d28d9; border-color:#ddd6fe; font-weight:700;" title="Insignia Activa">🏅 Novato</span>
         <span class="nav-badge" id="user-role-badge">ROL</span>
         <span id="user-greeting">Hola</span>
         <span class="logout" onclick="window.UyapayPortal.logout()">Salir</span>
@@ -200,7 +202,7 @@
       </div>
       <h3 style="font-size:24px; margin-bottom:10px; color:var(--text-dark);">Evaluación de Desempeño Práctico</h3>
       <p style="color:var(--text-muted); max-width:580px; margin:0 auto; line-height:1.5; font-size:14px;">
-        Esta evaluación medirá tu conocimiento de los procesos comerciales, gestión de clientes y configuración de pedidos. Al presionar <b>Iniciar Evaluación</b>, se cargarán <b>5 casos prácticos</b> seleccionados del catálogo de 21 casos oficiales de UYAPAY B2C, organizados en pestañas individuales (tabs).
+        Esta evaluación medirá tu conocimiento de los procesos comerciales, gestión de clientes y configuración de pedidos. Al presionar <b>Iniciar Evaluación</b>, se cargarán <b>5 casos prácticos</b> seleccionados del catálogo de 30 casos oficiales de UYAPAY B2C, organizados en pestañas individuales (tabs).
       </p>
 
       <div class="eval-feature-grid">
@@ -327,6 +329,257 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VISTA DE CAPACITACIÓN & VIDEOTECA (RF-008 a RF-012) ================= -->
+  <div id="training-view" class="container">
+    <div class="section-header">
+      <div>
+        <h2>Biblioteca de Capacitación & Microaprendizaje</h2>
+        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">
+          Cápsulas de microaprendizaje organizadas por módulo temático con desafíos interactivos estilo Kahoot.
+        </p>
+      </div>
+    </div>
+
+    <!-- Píldoras de filtrado por módulo -->
+    <div class="training-module-pills" id="training-module-pills">
+      <!-- Generado dinámicamente por JS -->
+    </div>
+
+    <!-- Grilla de tarjetas de video -->
+    <div class="video-cards-grid" id="training-videos-grid">
+      <!-- Generado dinámicamente por JS -->
+    </div>
+  </div>
+
+  <!-- ================= ARENA DE QUIZ ESTILO KAHOOT! (RF-010, RF-011, RF-012) ================= -->
+  <div id="kahoot-quiz-arena" class="container" style="display:none; max-width:960px;">
+    <div class="kahoot-arena-container">
+      <div class="kahoot-top-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:20px;">🎮</span>
+          <div>
+            <div id="kahoot-quiz-title" style="font-size:16px; font-weight:800;">Quiz de Refuerzo</div>
+            <div id="kahoot-question-counter" style="font-size:12px; opacity:0.8;">Pregunta 1 de 3</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span class="kahoot-streak-badge" id="kahoot-streak-badge">🔥 Racha: 0</span>
+          <div class="kahoot-timer-circle" id="kahoot-timer">20</div>
+          <button class="btn-secondary" style="background:rgba(255,255,255,0.2); color:#fff; border:none; padding:8px 12px; font-size:12px;" onclick="window.UyapayPortal.exitKahootQuiz()">✕ Salir</button>
+        </div>
+      </div>
+
+      <!-- Pregunta en caja central -->
+      <div class="kahoot-question-box" id="kahoot-question-box">
+        Cargando pregunta...
+      </div>
+
+      <!-- 4 Opciones Táctiles de Colores (Estilo Kahoot: Rojo, Azul, Amarillo, Verde) -->
+      <div class="kahoot-answers-grid" id="kahoot-answers-grid">
+        <!-- Renderizado dinámicamente por JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CAPACITADOR PASO A PASO (ONBOARDING) (RF-014 a RF-016) ================= -->
+  <div id="onboarding-view" class="container">
+    <div class="section-header">
+      <div>
+        <h2>Capacitador Paso a Paso • Inducción Guiada</h2>
+        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">
+          Recorrido interactivo de iniciación orientado a las 5 tareas de una visita comercial modelo (RF-014 a RF-016).
+        </p>
+      </div>
+      <span class="badge" id="onboarding-status-pill" style="background:#fef3c7; color:#b45309; padding:6px 14px; font-size:12px; border-radius:20px; font-weight:700;">
+        En progreso
+      </span>
+    </div>
+
+    <!-- Barra de progreso general de inducción -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; font-weight:700; color:var(--text-dark);">Progreso del Recorrido de Inducción</span>
+        <span id="onboarding-progress-text" style="font-size:13px; font-weight:800; color:var(--yellow-dark);">0% Completado</span>
+      </div>
+      <div class="onboarding-progress-bar-wrap">
+        <div class="onboarding-progress-bar-fill" id="onboarding-progress-bar" style="width: 0%;"></div>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-muted); margin:0; line-height:1.45;">
+        Completa las 5 tareas fundamentales en orden para desbloquear la <b>Evaluación Práctica de Inducción</b> y obtener tu insignia oficial <b>Pionero UYAPAY</b>.
+      </p>
+    </div>
+
+    <!-- Lista de las 5 tareas del capacitador -->
+    <div class="onboarding-task-list" id="onboarding-tasks-list">
+      <!-- Generado dinámicamente por JS -->
+    </div>
+
+    <!-- Banner de Evaluación de Onboarding (Desbloqueable) -->
+    <div class="card" id="onboarding-exam-card" style="margin-top:20px; border:2px dashed #cbd5e1; text-align:center; padding:32px 20px;">
+      <div style="font-size:42px; margin-bottom:8px;">🎓</div>
+      <h3 style="font-size:18px; margin-bottom:6px; color:var(--text-dark);">Evaluación de Onboarding</h3>
+      <p style="font-size:13px; color:var(--text-muted); max-width:500px; margin:0 auto 16px auto; line-height:1.5;">
+        Prueba práctica de consolidación para certificar que estás listo para salir a ruta comercial. Completa las 5 tareas anteriores para desbloquearla.
+      </p>
+      <button class="btn-primary" id="btn-start-onboarding-exam" style="width:auto; padding:12px 30px; font-size:14px;" disabled onclick="window.UyapayPortal.startOnboardingExam()">
+        🔒 Bloqueado (Completa las 5 tareas)
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= BASE DE CONOCIMIENTO: FAQS & REGLAS (RF-017, RF-018) ================= -->
+  <div id="knowledge-view" class="container">
+    <div class="section-header">
+      <div>
+        <h2>Base de Conocimiento Operativa</h2>
+        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">
+          Consulta oficial de preguntas frecuentes y políticas comerciales de UYAPAY B2C (RF-017, RF-018).
+        </p>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="training-pill active" id="btn-tab-faqs" onclick="window.UyapayPortal.switchKnowledgeSubtab('faqs')">
+          ❓ Preguntas Frecuentes (FAQs)
+        </button>
+        <button class="training-pill" id="btn-tab-rules" onclick="window.UyapayPortal.switchKnowledgeSubtab('rules')">
+          📜 Reglas de Negocio Oficiales
+        </button>
+      </div>
+    </div>
+
+    <!-- Buscador en tiempo real -->
+    <input type="text" class="knowledge-search-input" id="knowledge-search" placeholder="🔍 Buscar por palabra clave (ej. contado, crédito, geocerca, michelin, cotización)..." oninput="window.UyapayPortal.filterKnowledge()">
+
+    <!-- Contenedor de FAQs -->
+    <div id="knowledge-faqs-container">
+      <!-- Generado dinámicamente por JS -->
+    </div>
+
+    <!-- Contenedor de Reglas de Negocio -->
+    <div id="knowledge-rules-container" style="display:none;">
+      <!-- Generado dinámicamente por JS -->
+    </div>
+  </div>
+
+  <!-- ================= PERFIL DEL ASESOR & INSIGNIAS (RF-013, RF-029, RF-036 a RF-039) ================= -->
+  <div id="profile-view" class="container">
+    <div class="profile-hero-card">
+      <div style="display:flex; align-items:center; gap:18px;">
+        <div style="width:68px; height:68px; border-radius:50%; background:var(--yellow); color:#fff; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800;" id="profile-avatar">
+          👤
+        </div>
+        <div>
+          <h2 id="profile-name" style="margin:0; font-size:22px;">Cargando asesor...</h2>
+          <div style="font-size:13px; color:#cbd5e1; margin-top:3px;">
+            <span id="profile-username">@usuario</span> • <span id="profile-role" class="badge badge-warning" style="font-size:11px; padding:3px 10px;">ASESOR</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div style="text-align:center; background:rgba(255,255,255,0.08); padding:12px 20px; border-radius:12px;">
+          <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-weight:700;">Puntos Globales (XP)</div>
+          <div id="profile-xp" style="font-size:24px; font-weight:800; color:var(--yellow); margin-top:2px;">0 XP</div>
+        </div>
+        <div style="text-align:center; background:rgba(255,255,255,0.08); padding:12px 20px; border-radius:12px;">
+          <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-weight:700;">Mejor Calificación</div>
+          <div id="profile-best-score" style="font-size:24px; font-weight:800; color:#4ade80; margin-top:2px;">- / 20</div>
+        </div>
+        <div style="text-align:center; background:rgba(255,255,255,0.08); padding:12px 20px; border-radius:12px;">
+          <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-weight:700;">Insignias Ganadas</div>
+          <div id="profile-badges-count" style="font-size:24px; font-weight:800; color:#a78bfa; margin-top:2px;">0 / 6</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vitrina de las 6 Insignias Oficiales -->
+    <div class="card">
+      <h3 style="font-size:16px; margin-bottom:14px; color:var(--text-dark);">🏆 Vitrina de Insignias y Logros Comerciales</h3>
+      <div class="badges-showcase-grid" id="profile-badges-grid">
+        <!-- Renderizado dinámicamente por JS -->
+      </div>
+    </div>
+
+    <!-- Sección de Recomendaciones Pedagógicas y Temas Sugeridos (RF-013, RF-029) -->
+    <div class="recommendations-card" id="profile-recommendations-card">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <span style="font-size:22px;">🎯</span>
+        <h3 style="margin:0; font-size:16px; color:#854d0e;">Temas Sugeridos para Refuerzo Pedagógico</h3>
+      </div>
+      <p style="font-size:13px; color:#713f12; margin:0 0 14px 0; line-height:1.5;">
+        El motor inteligente analiza las faltas cometidas en tus evaluaciones prácticas y cuestionarios para recomendarte contenidos específicos de refuerzo.
+      </p>
+      <div id="profile-recommendations-list">
+        <!-- Generado dinámicamente por JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SUITE DE ADMINISTRACIÓN Y CONTROL (RF-003 a RF-006, RF-042 a RF-048) ================= -->
+  <div id="admin-mgmt-view" class="container">
+    <div class="section-header">
+      <div>
+        <h2>Suite Administrativa UYAPAY B2C</h2>
+        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">
+          Gestión integral de usuarios, asignación de roles múltiples y administración de contenidos formativos.
+        </p>
+      </div>
+      <button class="btn-primary" style="width:auto; padding:10px 20px; font-size:13px;" onclick="window.UyapayPortal.openCreateUserModal()">
+        ➕ Crear Nuevo Usuario
+      </button>
+    </div>
+
+    <!-- Pestañas internas de la administración -->
+    <div class="admin-tabs-nav">
+      <button class="admin-subtab active" id="btn-adm-tab-users" onclick="window.UyapayPortal.switchAdminTab('users')">👥 Gestión de Usuarios y Roles</button>
+      <button class="admin-subtab" id="btn-adm-tab-cases" onclick="window.UyapayPortal.switchAdminTab('cases')">📋 Banco de Casos de Evaluación</button>
+    </div>
+
+    <!-- Panel 1: Usuarios y Roles -->
+    <div id="admin-users-panel" class="card">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre Completo</th>
+              <th>Email</th>
+              <th>Roles Asignados</th>
+              <th>Estado</th>
+              <th style="text-align:center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-table-body">
+            <!-- Renderizado dinámicamente por JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel 2: Banco de Casos -->
+    <div id="admin-cases-panel" class="card" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size:16px; margin:0;">Catálogo de Casos Prácticos (30 Casos de Stock)</h3>
+        <span class="badge badge-success">21 Operativos • 9 Programados Cierre</span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Título del Caso</th>
+              <th>Módulo</th>
+              <th>Cliente de Prueba</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="admin-cases-table-body">
+            <!-- Renderizado dinámicamente por JS -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -527,6 +780,165 @@
         <button class="btn-primary" id="btn-dialog-confirm" style="width:auto; min-width:130px; padding:10px 20px;" onclick="window.UyapayPortal.handleDialogConfirm()">
           Aceptar
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE REPRODUCTOR DE VIDEO FORMATIVO -->
+  <div id="video-player-modal" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:800px;">
+      <div class="portal-modal-header">
+        <div>
+          <h3 id="modal-video-title" style="margin:0;">Video de Capacitación</h3>
+          <div id="modal-video-subtitle" style="font-size:12px; color:var(--text-muted); margin-top:2px;">Módulo UYAPAY B2C</div>
+        </div>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeVideoModal()">&times;</button>
+      </div>
+      <div class="portal-modal-body" style="padding:16px;">
+        <div style="position:relative; padding-bottom:56.25%; height:0; background:#000; border-radius:10px; overflow:hidden;">
+          <video id="modal-video-element" controls style="position:absolute; top:0; left:0; width:100%; height:100%;" poster="images/logoUyapay.png">
+            Tu navegador no soporta reproducción de video HTML5.
+          </video>
+        </div>
+        <p id="modal-video-desc" style="font-size:13.5px; color:var(--text-dark); margin:14px 0 0 0; line-height:1.5;"></p>
+      </div>
+      <div class="portal-modal-footer" style="justify-content:space-between;">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeVideoModal()">Cerrar</button>
+        <button class="btn-primary" id="btn-launch-quiz-from-video" style="width:auto; padding:10px 24px; font-weight:800; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="window.UyapayPortal.launchQuizFromCurrentVideo()">
+          🎮 Iniciar Desafío Kahoot! ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE FEEDBACK PREGUNTA KAHOOT! -->
+  <div id="kahoot-feedback-modal" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:540px; text-align:center;">
+      <div class="portal-modal-body" style="padding:32px 24px;">
+        <div id="kahoot-feedback-icon" style="font-size:56px; margin-bottom:12px;">🎉</div>
+        <h3 id="kahoot-feedback-title" style="font-size:22px; margin-bottom:8px; font-weight:800;">¡Respuesta Correcta!</h3>
+        <p id="kahoot-feedback-text" style="font-size:14px; color:var(--text-muted); line-height:1.6; margin-bottom:16px;"></p>
+        <div id="kahoot-feedback-rule-box" style="background:#f8fafc; border-left:4px solid var(--yellow); padding:12px 16px; text-align:left; border-radius:6px; font-size:12.5px; color:#334155; margin-bottom:20px; display:none;">
+          <b>📜 Fundamento Normativo UYAPAY:</b> <span id="kahoot-feedback-rule-text"></span>
+        </div>
+        <button class="btn-primary" id="btn-kahoot-next-question" style="width:100%; padding:14px; font-size:15px; font-weight:800;" onclick="window.UyapayPortal.nextKahootQuestion()">
+          Continuar ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE RESUMEN FINAL DEL QUIZ KAHOOT! -->
+  <div id="kahoot-summary-modal" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:500px; text-align:center;">
+      <div class="portal-modal-body" style="padding:36px 24px;">
+        <div style="font-size:58px; margin-bottom:12px;">🏆</div>
+        <h3 style="font-size:22px; font-weight:800; color:var(--text-dark); margin-bottom:6px;">¡Cuestionario Completado!</h3>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Desafío de Microaprendizaje Gamificado</div>
+        
+        <div style="background:#f8fafc; border-radius:12px; padding:20px; margin-bottom:20px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Calificación Final</div>
+          <div id="kahoot-summary-score" style="font-size:38px; font-weight:900; color:var(--yellow-dark); margin:6px 0;">20 / 20</div>
+          <div id="kahoot-summary-status-badge"><span class="badge badge-success" style="font-size:13px; padding:4px 14px;">Aprobado</span></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-around; margin-bottom:24px;">
+          <div>
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Puntos XP Ganados</div>
+            <div id="kahoot-summary-xp" style="font-size:22px; font-weight:800; color:var(--success);">+20 XP</div>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Aciertos</div>
+            <div id="kahoot-summary-correct" style="font-size:22px; font-weight:800; color:var(--text-dark);">3 de 3</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%; padding:13px; font-size:15px; font-weight:700;" onclick="window.UyapayPortal.closeKahootSummary()">
+          Regresar a Capacitación ✓
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CREACIÓN / EDICIÓN DE USUARIO (ADMIN) -->
+  <div id="admin-user-modal" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:500px;">
+      <div class="portal-modal-header">
+        <h3 id="admin-user-modal-title" style="margin:0;">Crear Nuevo Usuario</h3>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeAdminUserModal()">&times;</button>
+      </div>
+      <div class="portal-modal-body" style="padding:20px;">
+        <input type="hidden" id="modal-user-id" value="">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Nombre de Usuario (Login)</label>
+          <input type="text" id="modal-user-username" placeholder="ej. rgarcia" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13.5px;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Nombre y Apellidos</label>
+          <input type="text" id="modal-user-fullname" placeholder="ej. Rodrigo García" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13.5px;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Correo Electrónico (Opcional)</label>
+          <input type="email" id="modal-user-email" placeholder="ej. rgarcia@solar.pe" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13.5px;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Rol Base</label>
+          <select id="modal-user-role-select" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13.5px; background:#fff;">
+            <option value="asesor">Asesor Comercial (Participante)</option>
+            <option value="facilitador">Facilitador / Supervisor</option>
+            <option value="editor">Editor de Contenidos</option>
+            <option value="admin">Administrador del Sistema</option>
+          </select>
+        </div>
+        <div style="margin-bottom:14px;" id="modal-user-pass-group">
+          <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Contraseña Inicial</label>
+          <input type="text" id="modal-user-password" value="123" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13.5px;">
+        </div>
+      </div>
+      <div class="portal-modal-footer" style="justify-content:flex-end; gap:10px;">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeAdminUserModal()">Cancelar</button>
+        <button class="btn-primary" style="width:auto; padding:10px 22px;" onclick="window.UyapayPortal.saveAdminUser()">Guardar Usuario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ASIGNACIÓN MULTI-ROL (ADMIN) -->
+  <div id="admin-roles-modal" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:460px;">
+      <div class="portal-modal-header">
+        <div>
+          <h3 style="margin:0;">Asignar Roles Múltiples</h3>
+          <div id="modal-roles-subtitle" style="font-size:12px; color:var(--text-muted); margin-top:2px;">Usuario: -</div>
+        </div>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeAdminRolesModal()">&times;</button>
+      </div>
+      <div class="portal-modal-body" style="padding:20px;">
+        <input type="hidden" id="modal-roles-user-id" value="">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+          Selecciona uno o más roles para este usuario (ACC-03, RF-006):
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <label style="display:flex; align-items:center; gap:10px; font-size:13.5px; cursor:pointer;">
+            <input type="checkbox" id="chk-role-participante" value="rol-participante">
+            <span><b>Participante (Asesor):</b> Capacitaciones y Simulador</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; font-size:13.5px; cursor:pointer;">
+            <input type="checkbox" id="chk-role-facilitador" value="rol-facilitador">
+            <span><b>Facilitador / Supervisor:</b> Monitor en vivo y reportes</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; font-size:13.5px; cursor:pointer;">
+            <input type="checkbox" id="chk-role-editor" value="rol-editor">
+            <span><b>Editor de Contenidos:</b> Videos, FAQs y Reglas</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; font-size:13.5px; cursor:pointer;">
+            <input type="checkbox" id="chk-role-admin" value="rol-admin">
+            <span><b>Administrador:</b> Control total de la plataforma</span>
+          </label>
+        </div>
+      </div>
+      <div class="portal-modal-footer" style="justify-content:flex-end; gap:10px;">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeAdminRolesModal()">Cancelar</button>
+        <button class="btn-primary" style="width:auto; padding:10px 22px;" onclick="window.UyapayPortal.saveUserRoles()">Guardar Roles</button>
       </div>
     </div>
   </div>

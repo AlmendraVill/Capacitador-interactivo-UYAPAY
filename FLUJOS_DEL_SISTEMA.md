@@ -9,8 +9,8 @@
 A partir de los requerimientos formativos de UYAPAY B2C, el sistema opera bajo los siguientes principios:
 
 1. **Evaluación Práctica Directa:** El asesor no navega por material teórico previo en la plataforma; ingresa directamente al entorno de **Evaluación de Desempeño Práctico**.
-2. **Evaluación de 5 Casos en Pestañas (Tabs 1 al 5):** Al presionar **"Iniciar Evaluación"**, el sistema genera una batería de **5 casos prácticos seleccionados del catálogo oficial de 21 casos activos**, organizados en 5 pestañas individuales para evaluar competencias integrales.
-3. **Selección Estratificada Balanceada:** La asignación de los 5 casos cubre de forma homogénea las 5 áreas comerciales críticas (Venta base, condiciones de pago/listas, promociones/combos, gestión de ruta y cobranzas/liquidación), con filtro anti-repetición respecto a la última evaluación del asesor.
+2. **Evaluación de 5 Casos en Pestañas (Tabs 1 al 5):** Al presionar **"Iniciar Evaluación"**, el sistema genera una batería de **5 casos prácticos seleccionados del catálogo oficial de 30 casos activos**, organizados en 5 pestañas individuales para evaluar competencias integrales.
+3. **Selección Estratificada Balanceada:** La asignación de los 5 casos cubre de forma homogénea las 5 áreas comerciales críticas (Venta regular, condiciones comerciales/B2B, promociones y escalas, gestión de ruta/GPS y cobranzas/liquidación), con filtro anti-repetición respecto a la última evaluación del asesor.
 4. **Arquitectura Desacoplada:** El simulador móvil emula la aplicación Flutter oficial sin conocer la lógica de puntaje; emite eventos (`SIMULATOR_EVENT`) hacia el motor evaluador desacoplado.
 5. **Permanencia de Componentes Núcleo:** Cronómetro continuo de desempate, trazabilidad de eventos, monitor en vivo vía SSE, podio con control de publicación y analítica de errores para capacitadores.
 
@@ -23,35 +23,18 @@ flowchart TD
     subgraph Acceso["1. Acceso y Autenticación"]
         A[Login con Usuario y Clave] --> B{Rol del Usuario}
     end
-
-    subgraph Vista_Asesor["2. Flujo Asesor Comercial (Evaluación Práctica)"]
-        B -->|Asesor Comercial| C[Pantalla de Inicio de Evaluación]
-        C --> D[Botón: Iniciar Evaluación]
-        D --> E[Selección Estratificada de 5 Casos de 21 Activos]
-        E --> F[Inicia Cronómetro Global Unificado ⏱️ 00:00]
-        F --> G[Carga Arena de Evaluación: 5 Tabs Activos]
-        G --> H[Asesor resuelve Caso en Simulador Móvil]
-        H --> I{¿Finalizó los 5 Casos?}
-        I -->|Siguiente Caso| J[Conmutación Instantánea de Tab]
-        J --> H
-        I -->|5 Casos Listos| K[Cierre y Envío de Evaluación]
-        K --> L[Modal de Resultados Personales y Desglose]
-        L --> M[Mis Calificaciones]
+    subgraph Evaluacion["2. Batería de 5 Casos (Tabs 1-5)"]
+        B -- Asesor Comercial --> C[Arena de Examen 5 Pestañas]
+        C --> D[Simulador Móvil UYAPAY Flutter]
+        D -->|Eventos de Interacción| E[Motor Evaluador Vigesimal]
     end
-
-    subgraph Vista_Admin["3. Flujo Administrador (Gestión y Monitoreo)"]
-        B -->|Administrador| N[Dashboard & Monitor en Vivo]
-        N --> O[Live Feed SSE: Clics, Pasos y Errores en Tiempo Real]
-        N --> P[Control de Publicación de Podio: Mostrar/Ocultar a Asesores]
-        N --> Q[Matriz Analítica de Casos Críticos y Errores Frecuentes]
-        N --> R[Exportación de Evaluaciones: CSV con BOM / Excel .xls]
+    subgraph Supervision["3. Monitoreo y Administración"]
+        B -- Administrador / Capacitador --> F[Monitor en Vivo SSE]
+        F --> G[Podio y Control de Publicación]
+        F --> H[Auditoría y Exportación CSV/Excel]
     end
-
-    subgraph Consolidacion["4. Persistencia y Ranking General"]
-        K --> S[Cálculo Vigesimal Consolidado 0-20]
-        S --> T[Persistencia Centralizada en SQLite WAL]
-        T --> U[Cálculo Dinámico de Ranking Oficial y Podio Top 3]
-    end
+    E --> I[Registro en SQLite y Actualización de Métricas]
+    I --> F
 ```
 
 ---
@@ -67,15 +50,15 @@ flowchart TD
    - Escala vigesimal (0 a 20) con deducción de 4 puntos por error.
 
 ### Fase 2: Batería Balanceada de 5 Casos Estratificados
-Al hacer clic en **"Iniciar Evaluación"**, el sistema ejecuta la selección estratégica cubriendo un caso por cada estrato temático:
+Al hacer clic en **"Iniciar Evaluación"**, el sistema ejecuta la selección estratégica cubriendo un caso por cada estrato temático (Catálogo de 30 Casos Oficiales):
 
 | Estrato | Área Comercial | Universo de Casos |
 |---|---|---|
-| **Estrato 1** | Venta Regular y Catálogo Base | `B2C-01`, `B2C-02`, `B2C-03`, `B2C-04` |
-| **Estrato 2** | Condiciones Especiales, Listas y Moneda | `B2C-06`, `B2C-08`, `B2C-09`, `B2C-10`, `B2C-11`, `B2C-14` |
-| **Estrato 3** | Políticas Promocionales y Descuentos | `B2C-07`, `B2C-20`, `B2C-21` |
-| **Estrato 4** | Procedimientos de Ruta, Historial y Excepciones | `B2C-15`, `B2C-16`, `B2C-17`, `B2C-22` |
-| **Estrato 5** | Cobranza, Cotizaciones y Cierre Operativo | `B2C-05`, `B2C-18`, `B2C-19`, `B2C-23` |
+| **Estrato 1** | Venta Regular y Catálogo Base | `CP-01`, `CP-04`, `CP-06`, `CP-12`, `CP-15`, `CP-20`, `CP-25` |
+| **Estrato 2** | Condiciones Especiales, Políticas y B2B | `CP-02`, `CP-05`, `CP-13`, `CP-17`, `CP-18`, `CP-24`, `CP-28` |
+| **Estrato 3** | Políticas Promocionales, Bonificaciones y Escalas | `CP-03`, `CP-07`, `CP-14`, `CP-19`, `CP-30` |
+| **Estrato 4** | Gestión de Ruta, Visitas, GPS y Contingencias | `CP-08`, `CP-09`, `CP-10`, `CP-22`, `CP-27` |
+| **Estrato 5** | Cobranzas, SUNAT, Liquidación y Cierre Operativo | `CP-11`, `CP-16`, `CP-21`, `CP-23`, `CP-26`, `CP-29` |
 
 *Filtro anti-repetición:* El algoritmo prioriza casos que no hayan sido evaluados en el intento inmediato anterior del asesor.
 
