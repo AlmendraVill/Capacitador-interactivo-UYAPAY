@@ -18,6 +18,12 @@ describe('13. Hito 4: Cuestionarios Teóricos, Calendario y Gatekeeper API (Fluj
   let createdCalendarEventId;
 
   before(async () => {
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const db = new DatabaseSync('uyapay.sqlite');
+      db.prepare("DELETE FROM evaluation_assignments WHERE status = 'PENDIENTE'").run();
+    } catch (e) {}
+
     serverInstance = await startServer(TEST_PORT);
 
     // Login Admin

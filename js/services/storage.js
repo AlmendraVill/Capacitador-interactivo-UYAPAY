@@ -51,10 +51,25 @@ window.UyapayServices = window.UyapayServices || {};
   }
 
   function resolveUrl(url) {
-    if (typeof window !== 'undefined' && window.location && window.location.origin) {
-      return url;
+    if (typeof window !== 'undefined' && window.location) {
+      const port = window.location.port;
+      const isCustomDevServer = port && !['3000', '3100', '3101', '3102', '3103', '3104', '3105'].includes(port);
+      if (window.location.protocol === 'file:' || isCustomDevServer) {
+        return 'http://localhost:3000' + url;
+      }
     }
-    return 'http://localhost:3000' + url;
+    return url;
+  }
+
+  async function safeJson(res) {
+    if (!res) return null;
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) return null;
+    try {
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
   }
 
   function getAuthHeaders() {
@@ -75,9 +90,11 @@ window.UyapayServices = window.UyapayServices || {};
       try {
         const res = await fetch(resolveUrl('/api/users'));
         if (res.ok) {
-          const users = await res.json();
-          setLocalItem(KEYS.USERS, users);
-          return users;
+          const users = await safeJson(res);
+          if (Array.isArray(users)) {
+            setLocalItem(KEYS.USERS, users);
+            return users;
+          }
         }
       } catch (e) {
         // Fallback local
@@ -531,6 +548,93 @@ window.UyapayServices = window.UyapayServices || {};
         }
       } catch (e) {}
       return { has_blocking_evaluation: false, status: 'UNLOCKED' };
+    },
+
+    // ---- HISTORIAL Y AUDITORÍA FORENSE (HITO 5 / FLUJO 2 & 7) ----
+    async getAdvisorHistory(advisorId) {
+      try {
+        const res = await fetch(resolveUrl(`/api/gamification/advisors/${encodeURIComponent(advisorId)}/history`), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al obtener historial' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
+    },
+
+    async getEvaluationAudit(type, id) {
+      try {
+        const res = await fetch(resolveUrl(`/api/gamification/evaluations/audit/${encodeURIComponent(type)}/${encodeURIComponent(id)}`), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al obtener auditoría' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
+    },
+
+    async sendFeedback(advisorId, feedbackData) {
+      try {
+        const res = await fetch(resolveUrl(`/api/gamification/advisors/${encodeURIComponent(advisorId)}/feedback`), {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(feedbackData)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al enviar feedback' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
+    },
+
+    async getMyFeedback() {
+      try {
+        const res = await fetch(resolveUrl('/api/gamification/advisors/my-feedback'), {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return { success: true, feedback: [] };
+    },
+
+    async getRecentTraining() {
+      try {
+        const res = await fetch(resolveUrl('/api/gamification/training/recent'));
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return { success: true, recentItems: [] };
+    },
+
+    async pinBadge(badgeId) {
+      try {
+        const res = await fetch(resolveUrl('/api/gamification/pin-badge'), {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ badgeId })
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        return { success: false, message: err.message || 'Error al fijar insignia' };
+      } catch (e) {
+        return { success: false, message: e.message };
+      }
     },
 
     // ---- RESETEAR A DEMO ----

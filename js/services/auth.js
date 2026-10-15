@@ -15,20 +15,30 @@ window.UyapayServices = window.UyapayServices || {};
 
       // 1. Intentar autenticar contra el backend SQLite
       try {
-        const res = await fetch('/api/auth/login', {
+        const url = (typeof window !== 'undefined' && window.location)
+          ? ((window.location.protocol === 'file:' || (window.location.port && !['3000', '3100', '3101', '3102', '3103', '3104', '3105'].includes(window.location.port)))
+              ? 'http://localhost:3000/api/auth/login'
+              : '/api/auth/login')
+          : 'http://localhost:3000/api/auth/login';
+
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: username.trim(), password: password ? password.trim() : '' })
         });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          if (data.token) {
-            data.user.token = data.token;
+
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          if (res.ok && data.success) {
+            if (data.token) {
+              data.user.token = data.token;
+            }
+            Storage.setCurrentSession(data.user);
+            return { success: true, user: data.user };
+          } else if (res.status === 401) {
+            return { success: false, message: data.message || 'Credenciales incorrectas.' };
           }
-          Storage.setCurrentSession(data.user);
-          return { success: true, user: data.user };
-        } else if (res.status === 401) {
-          return { success: false, message: data.message || 'Credenciales incorrectas.' };
         }
       } catch (e) {
         // Fallback local si el servidor no está accesible

@@ -3,6 +3,14 @@
  * Implementa RF-003, RF-004, RF-005, RF-006, RF-007 y RF-048.
  */
 const express = require('express');
+const crypto = require('crypto');
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const iterations = 10000;
+  const derived = crypto.pbkdf2Sync((password || '123').trim(), salt, iterations, 64, 'sha512').toString('hex');
+  return `$pbkdf2$${iterations}$${salt}$${derived}`;
+}
 
 function createUsersRouter(db, authMiddleware, adminMiddleware) {
   const router = express.Router();
@@ -10,13 +18,14 @@ function createUsersRouter(db, authMiddleware, adminMiddleware) {
   // 0. Listar todos los usuarios con detalle completo (RF-003, RF-004, RF-005)
   router.get('/', adminMiddleware, (req, res) => {
     try {
+      const stmtRoles = db.prepare(`
+        SELECT r.id, r.code, r.name FROM roles r
+        JOIN user_roles ur ON r.id = ur.role_id
+        WHERE ur.user_id = ?
+      `);
       const users = db.prepare('SELECT id, username, name, email, role, status, created_at FROM users ORDER BY name ASC').all();
       const usersWithRoles = users.map(u => {
-        const roles = db.prepare(`
-          SELECT r.id, r.code, r.name FROM roles r
-          JOIN user_roles ur ON r.id = ur.role_id
-          WHERE ur.user_id = ?
-        `).all(u.id);
+        const roles = stmtRoles.all(u.id);
         return {
           ...u,
           status: u.status || 'active',
@@ -54,12 +63,7 @@ function createUsersRouter(db, authMiddleware, adminMiddleware) {
         return res.status(409).json({ success: false, message: 'Ese nombre de usuario ya está registrado.' });
       }
 
-      const crypto = require('crypto');
-      const salt = crypto.randomBytes(16).toString('hex');
-      const iterations = 10000;
-      const derived = crypto.pbkdf2Sync(password.trim(), salt, iterations, 64, 'sha512').toString('hex');
-      const hashedPassword = `$pbkdf2$${iterations}$${salt}$${derived}`;
-
+      const hashedPassword = hashPassword(password);
       const newId = 'usr-' + Date.now();
       const createdAt = new Date().toISOString();
 
@@ -185,7 +189,7 @@ function createUsersRouter(db, authMiddleware, adminMiddleware) {
   router.patch('/:id/password', authMiddleware, (req, res) => {
     try {
       const targetUserId = req.params.id;
-      const { newPassword } = req.body;
+      const newPassword = req.body.newPassword || req.body.password;
 
       if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length === 0) {
         return res.status(400).json({ success: false, message: 'La nueva contraseña no puede estar vacía.' });
@@ -205,11 +209,7 @@ function createUsersRouter(db, authMiddleware, adminMiddleware) {
         return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
       }
 
-      const crypto = require('crypto');
-      const salt = crypto.randomBytes(16).toString('hex');
-      const iterations = 10000;
-      const derived = crypto.pbkdf2Sync(newPassword.trim(), salt, iterations, 64, 'sha512').toString('hex');
-      const hashedPassword = `$pbkdf2$${iterations}$${salt}$${derived}`;
+      const hashedPassword = hashPassword(newPassword);
 
       db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPassword, targetUserId);
 

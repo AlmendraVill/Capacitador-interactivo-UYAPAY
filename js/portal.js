@@ -184,103 +184,118 @@
     applyUserSession(result.user);
   }
 
-  async function applyUserSession(user) {
-    document.getElementById('login-view').style.display = 'none';
-    document.getElementById('top-navbar').style.display = 'flex';
-    document.getElementById('user-greeting').textContent = 'Hola, ' + user.name;
-    document.getElementById('user-role-badge').textContent = user.role.toUpperCase();
-
-    // Sincronizar estado actual de publicación del podio
-    isPodiumVisible = await Storage.getPodiumStatus();
-    updatePodiumControlsUI(isPodiumVisible);
-
-    const rankingAdminControls = document.getElementById('ranking-admin-controls');
-    if (rankingAdminControls) {
-      rankingAdminControls.style.display = user.role === 'admin' ? 'inline-flex' : 'none';
-    }
-
-    if (user.role === 'admin') {
-      setupNavigation([
-        { id: 'admin-dashboard', label: 'Dashboard & Monitor en Vivo' },
-        { id: 'calendar-view', label: 'Calendario de Evaluaciones' },
-        { id: 'admin-mgmt-view', label: 'Suite de Administración' },
-        { id: 'training-view', label: 'Biblioteca de Capacitación' },
-        { id: 'knowledge-view', label: 'Base de Conocimiento' },
-        { id: 'ranking-view', label: 'Ranking General & Podio' },
-        { id: 'admin-historial', label: 'Historial de Calificaciones' }
-      ]);
-      await renderAdminDashboard();
-      await renderResultsTable('admin-results-table');
-    } else {
-      setupNavigation([
-        { id: 'training-view', label: 'Capacitación & Videos' },
-        { id: 'onboarding-view', label: 'Inducción Guiada' },
-        { id: 'calendar-view', label: 'Calendario & Mis Pruebas' },
-        { id: 'asesor-eval-intro', label: 'Evaluación Práctica' },
-        { id: 'knowledge-view', label: 'Base de Conocimiento' },
-        { id: 'ranking-view', label: 'Ranking & Podio' },
-        { id: 'profile-view', label: 'Mi Perfil & Insignias' },
-        { id: 'asesor-notas', label: 'Mis Calificaciones' }
-      ]);
-      await renderResultsTable('asesor-results-table', user.username);
-    }
-
-    await updateNavbarProfileBadges(user);
-    await renderLeaderboard();
-    await checkGatekeeperStatus(user);
-
-    // Comprobar si hay una evaluación en curso activa (resiliencia ante F5)
-    if (user.role !== 'admin') {
-      await checkActiveEvaluationSession(user);
-    }
+  function isUserStaff(user) {
+    if (!user) return false;
+    const roles = [user.role, ...(user.roles || [])].map(r => String(r).toLowerCase());
+    return roles.some(r => ['admin', 'administrador', 'editor', 'revisor', 'supervisor', 'facilitador'].includes(r));
   }
 
-  function setupNavigation(tabs) {
-    const navContainer = document.getElementById('nav-links-container');
-    navContainer.innerHTML = '';
+  // ================= ARQUITECTURA DE NAVEGACIÓN GLOBAL (PRDv2 Sección 3) =================
+  let currentMainMenu = 'resultados';
+  let currentSubMenu = 'ranking-view';
 
-    tabs.forEach((tab, index) => {
-      const btn = document.createElement('div');
-      btn.className = 'nav-item' + (index === 0 ? ' active' : '');
-      btn.textContent = tab.label;
-      btn.onclick = () => switchTab(tab.id, btn);
-      navContainer.appendChild(btn);
-    });
+  function getAuthorizedSubmenus(menuKey, user) {
+    if (!user) return [];
+    const isStaff = isUserStaff(user);
+    const role = (user.role || '').toLowerCase();
+    const isAdmin = role === 'admin' || role === 'administrador';
+    const isRevisor = role === 'revisor' || role === 'supervisor';
+    const isEditor = role === 'editor';
 
-    switchTab(tabs[0].id, navContainer.firstChild);
-  }
+    // 1. CAPACITACIÓN
+    if (menuKey === 'capacitacion') {
+      return [
+        { id: 'training-view', label: '📚 Módulos y Videos' },
+        { id: 'onboarding-view', label: '🚀 Onboarding' },
+        { id: 'knowledge-view', label: '💡 Base de Conocimiento' }
+      ];
+    }
 
-  function switchTab(containerId, navElement) {
-    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
-    document.getElementById('evaluation-arena').style.display = 'none';
+    // 2. EVALUACIÓN
+    if (menuKey === 'evaluacion') {
+      const items = [
+        { id: 'asesor-eval-intro', label: '📱 Simulador B2C' }
+      ];
+      if (isStaff) {
+        items.push({ id: 'calendar-view', label: '📅 Calendario y Convocatorias' });
+      } else {
+        items.push({ id: 'calendar-view', label: '📅 Mi Calendario' });
+      }
+      return items;
+    }
 
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const target = document.getElementById(containerId);
-    if (target) target.classList.add('active');
-
-    if (navElement) {
-      navElement.classList.add('active');
-    } else {
-      // Activar el botón correspondiente en la barra de navegación superior
-      const navItems = document.querySelectorAll('.nav-item');
-      navItems.forEach(item => {
-        const text = (item.textContent || '').toLowerCase();
-        if (
-          (containerId === 'ranking-view' && text.includes('ranking')) ||
-          (containerId === 'asesor-notas' && text.includes('calificaciones')) ||
-          (containerId === 'asesor-eval-intro' && text.includes('evaluación')) ||
-          (containerId === 'calendar-view' && text.includes('calendario')) ||
-          (containerId === 'admin-dashboard' && text.includes('dashboard')) ||
-          (containerId === 'admin-historial' && text.includes('historial')) ||
-          (containerId === 'training-view' && text.includes('capacitación')) ||
-          (containerId === 'onboarding-view' && text.includes('inducción')) ||
-          (containerId === 'knowledge-view' && text.includes('conocimiento')) ||
-          (containerId === 'profile-view' && text.includes('perfil')) ||
-          (containerId === 'admin-mgmt-view' && text.includes('administración'))
-        ) {
-          item.classList.add('active');
+    // 3. RESULTADOS (con compatibilidad si se invoca como 'ranking' o 'admin')
+    if (menuKey === 'resultados' || menuKey === 'ranking' || menuKey === 'admin') {
+      const items = [
+        { id: 'ranking-view', label: '🏆 Podio y Ranking' }
+      ];
+      if (!isStaff) {
+        items.push({ id: 'asesor-notas', label: '📊 Mis Calificaciones' });
+      } else {
+        if (isAdmin || isRevisor) {
+          items.push({ id: 'admin-dashboard', label: '📡 Monitor en Vivo' });
         }
-      });
+        items.push({ id: 'admin-historial', label: '📋 Historial y Auditoría' });
+        if (isAdmin) {
+          items.push({ id: 'admin-mgmt-view', label: '👥 Usuarios y Roles' });
+        }
+      }
+      return items;
+    }
+
+    return [];
+  }
+
+  function switchMainMenu(menuKey, targetSubId = null) {
+    const normalizedKey = (menuKey === 'ranking' || menuKey === 'admin') ? 'resultados' : menuKey;
+    currentMainMenu = normalizedKey;
+    const user = Auth.getCurrentUser();
+
+    // Actualizar clase activa en los 3 menús principales del Navbar
+    document.querySelectorAll('#main-nav-links .nav-item').forEach(el => el.classList.remove('active'));
+    const activeMainEl = document.getElementById(`main-nav-${normalizedKey}`) || document.getElementById(`main-nav-${menuKey}`);
+    if (activeMainEl) activeMainEl.classList.add('active');
+
+    // Renderizar Menú Secundario (Subnav Bar)
+    const subnavBar = document.getElementById('subnav-bar');
+    const subnavContainer = document.getElementById('subnav-links-container');
+    const submenus = getAuthorizedSubmenus(normalizedKey, user);
+
+    if (submenus.length > 0) {
+      subnavBar.style.display = 'flex';
+      const validSub = submenus.find(s => s.id === targetSubId);
+      const activeSub = validSub ? validSub.id : submenus[0].id;
+
+      subnavContainer.innerHTML = submenus.map(sub => `
+        <div class="subnav-item ${sub.id === activeSub ? 'active' : ''}" id="subnav-item-${sub.id}" onclick="window.UyapayPortal.switchSubMenu('${sub.id}')">
+          ${sub.label}
+        </div>
+      `).join('');
+
+      switchSubMenu(activeSub, false);
+    } else {
+      subnavBar.style.display = 'none';
+    }
+  }
+
+  function switchSubMenu(containerId, updatePill = true) {
+    currentSubMenu = containerId;
+
+    // Ocultar todos los contenedores principales y arena de evaluación
+    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+    const evalArena = document.getElementById('evaluation-arena');
+    if (evalArena) evalArena.style.display = 'none';
+
+    // Activar contenedor meta
+    const target = document.getElementById(containerId);
+    if (target) {
+      target.classList.add('active');
+    }
+
+    if (updatePill) {
+      document.querySelectorAll('#subnav-links-container .subnav-item').forEach(el => el.classList.remove('active'));
+      const activePill = document.getElementById(`subnav-item-${containerId}`);
+      if (activePill) activePill.classList.add('active');
     }
 
     // Refrescar vistas según pestaña activa
@@ -307,6 +322,155 @@
       renderAdminMgmtView();
     }
   }
+
+  // Compatibilidad hacia atrás
+  function switchTab(containerId) {
+    if (containerId === 'ranking-view') {
+      switchMainMenu('resultados', 'ranking-view');
+    } else if (containerId === 'admin-dashboard') {
+      switchMainMenu('resultados', 'admin-dashboard');
+    } else if (containerId === 'admin-historial') {
+      switchMainMenu('resultados', 'admin-historial');
+    } else if (containerId === 'asesor-notas') {
+      switchMainMenu('resultados', 'asesor-notas');
+    } else if (containerId === 'admin-mgmt-view') {
+      switchMainMenu('resultados', 'admin-mgmt-view');
+    } else if (containerId === 'training-view') {
+      switchMainMenu('capacitacion', 'training-view');
+    } else if (containerId === 'onboarding-view') {
+      switchMainMenu('capacitacion', 'onboarding-view');
+    } else if (containerId === 'knowledge-view') {
+      switchMainMenu('capacitacion', 'knowledge-view');
+    } else if (containerId === 'asesor-eval-intro') {
+      switchMainMenu('evaluacion', 'asesor-eval-intro');
+    } else if (containerId === 'calendar-view') {
+      switchMainMenu('evaluacion', 'calendar-view');
+    } else {
+      switchSubMenu(containerId);
+    }
+  }
+
+  function showSection(sectionKey) {
+    if (sectionKey === 'training') {
+      switchMainMenu('capacitacion', 'training-view');
+    } else if (sectionKey === 'evaluations' || sectionKey === 'eval') {
+      switchMainMenu('evaluacion', 'asesor-eval-intro');
+    } else if (sectionKey === 'results' || sectionKey === 'ranking') {
+      switchMainMenu('resultados', 'ranking-view');
+    }
+  }
+
+  async function applyUserSession(user) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('top-navbar').style.display = 'flex';
+    document.getElementById('user-greeting').textContent = user.name ? user.name.split(' ')[0] : 'Usuario';
+    document.getElementById('user-role-badge').textContent = (user.role || 'ASESOR').toUpperCase();
+
+    // Sincronizar estado actual de publicación del podio
+    isPodiumVisible = await Storage.getPodiumStatus();
+    updatePodiumControlsUI(isPodiumVisible);
+
+    const isStaff = isUserStaff(user);
+
+    const rankingAdminControls = document.getElementById('ranking-admin-controls');
+    if (rankingAdminControls) {
+      rankingAdminControls.style.display = isStaff ? 'inline-flex' : 'none';
+    }
+
+    // Enrutamiento inicial por rol según PRDv2 (Flujo 1):
+    // - Editor: Aterriza en Capacitación (Modo Edición)
+    // - Participante, Revisor, Administrador: Aterrizan en Resultados (Podio y Ranking)
+    if (user.role === 'editor') {
+      switchMainMenu('capacitacion', 'training-view');
+    } else {
+      switchMainMenu('resultados', 'ranking-view');
+    }
+
+    await updateNavbarProfileBadges(user);
+    await checkGatekeeperStatus(user);
+
+    // Comprobar si hay una evaluación en curso activa (resiliencia ante F5)
+    if (!isStaff) {
+      await checkActiveEvaluationSession(user);
+    }
+  }
+
+  // ================= DRAWER LATERAL DE PERFIL (FLUJO 8 PRDv2) =================
+  async function toggleProfileDrawer() {
+    const panel = document.getElementById('profile-drawer-panel');
+    if (!panel) return;
+
+    if (panel.classList.contains('open')) {
+      closeProfileDrawer();
+    } else {
+      await openProfileDrawer();
+    }
+  }
+
+  async function openProfileDrawer() {
+    const user = Auth.getCurrentUser();
+    if (!user) return;
+
+    const backdrop = document.getElementById('profile-drawer-backdrop');
+    const panel = document.getElementById('profile-drawer-panel');
+    if (backdrop) backdrop.classList.add('active');
+    if (panel) panel.classList.add('open');
+
+    // Cargar datos en el drawer
+    const nameEl = document.getElementById('drawer-user-name');
+    const handleEl = document.getElementById('drawer-user-handle');
+    const roleEl = document.getElementById('drawer-user-role');
+    if (nameEl) nameEl.textContent = user.name || 'Asesor UYAPAY';
+    if (handleEl) handleEl.textContent = '@' + (user.username || 'usuario');
+    if (roleEl) roleEl.textContent = (user.role || 'asesor').toUpperCase();
+
+    try {
+      const profile = await safeApiFetch('/api/gamification/my-profile').catch(() => null);
+      if (profile) {
+        const xpEl = document.getElementById('drawer-xp-count');
+        if (xpEl && profile.stats && profile.stats.globalPoints !== undefined) {
+          xpEl.textContent = `⚡ ${profile.stats.globalPoints} XP`;
+        }
+        if (profile.badges && Array.isArray(profile.badges)) {
+          const unlockedCount = profile.badges.filter(b => b.unlocked).length;
+          const countEl = document.getElementById('drawer-badges-unlocked');
+          if (countEl) countEl.textContent = `${unlockedCount} / ${profile.badges.length} Desbloqueadas`;
+          
+          const badgesListEl = document.getElementById('drawer-badges-list');
+          if (badgesListEl) {
+            badgesListEl.innerHTML = profile.badges.map(b => `
+              <div style="background:${b.unlocked ? '#f8fafc' : '#f1f5f9'}; border:1px solid ${b.unlocked ? '#cbd5e1' : '#e2e8f0'}; border-radius:10px; padding:10px; text-align:center; opacity:${b.unlocked ? '1' : '0.55'};">
+                <div style="font-size:24px;">${b.icon || '🏅'}</div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-dark); margin-top:4px;">${escapeHtml(b.name)}</div>
+                <div style="font-size:9.5px; color:var(--text-muted); margin-top:2px;">${b.unlocked ? '✅ Conseguida' : '🔒 Bloqueada'}</div>
+              </div>
+            `).join('');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error poblando drawer de perfil:', e);
+    }
+  }
+
+  function closeProfileDrawer() {
+    const backdrop = document.getElementById('profile-drawer-backdrop');
+    const panel = document.getElementById('profile-drawer-panel');
+    if (backdrop) backdrop.classList.remove('active');
+    if (panel) panel.classList.remove('open');
+  }
+
+  function goToFullProfile() {
+    closeProfileDrawer();
+    const currentUser = Auth.getCurrentUser();
+    if (currentUser) {
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      const profileView = document.getElementById('profile-view');
+      if (profileView) profileView.classList.add('active');
+      renderProfileView(currentUser);
+    }
+  }
+
 
   function updatePodiumControlsUI(visible) {
     // 1. Controles en Admin Dashboard
@@ -617,84 +781,318 @@
   }
 
   // ================= RANKING GENERAL Y PODIO (RF-MVP-042 A 047) =================
+  let rawLeaderboardData = [];
+  let currentAdvisorHistoryData = null;
+  let currentActiveHistoryTab = 'all';
+  let currentFeedbackTarget = null;
+
+  function formatShortDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return String(dateStr);
+      const day = String(d.getDate()).padStart(2, '0');
+      const mon = String(d.getMonth() + 1).padStart(2, '0');
+      let hours = d.getHours();
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12 || 12;
+      return `${day}/${mon} ${hours}:${mins} ${ampm}`;
+    } catch (e) {
+      return String(dateStr);
+    }
+  }
+
+  function launchConfetti() {
+    const canvas = document.getElementById('podium-confetti-canvas');
+    if (!canvas) return;
+    canvas.style.display = 'block';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    const particles = [];
+    const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#fbbf24'];
+
+    for (let i = 0; i < 140; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * (canvas.height * 0.4),
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 5,
+        vy: Math.random() * 3 + 2,
+        rot: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 8
+      });
+    }
+
+    let frames = 0;
+    function renderConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.rotSpeed;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+      });
+      frames++;
+      if (frames < 150) {
+        requestAnimationFrame(renderConfetti);
+      } else {
+        canvas.style.display = 'none';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    renderConfetti();
+  }
+
+  // Actualizar métricas del panel de supervisión SSE (Flujo 9)
+  async function updateSupervisorConsole() {
+    try {
+      const analytics = await Storage.getErrorAnalytics();
+      if (!analytics) return;
+
+      const totalEl = document.getElementById('telemetry-total-evals');
+      const passedEl = document.getElementById('telemetry-passed-evals');
+      const failedEl = document.getElementById('telemetry-failed-evals');
+      const rateEl = document.getElementById('telemetry-pass-rate');
+
+      if (totalEl) totalEl.textContent = analytics.totalEvaluations || 0;
+      if (passedEl) passedEl.textContent = analytics.passedEvaluations || 0;
+      if (failedEl) failedEl.textContent = analytics.failedEvaluations || 0;
+      if (rateEl) rateEl.textContent = `${analytics.passRate || 0}%`;
+
+      const criticalListEl = document.getElementById('telemetry-critical-cases-list');
+      if (criticalListEl) {
+        const cases = analytics.criticalCases || analytics.topErrorCases || [];
+        if (cases.length === 0) {
+          criticalListEl.innerHTML = `<div style="color:#94a3b8; font-size:12px;">Sin casos con errores registrados.</div>`;
+        } else {
+          criticalListEl.innerHTML = cases.slice(0, 4).map((c, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div>
+                <b>${idx + 1}. ${escapeHtml(c.caseCode || 'CP')}:</b> ${escapeHtml(c.caseTitle || '')}
+              </div>
+              <div style="font-weight:700; color:${c.severity === 'ALTA' ? '#ef4444' : (c.severity === 'MEDIA' ? '#f59e0b' : '#10b981')};">
+                ➔ ${c.errorRate || 0} err/intento (${c.severity || 'BAJA'})
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Actualizar el banner directo interactivo de evaluación (Flujo 2)
+  async function updateDirectActionBanner(currentUser) {
+    const banner = document.getElementById('ranking-direct-action-banner');
+    if (!banner || !currentUser) return;
+
+    try {
+      const gk = await Storage.getGatekeeperStatus(currentUser.id || currentUser.username);
+      if (gk && gk.has_blocking_evaluation) {
+        banner.style.display = 'flex';
+        banner.className = 'ranking-direct-banner active-pending';
+        const titleEl = document.getElementById('ranking-direct-title');
+        const subEl = document.getElementById('ranking-direct-subtitle');
+        const btnEl = document.getElementById('btn-ranking-direct-start');
+        if (titleEl) titleEl.textContent = `🚀 Evaluación Pendiente: ${gk.evaluation_title || 'Prueba Oficial'}`;
+        if (subEl) subEl.textContent = 'Tienes una evaluación programada obligatoria. Pulsa el botón para rendirla ahora.';
+        if (btnEl) btnEl.textContent = 'Iniciar Evaluación Programada ➔';
+      } else {
+        banner.style.display = 'flex';
+        banner.className = 'ranking-direct-banner';
+        const titleEl = document.getElementById('ranking-direct-title');
+        const subEl = document.getElementById('ranking-direct-subtitle');
+        const btnEl = document.getElementById('btn-ranking-direct-start');
+        if (titleEl) titleEl.textContent = 'Simulador Móvil UYAPAY B2C';
+        if (subEl) subEl.textContent = 'Sin evaluaciones pendientes en este momento. Puedes practicar libremente.';
+        if (btnEl) btnEl.textContent = 'Practicar en Simulador ➔';
+      }
+    } catch (e) {
+      banner.style.display = 'none';
+    }
+  }
+
+  // Renderizar la sección "Agregados Recientemente" (Novedades de Capacitación - Flujo 2)
+  async function renderRecentTrainingInRanking() {
+    const container = document.getElementById('recent-training-cards-container');
+    if (!container) return;
+
+    try {
+      const data = await Storage.getRecentTraining();
+      const items = data.recentItems || [];
+
+      if (items.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:12px;">No hay materiales agregados recientemente.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => `
+        <div class="recent-training-card" onclick="window.UyapayPortal.openRecentTraining('${item.moduleId}', '${item.id}')">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:11px; font-weight:700; color:#2563eb; background:#eff6ff; padding:2px 8px; border-radius:10px;">
+              ${item.moduleIcon || '📁'} ${escapeHtml(item.moduleTitle || 'Módulo')}
+            </span>
+            <span style="font-size:11px; color:#64748b;">${escapeHtml(item.date || '')}</span>
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#1e293b; margin:4px 0;">
+            ${escapeHtml(item.title)}
+          </div>
+          <div style="font-size:11px; color:#64748b; display:flex; align-items:center; gap:4px;">
+            <span>⏱️</span>
+            <span>${escapeHtml(item.estimatedTime || '3 min')}</span>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center;">No se pudieron cargar novedades.</div>`;
+    }
+  }
+
+  function openRecentTraining(moduleId, videoId) {
+    showSection('training');
+  }
+
+  // ================= RENDERIZADO PRINCIPAL DE RANKING Y PODIO =================
   async function renderLeaderboard() {
     isPodiumVisible = await Storage.getPodiumStatus();
     updatePodiumControlsUI(isPodiumVisible);
 
     const currentUser = Auth.getCurrentUser();
-    const isAdmin = currentUser && currentUser.role === 'admin';
+    const isSupervisorRole = currentUser && ['admin', 'administrador', 'revisor', 'editor', 'facilitador'].includes(currentUser.role.toLowerCase());
+    const isRevisorOrAdmin = currentUser && ['admin', 'administrador', 'revisor'].includes(currentUser.role.toLowerCase());
 
     const lockedCard = document.getElementById('podium-locked-state');
     const activeContainer = document.getElementById('podium-active-container');
     const rankingAdminControls = document.getElementById('ranking-admin-controls');
+    const supervisorConsole = document.getElementById('ranking-supervisor-console');
+    const thActions = document.getElementById('th-supervision-actions');
+    const btnExport = document.getElementById('btn-ranking-export');
 
     if (rankingAdminControls) {
-      rankingAdminControls.style.display = isAdmin ? 'inline-flex' : 'none';
+      rankingAdminControls.style.display = isSupervisorRole ? 'inline-flex' : 'none';
     }
 
-    // Si es un asesor y el podio NO está publicado por el administrador: mostrar estado bloqueado
-    if (!isAdmin && !isPodiumVisible) {
+    if (supervisorConsole) {
+      supervisorConsole.style.display = isRevisorOrAdmin ? 'block' : 'none';
+      if (isRevisorOrAdmin) {
+        await updateSupervisorConsole();
+      }
+    }
+
+    if (thActions) {
+      thActions.style.display = isSupervisorRole ? '' : 'none';
+    }
+    if (btnExport) {
+      btnExport.style.display = isSupervisorRole ? 'inline-block' : 'none';
+    }
+
+    // Si es participante y el podio está oculto: mostrar pantalla de espera
+    if (!isSupervisorRole && !isPodiumVisible) {
       if (lockedCard) lockedCard.style.display = 'block';
       if (activeContainer) activeContainer.style.display = 'none';
       return;
     }
 
-    // Si es administrador O si el podio fue publicado oficialmente para los asesores
     if (lockedCard) lockedCard.style.display = 'none';
     if (activeContainer) activeContainer.style.display = 'block';
 
-    const leaderboard = await Storage.getLeaderboard();
-    const podiumEl = document.getElementById('podium-wrapper');
-    const tableBody = document.getElementById('leaderboard-results-table');
+    // Cargar novedades de capacitación y banner directo
+    await renderRecentTrainingInRanking();
+    if (currentUser) {
+      await updateDirectActionBanner(currentUser);
+    }
 
-    // 1. Renderizar Podio (Top 3)
+    rawLeaderboardData = await Storage.getLeaderboard();
+    const podiumEl = document.getElementById('podium-wrapper');
+
+    // 1. Renderizar Podio Olímpico Asimétrico Top 3 (1° al Centro, 2° a la Derecha, 3° a la Izquierda)
     if (podiumEl) {
-      if (leaderboard.length === 0) {
-        podiumEl.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:20px;">Aún no hay participantes en el podio.</div>`;
+      if (rawLeaderboardData.length === 0) {
+        podiumEl.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:20px;">Aún no hay participantes registrados en el ranking.</div>`;
       } else {
-        const top1 = leaderboard[0] || null;
-        const top2 = leaderboard[1] || null;
-        const top3 = leaderboard[2] || null;
+        const top1 = rawLeaderboardData[0] || null;
+        const top2 = rawLeaderboardData[1] || null;
+        const top3 = rawLeaderboardData[2] || null;
 
         let html = '';
 
-        if (top2) {
-          html += `
-            <div class="podium-card silver">
-              <div class="podium-medal">🥈</div>
-              <div class="podium-advisor">${escapeHtml(top2.advisorName || top2.username)}</div>
-              <div class="podium-score">${top2.score}</div>
-              <div class="podium-meta">
-                <span>⏱️ ${top2.formattedDuration || '00:00'}</span>
-                <span>❌ ${top2.errors} err</span>
-              </div>
-            </div>
-          `;
-        }
-
-        if (top1) {
-          html += `
-            <div class="podium-card gold">
-              <div class="podium-medal">🥇</div>
-              <div class="podium-advisor">${escapeHtml(top1.advisorName || top1.username)}</div>
-              <div class="podium-score">${top1.score}</div>
-              <div class="podium-meta">
-                <span>⏱️ ${top1.formattedDuration || '00:00'}</span>
-                <span>❌ ${top1.errors} err</span>
-              </div>
-            </div>
-          `;
-        }
-
+        // 🥉 3° Lugar (Izquierda, Menor Elevación)
         if (top3) {
           html += `
-            <div class="podium-card bronze">
-              <div class="podium-medal">🥉</div>
-              <div class="podium-advisor">${escapeHtml(top3.advisorName || top3.username)}</div>
-              <div class="podium-score">${top3.score}</div>
-              <div class="podium-meta">
-                <span>⏱️ ${top3.formattedDuration || '00:00'}</span>
-                <span>❌ ${top3.errors} err</span>
+            <div class="podium-card olympic-card bronze-left">
+              <div>
+                <div class="olympic-medal-crown">🥉</div>
+                <span class="olympic-laurel-badge">3° Lugar</span>
+                <div class="olympic-advisor-name" title="${escapeHtml(top3.advisorName || top3.username)}">
+                  ${top3.pinnedBadge ? top3.pinnedBadge.icon + ' ' : ''}${escapeHtml(top3.advisorName || top3.username)}
+                </div>
+                <div class="olympic-score-badge">${top3.numericScore !== undefined ? top3.numericScore + ' / 20' : top3.score}</div>
+                <div style="font-size:12px; font-weight:700; color:#d97706;">${top3.totalXp || 0} XP Acumulados</div>
+              </div>
+              <div>
+                <div class="olympic-meta-row">
+                  <span>⏱️ ${top3.formattedDuration || '00:00'}</span>
+                  <span>❌ ${top3.errors} err</span>
+                  <span>🔄 ${top3.attempts || 1} int</span>
+                </div>
+                <div class="olympic-date-stamp">${formatShortDate(top3.completedAt)}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        // 🥇 1° Lugar (Centro, Más Elevado y Destacado)
+        if (top1) {
+          html += `
+            <div class="podium-card olympic-card gold-center">
+              <div>
+                <div class="olympic-medal-crown">🥇</div>
+                <span class="olympic-laurel-badge">🏆 1° Lugar (Oro)</span>
+                <div class="olympic-advisor-name" title="${escapeHtml(top1.advisorName || top1.username)}">
+                  ${top1.pinnedBadge ? top1.pinnedBadge.icon + ' ' : ''}${escapeHtml(top1.advisorName || top1.username)}
+                </div>
+                <div class="olympic-score-badge" style="color:#b45309;">${top1.numericScore !== undefined ? top1.numericScore + ' / 20' : top1.score}</div>
+                <div style="font-size:13px; font-weight:800; color:#b45309;">${top1.totalXp || 0} XP Acumulados</div>
+              </div>
+              <div>
+                <div class="olympic-meta-row" style="color:#854d0e; font-weight:600;">
+                  <span>⏱️ ${top1.formattedDuration || '00:00'}</span>
+                  <span>❌ ${top1.errors} err</span>
+                  <span>🔄 ${top1.attempts || 1} int</span>
+                </div>
+                <div class="olympic-date-stamp">${formatShortDate(top1.completedAt)}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        // 🥈 2° Lugar (Derecha, Altura Media)
+        if (top2) {
+          html += `
+            <div class="podium-card olympic-card silver-right">
+              <div>
+                <div class="olympic-medal-crown">🥈</div>
+                <span class="olympic-laurel-badge">2° Lugar</span>
+                <div class="olympic-advisor-name" title="${escapeHtml(top2.advisorName || top2.username)}">
+                  ${top2.pinnedBadge ? top2.pinnedBadge.icon + ' ' : ''}${escapeHtml(top2.advisorName || top2.username)}
+                </div>
+                <div class="olympic-score-badge" style="color:#475569;">${top2.numericScore !== undefined ? top2.numericScore + ' / 20' : top2.score}</div>
+                <div style="font-size:12px; font-weight:700; color:#475569;">${top2.totalXp || 0} XP Acumulados</div>
+              </div>
+              <div>
+                <div class="olympic-meta-row">
+                  <span>⏱️ ${top2.formattedDuration || '00:00'}</span>
+                  <span>❌ ${top2.errors} err</span>
+                  <span>🔄 ${top2.attempts || 1} int</span>
+                </div>
+                <div class="olympic-date-stamp">${formatShortDate(top2.completedAt)}</div>
               </div>
             </div>
           `;
@@ -704,35 +1102,432 @@
       }
     }
 
-    // 2. Renderizar Tabla General de Posiciones
-    if (tableBody) {
-      if (leaderboard.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">No hay evaluaciones registradas en el ranking.</td></tr>`;
-        return;
+    // 2. Renderizar Tabla General de Posiciones con fila sticky del usuario
+    renderLeaderboardRows(rawLeaderboardData, isSupervisorRole, currentUser);
+  }
+
+  function renderLeaderboardRows(items, isSupervisorRole, currentUser) {
+    const tableBody = document.getElementById('leaderboard-results-table');
+    if (!tableBody) return;
+
+    if (items.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="${isSupervisorRole ? 5 : 4}" style="text-align:center; color:var(--text-muted); padding:24px;">No hay evaluaciones que coincidan con la búsqueda.</td></tr>`;
+      return;
+    }
+
+    const currentUsername = currentUser ? (currentUser.username || '').toLowerCase() : '';
+
+    tableBody.innerHTML = items.map(item => {
+      let badgeRankClass = 'rank-other';
+      if (item.rank === 1) badgeRankClass = 'rank-1';
+      else if (item.rank === 2) badgeRankClass = 'rank-2';
+      else if (item.rank === 3) badgeRankClass = 'rank-3';
+
+      const isSelf = currentUsername && (item.username || '').toLowerCase() === currentUsername;
+      const rowSelfClass = isSelf ? 'ranking-row-self' : '';
+
+      return `
+        <tr class="${rowSelfClass}">
+          <td><span class="rank-badge ${badgeRankClass}">#${item.rank}</span></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>${item.pinnedBadge ? item.pinnedBadge.icon : '👤'}</span>
+              <b>${escapeHtml(item.advisorName || item.username)}</b>
+              ${isSelf ? '<span class="badge" style="background:#10b981; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px;">Tú</span>' : ''}
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              ⏱️ ${item.formattedDuration || '00:00'} | ❌ ${item.errors} err | 🔄 ${item.attempts || 1} int
+            </div>
+          </td>
+          <td>
+            <button class="ranking-score-clickable" onclick="window.UyapayPortal.handleScoreClick('${item.userId || item.username}', '${escapeHtml(item.username)}')" title="Clic para ver desglose de evaluaciones">
+              <span>🏆 ${item.totalXp || 0} XP</span>
+              <span style="font-size:11px; opacity:0.8;">(${item.numericScore !== undefined ? item.numericScore + '/20' : item.score})</span>
+              <span>🔍</span>
+            </button>
+          </td>
+          <td style="font-size:12px; color:var(--text-muted);">${formatShortDate(item.completedAt)}</td>
+          ${isSupervisorRole ? `
+            <td style="text-align:center;">
+              <button class="btn-secondary" style="font-size:11px; padding:4px 8px; margin-right:4px;" onclick="window.UyapayPortal.openFeedbackModal('SUGGESTION', '${item.userId || item.username}', '${escapeHtml(item.advisorName)}')">💡 Sugerir</button>
+              <button class="btn-secondary" style="font-size:11px; padding:4px 8px;" onclick="window.UyapayPortal.openFeedbackModal('CONGRATULATION', '${item.userId || item.username}', '${escapeHtml(item.advisorName)}')">🎉 Felicitar</button>
+            </td>
+          ` : ''}
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterLeaderboardTable(query) {
+    const clean = (query || '').toLowerCase().trim();
+    const currentUser = Auth.getCurrentUser();
+    const isSupervisorRole = currentUser && ['admin', 'administrador', 'revisor', 'editor', 'facilitador'].includes(currentUser.role.toLowerCase());
+
+    if (!clean) {
+      renderLeaderboardRows(rawLeaderboardData, isSupervisorRole, currentUser);
+      return;
+    }
+
+    const filtered = rawLeaderboardData.filter(item => 
+      (item.advisorName || '').toLowerCase().includes(clean) ||
+      (item.username || '').toLowerCase().includes(clean)
+    );
+    renderLeaderboardRows(filtered, isSupervisorRole, currentUser);
+  }
+
+  function startScheduledFromRanking() {
+    showSection('evaluations');
+  }
+
+  function exportLeaderboardExcel() {
+    const token = (typeof Auth !== 'undefined' && Auth.getToken) ? Auth.getToken() : null;
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    window.location.href = `/api/admin/export?format=excel${tokenParam}`;
+  }
+
+  // ================= MODAL NIVEL 1: HISTORIAL DE EVALUACIONES =================
+  async function handleScoreClick(targetId, targetUsername) {
+    const currentUser = Auth.getCurrentUser();
+    if (!currentUser) return;
+
+    const isSupervisorRole = ['admin', 'administrador', 'revisor', 'editor', 'facilitador'].includes(currentUser.role.toLowerCase());
+    const isSelf = (currentUser.username || '').toLowerCase() === (targetUsername || '').toLowerCase();
+
+    if (!isSelf && !isSupervisorRole) {
+      await showCustomAlert({
+        title: 'Control de Privacidad',
+        message: 'Por normas de seguridad y privacidad, los participantes solo pueden auditar su propio historial personal de evaluaciones.',
+        icon: '🔒'
+      });
+      return;
+    }
+
+    await openAdvisorHistory(targetId || targetUsername);
+  }
+
+  async function openAdvisorHistory(advisorId) {
+    const modal = document.getElementById('modal-advisor-history');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+    const container = document.getElementById('hist-modal-list-container');
+    if (container) {
+      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">Cargando historial forense...</div>`;
+    }
+
+    const data = await Storage.getAdvisorHistory(advisorId);
+    if (!data || !data.success) {
+      if (container) container.innerHTML = `<div style="color:var(--danger); text-align:center; padding:20px;">${escapeHtml((data && data.message) || 'Error al obtener historial.')}</div>`;
+      return;
+    }
+
+    currentAdvisorHistoryData = data;
+    currentActiveHistoryTab = 'all';
+
+    // Rellenar cabecera y resumen
+    const nameEl = document.getElementById('hist-modal-advisor-name');
+    const roleEl = document.getElementById('hist-modal-advisor-role');
+    const xpEl = document.getElementById('hist-modal-total-xp');
+    const simEl = document.getElementById('hist-modal-sim-count');
+    const quizEl = document.getElementById('hist-modal-quiz-count');
+    const theoEl = document.getElementById('hist-modal-theo-count');
+
+    if (nameEl) nameEl.textContent = `Historial de Evaluaciones: ${data.advisor.name || data.advisor.username}`;
+    if (roleEl) roleEl.textContent = `Rol: ${data.advisor.role.toUpperCase()} | Usuario: @${data.advisor.username}`;
+    if (xpEl) xpEl.textContent = `${data.summary.consolidatedXp || 0} XP`;
+    if (simEl) simEl.textContent = `${data.summary.simulatorCount || 0} evals`;
+    if (quizEl) quizEl.textContent = `${data.summary.quizzesPassed || 0} aprobados`;
+    if (theoEl) theoEl.textContent = `${data.summary.theoreticalPassed || 0} aprobados`;
+
+    renderHistoryTabContent('all');
+  }
+
+  function filterHistoryTab(tab) {
+    currentActiveHistoryTab = tab;
+    ['all', 'sim', 'quiz', 'theo'].forEach(t => {
+      const btn = document.getElementById(`tab-filter-${t}`);
+      if (btn) btn.classList.toggle('active', t === tab);
+    });
+    renderHistoryTabContent(tab);
+  }
+
+  function renderHistoryTabContent(tab) {
+    if (!currentAdvisorHistoryData) return;
+    const container = document.getElementById('hist-modal-list-container');
+    if (!container) return;
+
+    const evals = currentAdvisorHistoryData.evaluations || {};
+    let list = [];
+
+    if (tab === 'all') {
+      list = [
+        ...(evals.simulator || []),
+        ...(evals.quizzes || []),
+        ...(evals.questionnaires || [])
+      ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    } else if (tab === 'sim') {
+      list = evals.simulator || [];
+    } else if (tab === 'quiz') {
+      list = evals.quizzes || [];
+    } else if (tab === 'theo') {
+      list = evals.questionnaires || [];
+    }
+
+    if (list.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No hay evaluaciones registradas en esta categoría.</div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(item => {
+      let typeBadge = '';
+      let typeCode = '';
+      if (item.type === 'SIMULATOR') {
+        typeBadge = `<span class="badge" style="background:#0284c7; color:#fff; font-size:11px;">📱 Simulador Móvil</span>`;
+        typeCode = 'simulator';
+      } else if (item.type === 'QUIZ') {
+        typeBadge = `<span class="badge" style="background:#8b5cf6; color:#fff; font-size:11px;">🎓 Quiz Kahoot</span>`;
+        typeCode = 'quiz';
+      } else {
+        typeBadge = `<span class="badge" style="background:#d97706; color:#fff; font-size:11px;">📝 Cuestionario Teórico</span>`;
+        typeCode = 'questionnaire';
       }
 
-      tableBody.innerHTML = leaderboard.map(item => {
-        let badgeRankClass = 'rank-other';
-        if (item.rank === 1) badgeRankClass = 'rank-1';
-        else if (item.rank === 2) badgeRankClass = 'rank-2';
-        else if (item.rank === 3) badgeRankClass = 'rank-3';
+      const isPassed = (item.status === 'Aprobado' || item.passed);
+      const statusBadge = `<span class="badge ${isPassed ? 'badge-success' : 'badge-danger'}" style="font-size:11px;">${isPassed ? 'Aprobado' : 'Desaprobado'}</span>`;
 
-        const statusBadgeClass = item.status === 'Aprobado' ? 'badge-success' : 'badge-danger';
+      return `
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              ${typeBadge}
+              ${statusBadge}
+              <span style="font-size:11px; color:#64748b;">${formatShortDate(item.date)}</span>
+            </div>
+            <div style="font-size:14px; font-weight:700; color:#1e293b;">
+              ${escapeHtml(item.title || item.code || 'Evaluación')}
+            </div>
+            <div style="font-size:12px; color:#64748b; margin-top:2px;">
+              Nota: <b>${item.score || 0}</b> | ${item.duration ? `⏱️ ${item.duration} | ` : ''} ${item.errors !== undefined ? `❌ ${item.errors} errores` : ''} ${item.xpEarned ? `| ⭐ +${item.xpEarned} XP` : ''}
+            </div>
+          </div>
+          <div>
+            <button class="btn-secondary" style="font-size:12px; padding:6px 14px;" onclick="window.UyapayPortal.openEvaluationAudit('${typeCode}', '${item.id}')">
+              Ver Detalle Completo ➔
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
-        return `
-          <tr>
-            <td><span class="rank-badge ${badgeRankClass}">#${item.rank}</span></td>
-            <td><b>${escapeHtml(item.advisorName || item.username)}</b></td>
-            <td>${escapeHtml(item.caseTitle)}</td>
-            <td><span class="badge ${statusBadgeClass}">${item.score}</span></td>
-            <td><b>⏱️ ${item.formattedDuration || '00:00'}</b></td>
-            <td>${item.errors} errores</td>
-            <td><span class="badge ${statusBadgeClass}">${item.status}</span></td>
-            <td style="font-size:12px; color:var(--text-muted);">${item.completedAt}</td>
-          </tr>
-        `;
-      }).join('');
+  function closeAdvisorHistoryModal() {
+    const modal = document.getElementById('modal-advisor-history');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // ================= MODAL NIVEL 2: AUDITORÍA FORENSE ÍTEM POR ÍTEM =================
+  async function openEvaluationAudit(type, id) {
+    const histModal = document.getElementById('modal-advisor-history');
+    if (histModal) histModal.style.display = 'none';
+
+    const auditModal = document.getElementById('modal-forensic-audit');
+    if (!auditModal) return;
+
+    auditModal.style.display = 'flex';
+    const container = document.getElementById('audit-modal-items-container');
+    const banner = document.getElementById('audit-modal-meta-banner');
+    if (container) container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">Cargando autopsia forense...</div>`;
+
+    const data = await Storage.getEvaluationAudit(type, id);
+    if (!data || !data.success) {
+      if (container) container.innerHTML = `<div style="color:var(--danger); text-align:center; padding:20px;">${escapeHtml((data && data.message) || 'No se pudo cargar la auditoría.')}</div>`;
+      return;
     }
+
+    if (banner) {
+      if (type === 'simulator') {
+        const ev = data.evaluation;
+        banner.innerHTML = `
+          <div>
+            <b>Asesor:</b> ${escapeHtml(ev.advisorName || ev.username)} (@${escapeHtml(ev.username)})<br>
+            <b>Caso Evaluado:</b> ${escapeHtml(ev.caseCode)} - ${escapeHtml(ev.caseTitle)}
+          </div>
+          <div style="text-align:right;">
+            <b>Calificación:</b> <span class="badge ${ev.status === 'Aprobado' ? 'badge-success' : 'badge-danger'}">${ev.score}</span><br>
+            <span style="font-size:12px; color:#64748b;">⏱️ ${ev.duration} | ❌ ${ev.errors} errores | 📅 ${formatShortDate(ev.completedAt)}</span>
+          </div>
+        `;
+      } else if (type === 'quiz') {
+        const sub = data.submission;
+        banner.innerHTML = `
+          <div>
+            <b>Evaluación:</b> Quiz de Video: ${escapeHtml(sub.title)}
+          </div>
+          <div style="text-align:right;">
+            <b>Puntaje:</b> <span class="badge ${sub.passed ? 'badge-success' : 'badge-danger'}">${sub.score} / ${sub.maxScore}</span><br>
+            <span style="font-size:12px; color:#64748b;">📅 ${formatShortDate(sub.submittedAt)}</span>
+          </div>
+        `;
+      } else if (type === 'questionnaire') {
+        const sub = data.submission;
+        banner.innerHTML = `
+          <div>
+            <b>Cuestionario:</b> ${escapeHtml(sub.title)}
+          </div>
+          <div style="text-align:right;">
+            <b>Nota Vigesimal:</b> <span class="badge ${sub.passed ? 'badge-success' : 'badge-danger'}">${sub.score.toFixed(1)} / 20</span> (+${sub.xpEarned || 0} XP)<br>
+            <span style="font-size:12px; color:#64748b;">⏱️ ${Math.floor((sub.durationSeconds || 0) / 60)}m ${((sub.durationSeconds || 0) % 60)}s | 📅 ${formatShortDate(sub.submittedAt)}</span>
+          </div>
+        `;
+      }
+    }
+
+    if (container) {
+      if (type === 'simulator') {
+        const cases = data.cases || [];
+        if (cases.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:20px; color:#64748b;">Evaluación registrada sin desglose multi-caso.</div>`;
+        } else {
+          container.innerHTML = cases.map((c, idx) => `
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-weight:700; color:#1e293b; font-size:13px;">Caso ${idx + 1}: ${escapeHtml(c.caseCode || '')} - ${escapeHtml(c.caseTitle || '')}</span>
+                <span class="badge ${c.completed ? 'badge-success' : 'badge-danger'}">${c.completed ? 'Completado' : 'Incompleto'}</span>
+              </div>
+              <div style="font-size:12px; color:#64748b; margin-bottom:8px;">
+                Cliente: <b>${escapeHtml(c.client || '')}</b> | ⏱️ ${c.duration || '00:00'} | ❌ ${c.errors || 0} errores
+              </div>
+              ${(c.actionsLog || []).filter(a => a.type === 'ERROR').length > 0 ? `
+                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px; margin-top:8px;">
+                  <b style="color:#b91c1c; font-size:11px; text-transform:uppercase;">Fallas Operativas Cometidas:</b>
+                  <ul style="margin:4px 0 0 16px; padding:0; font-size:12px; color:#991b1b;">
+                    ${c.actionsLog.filter(a => a.type === 'ERROR').map(err => `<li>[${escapeHtml(err.step || 'Paso')}]: ${escapeHtml(err.detail || 'Error')}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : '<div style="font-size:12px; color:#15803d; font-weight:600;">✅ Ejecución impecable sin errores operativos en este caso.</div>'}
+            </div>
+          `).join('');
+        }
+      } else {
+        // Quizzes y Cuestionarios Teóricos (Pregunta por pregunta)
+        const answers = data.answers || [];
+        if (answers.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:20px; color:#64748b;">No hay respuestas registradas en esta sumisión.</div>`;
+        } else {
+          container.innerHTML = answers.map((ans, idx) => {
+            const isCorrect = Boolean(ans.isCorrect);
+            return `
+              <div style="background:#fff; border:1.5px solid ${isCorrect ? '#86efac' : '#fca5a5'}; border-radius:10px; padding:14px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <span style="font-weight:700; color:#1e293b; font-size:13px;">Pregunta ${idx + 1}: ${escapeHtml(ans.questionText || '')}</span>
+                  <span class="badge ${isCorrect ? 'badge-success' : 'badge-danger'}">${isCorrect ? 'Correcta (+Pts)' : 'Incorrecta (0 Pts)'}</span>
+                </div>
+                <div style="font-size:12.5px; margin:6px 0; color:#334155;">
+                  Respuesta del Asesor: <b style="color:${isCorrect ? '#15803d' : '#b91c1c'};">${escapeHtml(Array.isArray(ans.userAnswer) ? ans.userAnswer.join(', ') : (ans.userAnswer || ans.selectedOption || '-'))}</b>
+                </div>
+                ${!isCorrect && (ans.correctAnswer || ans.correctOption) ? `
+                  <div style="font-size:12.5px; color:#15803d; margin-bottom:6px;">
+                    Respuesta Correcta Oficial: <b>${escapeHtml(Array.isArray(ans.correctAnswer) ? ans.correctAnswer.join(', ') : (ans.correctAnswer || ans.correctOption))}</b>
+                  </div>
+                ` : ''}
+                ${ans.explanation ? `
+                  <div style="background:#f8fafc; border-left:3px solid #3b82f6; padding:8px 12px; font-size:12px; color:#475569; margin-top:8px;">
+                    <b>Explicación Pedagógica:</b> ${escapeHtml(ans.explanation)}
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
+  }
+
+  function closeForensicAuditModal() {
+    const auditModal = document.getElementById('modal-forensic-audit');
+    if (auditModal) auditModal.style.display = 'none';
+
+    // Volver a abrir el modal de historial
+    const histModal = document.getElementById('modal-advisor-history');
+    if (histModal) histModal.style.display = 'flex';
+  }
+
+  // ================= MODAL FEEDBACK Y FELICITACIONES (SUPERVISIÓN - FLUJO 7) =================
+  function openFeedbackModal(type, targetId, advisorName) {
+    currentFeedbackTarget = { advisorId: targetId, advisorName: advisorName };
+    const modal = document.getElementById('modal-supervisor-feedback');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+    const subTitle = document.getElementById('feedback-modal-subtitle');
+    if (subTitle) subTitle.textContent = `Asesor: ${advisorName}`;
+
+    // Seleccionar radio button correspondiente
+    const radio = document.querySelector(`input[name="feedback-type"][value="${type}"]`);
+    if (radio) radio.checked = true;
+    toggleFeedbackType(type);
+
+    const txt = document.getElementById('feedback-message-text');
+    if (txt) {
+      txt.value = (type === 'CONGRATULATION')
+        ? `¡Felicitaciones ${advisorName} por tu destacada participación en el ranking con un rendimiento sobresaliente!`
+        : `Hola ${advisorName}, te sugerimos repasar los procedimientos comerciales de este módulo para reforzar tu efectividad en ruta.`;
+    }
+  }
+
+  function toggleFeedbackType(type) {
+    const topicGroup = document.getElementById('feedback-topic-group');
+    const modalTitle = document.getElementById('feedback-modal-title');
+    if (topicGroup) {
+      topicGroup.style.display = (type === 'SUGGESTION') ? 'block' : 'none';
+    }
+    if (modalTitle) {
+      modalTitle.textContent = (type === 'CONGRATULATION') ? '🎉 Escribir Nota de Felicitación' : '💡 Sugerir Temas de Refuerzo';
+    }
+  }
+
+  async function submitSupervisorFeedback() {
+    if (!currentFeedbackTarget) return;
+
+    const typeRadio = document.querySelector('input[name="feedback-type"]:checked');
+    const type = typeRadio ? typeRadio.value : 'SUGGESTION';
+    const topicSelect = document.getElementById('feedback-topic-select');
+    const topicOrModule = topicSelect ? topicSelect.value : '';
+    const messageInput = document.getElementById('feedback-message-text');
+    const message = messageInput ? messageInput.value.trim() : '';
+
+    if (!message) {
+      await showCustomAlert({ title: 'Campo Requerido', message: 'Por favor redacta el mensaje de retroalimentación.', icon: '⚠️' });
+      return;
+    }
+
+    const res = await Storage.sendFeedback(currentFeedbackTarget.advisorId, {
+      type: type,
+      topicOrModule: (type === 'SUGGESTION') ? topicOrModule : '',
+      message: message
+    });
+
+    closeFeedbackModal();
+
+    if (res && res.success) {
+      await showCustomAlert({
+        title: type === 'CONGRATULATION' ? '🎉 Felicitación Enviada' : '💡 Recomendación Registrada',
+        message: res.message || 'La retroalimentación ha sido enviada exitosamente al perfil del asesor.',
+        icon: '✅'
+      });
+    } else {
+      await showCustomAlert({
+        title: 'Error',
+        message: (res && res.message) || 'No se pudo registrar la retroalimentación.',
+        icon: '❌'
+      });
+    }
+  }
+
+  function closeFeedbackModal() {
+    const modal = document.getElementById('modal-supervisor-feedback');
+    if (modal) modal.style.display = 'none';
+    currentFeedbackTarget = null;
   }
 
   // ================= TABLAS DE RESULTADOS =================
@@ -1817,27 +2612,64 @@
     return headers;
   }
 
+  // Resolver de URLs de API resiliente (apunta a :3000 si se ejecuta en Live Server :5500 u otro puerto)
+  function resolveApiUrl(path) {
+    if (typeof window !== 'undefined' && window.location) {
+      const port = window.location.port;
+      const isCustomDevServer = port && !['3000', '3100', '3101', '3102', '3103', '3104', '3105'].includes(port);
+      if (window.location.protocol === 'file:' || isCustomDevServer) {
+        return 'http://localhost:3000' + path;
+      }
+    }
+    return path;
+  }
+
+  // Cliente HTTP seguro que valida Content-Type JSON y evita crashes por respuestas HTML
+  async function safeApiFetch(path, options = {}) {
+    const targetUrl = resolveApiUrl(path);
+    const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+    let res;
+    try {
+      res = await fetch(targetUrl, { ...options, headers });
+    } catch (netErr) {
+      throw new Error(`No se pudo conectar con el servidor backend (http://localhost:3000). ¿Está ejecutándose 'node server.js'?`);
+    }
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await res.text();
+      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+        throw new Error(`El servidor devolvió una página HTML en vez de datos JSON. Si estás usando Live Server (puerto 5500), ejecuta 'npm start' y abre http://localhost:3000.`);
+      }
+      throw new Error(`Respuesta no válida del servidor (Content-Type: ${contentType}).`);
+    }
+
+    const data = await res.json();
+    if (!res.ok) {
+      const errMsg = (data && data.message) || `Error del servidor HTTP ${res.status}`;
+      throw new Error(errMsg);
+    }
+    return data;
+  }
+
   // 1. Actualizar insignias y XP en el Navbar
   async function updateNavbarProfileBadges(user) {
     if (!user) return;
     try {
-      const res = await fetch('/api/gamification/my-profile', { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        const xpBadge = document.getElementById('user-xp-badge');
-        const badgeDisplay = document.getElementById('user-badge-display');
-        if (xpBadge && data.stats) {
-          xpBadge.textContent = `⚡ ${data.stats.globalPoints || 0} XP`;
-          xpBadge.style.display = 'inline-flex';
-        }
-        if (badgeDisplay && data.badges && data.badges.length > 0) {
-          const topBadge = data.badges[0];
-          badgeDisplay.textContent = `${topBadge.icon} ${topBadge.name}`;
-          badgeDisplay.style.display = 'inline-flex';
-        } else if (badgeDisplay) {
-          badgeDisplay.textContent = '🌟 Asesor B2C';
-          badgeDisplay.style.display = 'inline-flex';
-        }
+      const res = await safeApiFetch('/api/gamification/my-profile');
+      const xpBadge = document.getElementById('user-xp-badge');
+      const badgeDisplay = document.getElementById('user-badge-display');
+      if (xpBadge && res.stats) {
+        xpBadge.textContent = `⚡ ${res.stats.globalPoints || 0} XP`;
+        xpBadge.style.display = 'inline-flex';
+      }
+      if (badgeDisplay && res.badges && res.badges.length > 0) {
+        const topBadge = res.badges[0];
+        badgeDisplay.textContent = `${topBadge.icon} ${topBadge.name}`;
+        badgeDisplay.style.display = 'inline-flex';
+      } else if (badgeDisplay) {
+        badgeDisplay.textContent = '🌟 Asesor B2C';
+        badgeDisplay.style.display = 'inline-flex';
       }
     } catch (e) {
       console.warn('[Navbar] No se pudo cargar perfil de gamificación:', e.message);
@@ -1856,84 +2688,94 @@
     pillsContainer.innerHTML = '<div style="color:var(--text-muted); padding:10px;">Cargando módulos...</div>';
     videosContainer.innerHTML = '<div style="color:var(--text-muted); padding:20px;">Cargando catálogo audiovisual...</div>';
 
+    let modules = [];
+    let videos = [];
+
     try {
-      const [modulesRes, videosRes] = await Promise.all([
-        fetch('/api/training/modules', { headers: getAuthHeaders() }),
-        fetch(`/api/training/videos${selectedModuleId ? '?moduleId=' + encodeURIComponent(selectedModuleId) : ''}`, { headers: getAuthHeaders() })
+      const [mRes, vRes] = await Promise.all([
+        safeApiFetch('/api/training/modules'),
+        safeApiFetch(`/api/training/videos${selectedModuleId ? '?moduleId=' + encodeURIComponent(selectedModuleId) : ''}`)
       ]);
+      modules = Array.isArray(mRes) ? mRes : [];
+      videos = Array.isArray(vRes) ? vRes : [];
+    } catch (fetchErr) {
+      console.warn('[Training] Error cargando desde API, activando fallback local:', fetchErr.message);
+      // Fallback local a los 5 módulos temáticos oficiales de Requisitos.pdf
+      modules = [
+        { id: 'mod-01', code: 'VENTAS', title: 'Ventas y Toma de Pedidos B2C', description: 'Configuración comercial, pedidos contado/crédito, bonificaciones y regalos.', icon: '🛒', order_num: 1 },
+        { id: 'mod-02', code: 'COBRANZAS', title: 'Cobranzas y Liquidación de Ruta', description: 'Cobranzas mixtas (efectivo + voucher), recibos provisionales y arqueo diario.', icon: '💰', order_num: 2 },
+        { id: 'mod-03', code: 'RUTA_GPS', title: 'Gestión de Ruta, GPS y Tareas', description: 'Plan de visitas, geocerca de 50m, bypass justificado y tareas T1 a T5.', icon: '📍', order_num: 3 },
+        { id: 'mod-04', code: 'POLITICAS', title: 'Políticas Comerciales y Promociones', description: 'Listas de precios Oficina/1/2/3/4 y exclusión mutua de promociones combo.', icon: '🏷️', order_num: 4 },
+        { id: 'mod-05', code: 'DOCUMENTOS', title: 'Documentos Electrónicos y Cartera', description: 'Consulta de facturas electrónicas, notas de crédito y estados de cuenta.', icon: '📄', order_num: 5 }
+      ];
+      videos = [];
+    }
 
-      const modules = await modulesRes.json();
-      const videos = await videosRes.json();
-      activeVideosList = videos;
+    activeVideosList = videos;
 
-      // Renderizar píldoras de módulo
-      let pillsHtml = `
-        <button class="training-pill ${!selectedModuleId ? 'active' : ''}" onclick="window.UyapayPortal.renderTrainingByModule(null)">
-          🌐 Todos los Módulos
+    // Renderizar píldoras de módulo
+    let pillsHtml = `
+      <button class="training-pill ${!selectedModuleId ? 'active' : ''}" onclick="window.UyapayPortal.renderTrainingByModule(null)">
+        🌐 Todos los Módulos
+      </button>
+    `;
+    modules.forEach(m => {
+      const isActive = selectedModuleId === m.id;
+      pillsHtml += `
+        <button class="training-pill ${isActive ? 'active' : ''}" onclick="window.UyapayPortal.renderTrainingByModule('${m.id}')">
+          ${m.icon || '📁'} ${escapeHtml(m.title)}
         </button>
       `;
-      modules.forEach(m => {
-        const isActive = selectedModuleId === m.id;
-        pillsHtml += `
-          <button class="training-pill ${isActive ? 'active' : ''}" onclick="window.UyapayPortal.renderTrainingByModule('${m.id}')">
-            ${m.icon || '📁'} ${escapeHtml(m.title)}
-          </button>
-        `;
-      });
-      pillsContainer.innerHTML = pillsHtml;
+    });
+    pillsContainer.innerHTML = pillsHtml;
 
-      // Renderizar tarjetas de videos
-      if (videos.length === 0) {
-        videosContainer.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align:center; padding:40px 20px; color:var(--text-muted);">
-            No hay videos registrados en este módulo.
-          </div>
-        `;
-        return;
+    // Renderizar tarjetas de videos
+    if (videos.length === 0) {
+      videosContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align:center; padding:40px 20px; color:var(--text-muted);">
+          ${selectedModuleId ? 'No hay videos registrados en este módulo.' : 'No hay cápsulas de video disponibles en este momento. Conéctate a http://localhost:3000 para sincronizar el catálogo.'}
+        </div>
+      `;
+      return;
+    }
+
+    let videosHtml = '';
+    videos.forEach(v => {
+      const mins = Math.floor((v.duration_seconds || 180) / 60);
+      const secs = (v.duration_seconds || 180) % 60;
+      const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs} min`;
+
+      let quizBadgeHtml = '';
+      if (v.userPassed) {
+        quizBadgeHtml = `<span class="badge badge-success" style="font-size:11px;">✓ Quiz Aprobado (${v.userBestScore}/20)</span>`;
+      } else if (v.quizId) {
+        quizBadgeHtml = `<span class="badge badge-warning" style="font-size:11px;">⚡ Quiz Disponible</span>`;
       }
 
-      let videosHtml = '';
-      videos.forEach(v => {
-        const mins = Math.floor((v.duration_seconds || 180) / 60);
-        const secs = (v.duration_seconds || 180) % 60;
-        const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs} min`;
-
-        let quizBadgeHtml = '';
-        if (v.userPassed) {
-          quizBadgeHtml = `<span class="badge badge-success" style="font-size:11px;">✓ Quiz Aprobado (${v.userBestScore}/20)</span>`;
-        } else if (v.quizId) {
-          quizBadgeHtml = `<span class="badge badge-warning" style="font-size:11px;">⚡ Quiz Disponible</span>`;
-        }
-
-        videosHtml += `
-          <div class="video-card">
-            <div class="video-thumb-wrapper" onclick="window.UyapayPortal.openVideoModal('${v.id}')">
-              <div class="video-play-btn">▶</div>
-              <span class="video-duration-tag">⏱️ ${durationStr}</span>
+      videosHtml += `
+        <div class="video-card">
+          <div class="video-thumb-wrapper" onclick="window.UyapayPortal.openVideoModal('${v.id}')">
+            <div class="video-play-btn">▶</div>
+            <span class="video-duration-tag">⏱️ ${durationStr}</span>
+          </div>
+          <div class="video-card-body">
+            <div style="font-size:11px; font-weight:700; color:var(--yellow-dark); text-transform:uppercase; margin-bottom:4px;">
+              ${escapeHtml(v.module_title || 'Capacitación')}
             </div>
-            <div class="video-card-body">
-              <div style="font-size:11px; font-weight:700; color:var(--yellow-dark); text-transform:uppercase; margin-bottom:4px;">
-                ${escapeHtml(v.module_title || 'Capacitación')}
-              </div>
-              <h3 class="video-card-title">${escapeHtml(v.title)}</h3>
-              <p class="video-card-desc">${escapeHtml(v.description || 'Cápsula formativa oficial.')}</p>
-              <div class="video-card-footer">
-                <div>${quizBadgeHtml}</div>
-                <div style="display:flex; gap:8px;">
-                  <button class="btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="window.UyapayPortal.openVideoModal('${v.id}')">Ver Video</button>
-                  ${v.quizId ? `<button class="btn-primary" style="font-size:12px; padding:6px 14px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="window.UyapayPortal.startKahootQuiz('${v.id}')">🎮 Quiz</button>` : ''}
-                </div>
+            <h3 class="video-card-title">${escapeHtml(v.title)}</h3>
+            <p class="video-card-desc">${escapeHtml(v.description || 'Cápsula formativa oficial.')}</p>
+            <div class="video-card-footer">
+              <div>${quizBadgeHtml}</div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="window.UyapayPortal.openVideoModal('${v.id}')">Ver Video</button>
+                ${v.quizId ? `<button class="btn-primary" style="font-size:12px; padding:6px 14px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="window.UyapayPortal.startKahootQuiz('${v.id}')">🎮 Quiz</button>` : ''}
               </div>
             </div>
           </div>
-        `;
-      });
-      videosContainer.innerHTML = videosHtml;
-
-    } catch (e) {
-      pillsContainer.innerHTML = '';
-      videosContainer.innerHTML = `<div class="error-msg" style="display:block;">Error cargando módulos de capacitación: ${escapeHtml(e.message)}</div>`;
-    }
+        </div>
+      `;
+    });
+    videosContainer.innerHTML = videosHtml;
   }
 
   function openVideoModal(videoId) {
@@ -1996,17 +2838,16 @@
 
   async function startKahootQuiz(videoId) {
     try {
-      const res = await fetch(`/api/training/videos/${videoId}/quiz`, { headers: getAuthHeaders() });
-      if (!res.ok) {
-        showCustomAlert({
-          title: 'Quiz No Disponible',
-          message: 'Este video no tiene un cuestionario de refuerzo configurado todavía.',
-          icon: 'ℹ️'
-        });
-        return;
-      }
+      currentKahootQuiz = await safeApiFetch(`/api/training/videos/${videoId}/quiz`);
+    } catch (err) {
+      showCustomAlert({
+        title: 'Quiz No Disponible',
+        message: 'Este video no tiene un cuestionario de refuerzo configurado todavía o el servidor no respondió.',
+        icon: 'ℹ️'
+      });
+      return;
+    }
 
-      currentKahootQuiz = await res.json();
       currentKahootIndex = 0;
       currentKahootAnswers = {};
       kahootStreak = 0;
@@ -2151,13 +2992,10 @@
     if (kahootTimerInterval) clearInterval(kahootTimerInterval);
 
     try {
-      const res = await fetch(`/api/training/quizzes/${currentKahootQuiz.id}/submit`, {
+      const result = await safeApiFetch(`/api/training/quizzes/${currentKahootQuiz.id}/submit`, {
         method: 'POST',
-        headers: getAuthHeaders(),
         body: JSON.stringify({ answers: currentKahootAnswers })
       });
-
-      const result = await res.json();
 
       const modal = document.getElementById('kahoot-summary-modal');
       const scoreEl = document.getElementById('kahoot-summary-score');
@@ -2271,9 +3109,8 @@
 
     try {
       if (user) {
-        const res = await fetch('/api/training/onboarding/progress', { headers: getAuthHeaders() });
-        if (res.ok) {
-          const data = await res.json();
+        const data = await safeApiFetch('/api/training/onboarding/progress');
+        if (data) {
           const state = {};
           if (Array.isArray(data.completedTasks)) {
             data.completedTasks.forEach(tId => state[tId] = true);
@@ -2305,9 +3142,8 @@
     try {
       if (user) {
         const completedTasks = Object.keys(state).filter(k => Boolean(state[k]));
-        await fetch('/api/training/onboarding/progress', {
+        await safeApiFetch('/api/training/onboarding/progress', {
           method: 'POST',
-          headers: getAuthHeaders(),
           body: JSON.stringify({
             completedTasks: completedTasks,
             examUnlocked: completedTasks.length >= ONBOARDING_TASKS.length
@@ -2417,23 +3253,40 @@
   }
 
   // 5. Base de Conocimiento (FAQs & Reglas de Negocio)
-  let activeFaqsList = [];
-  let activeRulesList = [];
+  const DEFAULT_FAQS = [
+    { id: 'faq-01', category: 'Precios', question: '¿Cómo elijo la lista de precios adecuada para un cliente minorista?', answer: 'En el menú del cliente dentro de Uyapay Móvil, dirígete a Datos Comerciales. La lista Oficina es la tarifa estándar sugerida; para clientes con volumen regular usa Lista 1 o 2.' },
+    { id: 'faq-02', category: 'Ruta y Visitas', question: '¿Qué hacer si un cliente no se encuentra en su negocio al visitarlo?', answer: 'Debes registrar la visita marcando "No Contactado" y seleccionar el motivo correspondiente (local cerrado, titular ausente). Recuerda adjuntar la foto del frontis del local para validar el geoposicionamiento.' },
+    { id: 'faq-03', category: 'Cobranzas', question: '¿Cómo registro un pago mixto (efectivo y transferencia bancaria)?', answer: 'En la pantalla de cobranza, ingresa el monto en efectivo y agrega un segundo medio seleccionando "Transferencia / Depósito". Es obligatorio ingresar el número de operación bancaria y verificar que coincida con el voucher físico o digital.' },
+    { id: 'faq-04', category: 'Pedidos', question: '¿Qué plazo tengo para anular o modificar un pedido ingresado?', answer: 'Los pedidos pueden modificarse mientras estén en estado "Borrador" o "En Cola de Sincronización". Una vez sincronizados con la central, cualquier anulación debe solicitarse a la jefatura de ventas con justificación comercial.' },
+    { id: 'faq-05', category: 'Inventario', question: '¿Cómo verifico el stock en tiempo real antes de confirmar el pedido?', answer: 'Al seleccionar un artículo, la ficha del producto muestra el stock disponible en almacén central. Si un producto está marcado como "Agotado" o con stock menor al solicitado, el sistema emitirá una alerta preventiva.' }
+  ];
+
+  const DEFAULT_RULES = [
+    { id: 'rule-01', category: 'Listas de Precio', title: 'Jerarquía y Segmentación de Listas de Precios', content: 'En el canal minorista B2C, la lista Oficina representa el precio base sugerido. Las listas 1, 2 y 3 otorgan precios más competitivos según el volumen y la antigüedad del cliente. Para clientes corporativos B2B se aplican las listas 5, 6, 7 y 8 según autorización crediticia.' },
+    { id: 'rule-02', category: 'Tareas en Ruta', title: 'Secuencia Obligatoria de Tareas de Visita (T1 a T5)', content: 'Toda visita en ruta debe cumplir con el flujo estándar: T1 Inicio de Visita → T2 Registro Fotográfico de Exhibición Inicial y Final → T3 Tracking de Precios de Competencia (o registro del motivo de omisión justificado) → T4 Verificación de Cartera y Deudas → T5 Toma de Pedido o Justificación formal de Cierre.' },
+    { id: 'rule-03', category: 'Créditos', title: 'Política de Clientes Morosos y Bloqueos de Venta', content: 'Clientes con deudas vencidas mayores a 40 días se consideran en tramo moroso o dudoso. Para emitir un nuevo pedido a crédito es obligatorio amortizar primero la deuda vencida o solicitar autorización excepcional al área de créditos.' },
+    { id: 'rule-04', category: 'Liquidación', title: 'Cuadre y Consolidado Diario Obligatorio', content: 'Al concluir las visitas del día, todo asesor debe generar la "Liquidación de Cobranza Diaria". El arqueo debe cuadrar exactamente los soles, dólares y vouchers antes de la entrega formal en caja.' }
+  ];
+
+  let activeFaqsList = DEFAULT_FAQS;
+  let activeRulesList = DEFAULT_RULES;
   let currentKnowledgeSubtab = 'faqs';
 
   async function renderKnowledgeView() {
     try {
-      const [faqsRes, rulesRes] = await Promise.all([
-        fetch('/api/knowledge/faqs', { headers: getAuthHeaders() }),
-        fetch('/api/knowledge/rules', { headers: getAuthHeaders() })
+      const [faqs, rules] = await Promise.all([
+        safeApiFetch('/api/knowledge/faqs'),
+        safeApiFetch('/api/knowledge/rules')
       ]);
 
-      activeFaqsList = await faqsRes.json();
-      activeRulesList = await rulesRes.json();
-      filterKnowledge();
+      activeFaqsList = Array.isArray(faqs) ? faqs : DEFAULT_FAQS;
+      activeRulesList = Array.isArray(rules) ? rules : DEFAULT_RULES;
     } catch (e) {
-      console.error('[Conocimiento] Error:', e.message);
+      console.warn('[Conocimiento] Servidor backend no disponible, cargando catálogo local resiliente:', e.message);
+      activeFaqsList = DEFAULT_FAQS;
+      activeRulesList = DEFAULT_RULES;
     }
+    filterKnowledge();
   }
 
   function switchKnowledgeSubtab(subtab) {
@@ -2509,13 +3362,10 @@
   // 6. Perfil del Asesor & Vitrina de Insignias
   async function renderProfileView(user) {
     try {
-      const [profileRes, recsRes] = await Promise.all([
-        fetch('/api/gamification/my-profile', { headers: getAuthHeaders() }),
-        fetch(`/api/integration/recommendations/${user.username}`, { headers: getAuthHeaders() })
+      const [profile, recs] = await Promise.all([
+        safeApiFetch('/api/gamification/my-profile').catch(() => ({ user, stats: { globalPoints: 0, bestScore: 0, badgesUnlockedCount: 0, totalBadgesCount: 6 }, badges: [] })),
+        safeApiFetch(`/api/integration/recommendations/${user.username}`).catch(() => ({ recommendations: [] }))
       ]);
-
-      const profile = await profileRes.json();
-      const recs = await recsRes.json();
 
       // Rellenar datos del Hero
       const nameEl = document.getElementById('profile-name');
@@ -2614,8 +3464,8 @@
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Cargando nómina de usuarios...</td></tr>';
 
     try {
-      const res = await fetch('/api/users-mgmt', { headers: getAuthHeaders() });
-      const users = await res.json();
+      const users = await safeApiFetch('/api/users-mgmt');
+      if (!Array.isArray(users)) throw new Error('Respuesta no válida del servidor.');
 
       tbody.innerHTML = users.map(u => {
         const isActive = u.status === 'active';
@@ -2721,25 +3571,20 @@
     }
 
     try {
-      let res;
+      let data;
       if (id) {
         // Editar usuario existente
-        res = await fetch(`/api/users-mgmt/${id}`, {
+        data = await safeApiFetch(`/api/users-mgmt/${id}`, {
           method: 'PUT',
-          headers: getAuthHeaders(),
           body: JSON.stringify({ name, email, role })
         });
       } else {
         // Crear nuevo usuario
-        res = await fetch('/api/users-mgmt', {
+        data = await safeApiFetch('/api/users-mgmt', {
           method: 'POST',
-          headers: getAuthHeaders(),
           body: JSON.stringify({ username, name, email, role, password })
         });
       }
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Error guardando usuario');
 
       closeAdminUserModal();
       showCustomAlert({ title: 'Éxito', message: data.message || 'Usuario guardado correctamente.', icon: '✅' });
@@ -2751,12 +3596,9 @@
 
   async function toggleUserStatus(userId) {
     try {
-      const res = await fetch(`/api/users-mgmt/${userId}/toggle-status`, {
-        method: 'PATCH',
-        headers: getAuthHeaders()
+      const data = await safeApiFetch(`/api/users-mgmt/${userId}/toggle-status`, {
+        method: 'PATCH'
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
       renderAdminUsersTable();
     } catch (e) {
       showCustomAlert({ title: 'Error', message: e.message, icon: '⚠️' });
@@ -2775,9 +3617,8 @@
     });
 
     try {
-      const res = await fetch(`/api/users-mgmt/${userId}/roles`, { headers: getAuthHeaders() });
-      if (res.ok) {
-        const roles = await res.json();
+      const roles = await safeApiFetch(`/api/users-mgmt/${userId}/roles`);
+      if (Array.isArray(roles)) {
         roles.forEach(r => {
           const chk = document.getElementById(`chk-role-${r.code}`);
           if (chk) chk.checked = true;
@@ -2813,21 +3654,19 @@
     }
 
     try {
-      const res = await fetch(`/api/users-mgmt/${userId}/roles`, {
+      const data = await safeApiFetch(`/api/users-mgmt/${userId}/roles`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
         body: JSON.stringify({ roleIds: selectedRoles })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
 
       closeAdminRolesModal();
-      showCustomAlert({ title: 'Éxito', message: 'Roles actualizados correctamente.', icon: '✅' });
+      showCustomAlert({ title: 'Éxito', message: (data && data.message) || 'Roles actualizados correctamente.', icon: '✅' });
       renderAdminUsersTable();
     } catch (e) {
       showCustomAlert({ title: 'Error', message: e.message, icon: '⚠️' });
     }
   }
+
 
   // ================= 7. CALENDARIO DE EVALUACIONES Y CUESTIONARIOS TEÓRICOS (FLUJO 12 PRDv2) =================
   let calendarCurrentYear = new Date().getFullYear();
@@ -2910,7 +3749,7 @@
     }
 
     const currentUser = Auth.getCurrentUser();
-    const isStaff = currentUser && ['admin', 'editor'].includes(currentUser.role);
+    const isStaff = isUserStaff(currentUser);
 
     // Ajustar visibilidad de botones de creación para personal autorizado
     const btnCreateQ = document.getElementById('btn-global-create-questionnaire');
@@ -3099,14 +3938,13 @@
     if (advisorsContainer) {
       advisorsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:12px;">Cargando nómina de asesores...</div>';
       try {
-        const res = await fetch('/api/users-mgmt', { headers: getAuthHeaders() });
-        let users = [];
-        if (res.ok) {
-          users = await res.json();
+        let users = await safeApiFetch('/api/users').catch(() => []);
+        if (!Array.isArray(users) || users.length === 0) {
+          users = await safeApiFetch('/api/users-mgmt').catch(() => []);
         }
-        const advisors = users.filter(u => u.role === 'asesor' && u.active !== 0);
+        const advisors = Array.isArray(users) ? users.filter(u => (u.role === 'asesor' || u.role === 'participante') && u.status !== 'inactive') : [];
         const listToRender = advisors.length > 0 ? advisors : [
-          { id: 'usr-edward', username: 'edward', name: 'Edward Quispe' },
+          { id: 'usr-edward', username: 'edward', name: 'Edward Velásquez' },
           { id: 'usr-almendra', username: 'almendra', name: 'Almendra Villafuerte' },
           { id: 'usr-carlos', username: 'carlos', name: 'Carlos Mendoza' },
           { id: 'usr-jorge', username: 'jorge', name: 'Jorge Huamán' },
@@ -3214,7 +4052,7 @@
     if (!modal || !selectedCalendarEvent) return;
 
     const currentUser = Auth.getCurrentUser();
-    const isStaff = currentUser && ['admin', 'editor'].includes(currentUser.role);
+    const isStaff = isUserStaff(currentUser);
 
     const titleEl = document.getElementById('event-detail-title');
     const subEl = document.getElementById('event-detail-subtitle');
@@ -3883,7 +4721,34 @@
     toggleUserStatus: toggleUserStatus,
     openAdminRolesModal: openAdminRolesModal,
     closeAdminRolesModal: closeAdminRolesModal,
-    saveUserRoles: saveUserRoles
+    saveUserRoles: saveUserRoles,
+
+    // Métodos de Hito 5: Ranking, Podio, Auditoría y Feedback
+    handleScoreClick: handleScoreClick,
+    openAdvisorHistory: openAdvisorHistory,
+    closeAdvisorHistoryModal: closeAdvisorHistoryModal,
+    filterHistoryTab: filterHistoryTab,
+    openEvaluationAudit: openEvaluationAudit,
+    closeForensicAuditModal: closeForensicAuditModal,
+    openFeedbackModal: openFeedbackModal,
+    closeFeedbackModal: closeFeedbackModal,
+    toggleFeedbackType: toggleFeedbackType,
+    submitSupervisorFeedback: submitSupervisorFeedback,
+    filterLeaderboardTable: filterLeaderboardTable,
+    exportLeaderboardExcel: exportLeaderboardExcel,
+    startScheduledFromRanking: startScheduledFromRanking,
+    openRecentTraining: openRecentTraining,
+
+    // Navegación de 3 Menús Principales y Submenús (PRDv2 Sección 3)
+    switchMainMenu: switchMainMenu,
+    switchSubMenu: switchSubMenu,
+    showSection: showSection,
+
+    // Drawer Lateral de Perfil (Flujo 8 PRDv2)
+    openProfileDrawer: openProfileDrawer,
+    closeProfileDrawer: closeProfileDrawer,
+    toggleProfileDrawer: toggleProfileDrawer,
+    goToFullProfile: goToFullProfile
   };
 })();
 

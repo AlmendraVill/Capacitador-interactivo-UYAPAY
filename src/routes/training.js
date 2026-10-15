@@ -54,15 +54,18 @@ function createTrainingRouter(db, authMiddleware, adminMiddleware) {
 
       // Enriquecer con información de si tiene quiz y si el usuario ya lo aprobó
       const userId = req.user.id;
+      const quizStmt = db.prepare('SELECT id, title FROM quizzes WHERE video_id = ?');
+      const subStmt = db.prepare(`
+        SELECT score, max_score, passed, submitted_at FROM quiz_submissions
+        WHERE quiz_id = ? AND user_id = ?
+        ORDER BY score DESC LIMIT 1
+      `);
+
       const parsed = videos.map(v => {
-        const quiz = db.prepare('SELECT id, title FROM quizzes WHERE video_id = ?').get(v.id);
+        const quiz = quizStmt.get(v.id);
         let userSubmission = null;
         if (quiz) {
-          userSubmission = db.prepare(`
-            SELECT score, max_score, passed, submitted_at FROM quiz_submissions
-            WHERE quiz_id = ? AND user_id = ?
-            ORDER BY score DESC LIMIT 1
-          `).get(quiz.id, userId);
+          userSubmission = subStmt.get(quiz.id, userId);
         }
 
         return {

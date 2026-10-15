@@ -28,21 +28,50 @@
     </div>
   </div>
 
-  <!-- ================= 2. NAVBAR SUPERIOR RESPONSIVE ================= -->
+  <!-- ================= 2. NAVBAR SUPERIOR RESPONSIVE (3 MENÚS PRDv2) ================= -->
   <nav id="top-navbar">
     <div class="nav-header-row">
-      <div class="nav-brand">UYAPAY B2C</div>
+      <div class="nav-brand" style="cursor:pointer;" onclick="window.UyapayPortal.switchMainMenu('ranking')">
+        <span style="font-size:22px;">🟡</span> UYAPAY B2C
+      </div>
+      
+      <!-- LOS 3 MENÚS PRINCIPALES TRANSVERSALES (Capacitación, Evaluación, Resultados) -->
+      <div class="nav-links" id="main-nav-links">
+        <div class="nav-item" id="main-nav-capacitacion" onclick="window.UyapayPortal.switchMainMenu('capacitacion')">
+          🎓 Capacitación
+        </div>
+        <div class="nav-item" id="main-nav-evaluacion" onclick="window.UyapayPortal.switchMainMenu('evaluacion')">
+          📝 Evaluación
+        </div>
+        <div class="nav-item active" id="main-nav-resultados" onclick="window.UyapayPortal.switchMainMenu('resultados')">
+          🏆 Resultados
+        </div>
+      </div>
+
       <div class="nav-user">
+
         <span class="nav-badge" id="firebase-cloud-badge" style="display:none; background:#ecfdf5; color:#059669; border-color:#a7f3d0; font-weight:700;" title="Sincronización en la nube con Firebase">☁️ Nube Activa</span>
         <span class="nav-badge" id="user-xp-badge" style="display:none; background:#fef3c7; color:#b45309; border-color:#fde68a; font-weight:700;" title="Puntaje Global Acumulado">⚡ 0 XP</span>
         <span class="nav-badge" id="user-badge-display" style="display:none; background:#ede9fe; color:#6d28d9; border-color:#ddd6fe; font-weight:700;" title="Insignia Activa">🏅 Novato</span>
-        <span class="nav-badge" id="user-role-badge">ROL</span>
-        <span id="user-greeting">Hola</span>
+        
+        <!-- Trigger del Drawer Lateral de Perfil (Avatar + Nombre) -->
+        <div id="nav-profile-trigger" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; padding:3px 8px; border-radius:20px; transition:background 0.2s;" onclick="window.UyapayPortal.toggleProfileDrawer()" title="Abrir mi perfil y vitrina de medallas">
+          <div style="width:28px; height:28px; border-radius:50%; background:var(--yellow); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;" id="nav-avatar-icon">👤</div>
+          <span id="user-greeting" style="font-weight:600;">Hola</span>
+          <span class="nav-badge" id="user-role-badge">ROL</span>
+        </div>
+
         <span class="logout" onclick="window.UyapayPortal.logout()">Salir</span>
       </div>
     </div>
-    <div class="nav-links" id="nav-links-container"></div>
   </nav>
+
+  <!-- ================= SUBNAV: MENÚ SECUNDARIO CONTEXTUAL (PRDv2) ================= -->
+  <div id="subnav-bar" class="subnav-bar" style="display:none;">
+    <div class="subnav-container" id="subnav-links-container">
+      <!-- Los tabs/pills secundarios del menú activo se renderizan aquí dinámicamente -->
+    </div>
+  </div>
 
   <!-- BANNER DE ESTADO GATEKEEPER (ALGORITMO 3 PRDv2) -->
   <div id="gatekeeper-status-banner" style="display:none; padding:12px 24px; background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-bottom:1px solid #fca5a5; font-size:13.5px; color:#991b1b; align-items:center; justify-content:space-between; gap:16px;">
@@ -292,14 +321,94 @@
     <div class="section-header">
       <div>
         <h2>Ranking General & Podio</h2>
-        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">Clasificación de asesores por puntuación y tiempo de resolución (RF-MVP-042).</p>
+        <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">Clasificación trifactorial oficial de asesores por XP, tiempo y precisión operativa (RF-MVP-042 a 047).</p>
       </div>
-      <!-- Control rápido de podio visible para administradores -->
+      <!-- Control rápido de podio visible para supervisores y administradores -->
       <div id="ranking-admin-controls" style="display:none; align-items:center; gap:10px;">
         <span id="ranking-podium-badge" class="badge" style="padding:6px 12px; border-radius:20px; background:#475569; color:#f1f5f9;">🔒 Podio Oculto a Asesores</span>
         <button id="btn-ranking-toggle-podium" class="btn-primary" style="font-size:12px; padding:8px 16px; width:auto;" onclick="window.UyapayPortal.togglePodiumVisibility()">
-          Mostrar Podio a Asesores
+          Mostrar Podio a Asesores ➔
         </button>
+      </div>
+    </div>
+
+    <!-- CONSOLA DE SUPERVISIÓN Y TELEMETRÍA EN VIVO SSE (EXCLUSIVO REVISOR / ADMIN - FLUJO 9) -->
+    <div id="ranking-supervisor-console" class="supervisor-telemetry-panel" style="display:none;">
+      <div class="telemetry-status-bar">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="telemetry-live-dot"></span>
+          <span style="font-weight:700; font-size:13px; letter-spacing:0.5px;">ESTADO: CANAL DE SINCRONIZACIÓN ACTIVO (SSE)</span>
+        </div>
+        <div style="font-size:12px; color:#94a3b8;">
+          USUARIOS CONECTADOS: <b id="telemetry-connected-users" style="color:#38bdf8; font-size:14px;">1</b> ASESORES
+        </div>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="telemetry-box">
+          <div style="font-size:11px; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">📱 Asesor Evaluado en Tiempo Real</div>
+          <div id="telemetry-advisor-name" style="font-size:16px; font-weight:700; color:#fff;">En espera</div>
+          <div id="telemetry-case-title" style="font-size:12px; color:#38bdf8; margin-top:2px;">Sin caso activo</div>
+          <div id="telemetry-client-name" style="font-size:11px; color:#94a3b8; margin-top:2px;">-</div>
+        </div>
+
+        <div class="telemetry-box">
+          <div style="font-size:11px; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">📊 Estadísticas de la Prueba en Curso</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="font-size:12px; color:#cbd5e1;">Paso actual:</span>
+            <b id="telemetry-step-name" style="color:#f59e0b; font-size:12px;">Sin actividad</b>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="font-size:12px; color:#cbd5e1;">Casos resueltos:</span>
+            <b id="telemetry-cases-progress" style="color:#10b981; font-size:12px;">0 de 5</b>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:12px; color:#cbd5e1;">Errores en vivo:</span>
+            <b id="telemetry-errors-count" style="color:#ef4444; font-size:14px;">0</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed de Alertas de Errores e Incidencias en Vivo -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:12px; font-weight:700; color:#cbd5e1; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+          <span>🚨</span> FEED DE INCIDENCIAS Y ERRORES EN VIVO (&lt;300ms):
+        </div>
+        <div class="telemetry-feed-box" id="telemetry-live-feed">
+          <div style="color:#94a3b8; text-align:center; padding:10px;">Esperando eventos de evaluación de la fuerza de ventas...</div>
+        </div>
+      </div>
+
+      <!-- Panel de Métricas Rápidas y Casos Críticos -->
+      <div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
+          <div style="background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; color:#94a3b8;">Total Evaluados</div>
+            <div id="telemetry-total-evals" style="font-size:18px; font-weight:800; color:#fff;">0</div>
+          </div>
+          <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); padding:10px 14px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; color:#6ee7b7;">Aprobados (≥11)</div>
+            <div id="telemetry-passed-evals" style="font-size:18px; font-weight:800; color:#10b981;">0</div>
+          </div>
+          <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); padding:10px 14px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; color:#fca5a5;">Reprobados (&lt;11)</div>
+            <div id="telemetry-failed-evals" style="font-size:18px; font-weight:800; color:#ef4444;">0</div>
+          </div>
+          <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.2); padding:10px 14px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; color:#bae6fd;">Efectividad</div>
+            <div id="telemetry-pass-rate" style="font-size:18px; font-weight:800; color:#38bdf8;">0%</div>
+          </div>
+        </div>
+
+        <!-- Ranking analítico de casos críticos con mayor tasa de error -->
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:12px; font-weight:700; color:#f59e0b; margin-bottom:8px;">
+            ⚠️ RANKING ANALÍTICO DE CASOS CRÍTICOS (MAYOR ÍNDICE DE ERROR):
+          </div>
+          <div id="telemetry-critical-cases-list" style="font-size:12px; color:#cbd5e1; line-height:1.6;">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -308,7 +417,7 @@
       <div style="font-size:56px; margin-bottom:12px;">🔒</div>
       <h3 style="font-size:20px; color:var(--text-dark); margin-bottom:8px;">Podio Oficial en Espera</h3>
       <p style="color:var(--text-muted); max-width:540px; margin:0 auto 20px auto; font-size:14px; line-height:1.6;">
-        El administrador aún no ha habilitado la visualización del podio oficial para esta jornada de evaluación. Una vez que todos los asesores finalicen sus casos, el capacitador publicará el ranking oficial y podrás consultar tu posición en el podio.
+        El facilitador o supervisor aún no ha habilitado la visualización del podio oficial para esta jornada de evaluación. Una vez que todos los asesores finalicen sus casos, se publicará el podio y se revelarán las posiciones oficiales.
       </p>
       <div style="display:inline-flex; align-items:center; gap:8px; background:#fff9e6; color:var(--yellow-dark); padding:8px 18px; border-radius:24px; font-size:13px; font-weight:700;">
         <span>⏱️</span>
@@ -318,32 +427,73 @@
 
     <!-- CONTENEDOR ACTIVO DE PODIO Y RANKING -->
     <div id="podium-active-container">
-      <!-- PODIO TOP 3 -->
-      <div class="podium-wrapper" id="podium-wrapper">
+      <!-- PODIO TOP 3 ASIMÉTRICO (1° CENTRO, 2° DERECHA, 3° IZQUIERDA) -->
+      <div class="podium-wrapper olympic-asymmetric" id="podium-wrapper">
         <!-- Generado dinámicamente por JS -->
       </div>
 
-      <!-- TABLA COMPLETA DE POSICIONES -->
-      <div class="card" style="margin-top:20px;" id="ranking-table-card">
-        <h3 style="font-size:16px; margin-bottom:14px; color:var(--text-dark);">Tabla Oficial de Posiciones</h3>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:70px;">Posición</th>
-                <th>Asesor</th>
-                <th>Caso Evaluado</th>
-                <th>Puntaje</th>
-                <th>Tiempo</th>
-                <th>Errores</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboard-results-table">
-              <!-- Renderizado dinámicamente por JS -->
-            </tbody>
-          </table>
+      <!-- BOTÓN DIRECTO: INICIAR EVALUACIÓN PROGRAMADA (FLUJO 2) -->
+      <div id="ranking-direct-action-banner" class="ranking-direct-banner" style="display:none;">
+        <div style="display:flex; align-items:center; gap:14px; color:#fff;">
+          <div style="font-size:28px;">🚀</div>
+          <div>
+            <div id="ranking-direct-title" style="font-size:15px; font-weight:700;">Evaluación Programada Disponible</div>
+            <div id="ranking-direct-subtitle" style="font-size:12px; opacity:0.85; margin-top:2px;">Tienes una prueba asignada pendiente de rendir.</div>
+          </div>
+        </div>
+        <button id="btn-ranking-direct-start" class="btn-start-pending-eval" onclick="window.UyapayPortal.startScheduledFromRanking()">
+          Iniciar Evaluación Programada ➔
+        </button>
+      </div>
+
+      <!-- GRILLA PRINCIPAL DE RANKING: TABLA DE POSICIONES + AGREGADOS RECIENTEMENTE -->
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-top:20px;" id="ranking-main-grid">
+        <!-- TABLA COMPLETA DE POSICIONES -->
+        <div class="card" style="margin-top:0;" id="ranking-table-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h3 style="font-size:16px; margin:0; color:var(--text-dark);">Tabla Oficial de Posiciones</h3>
+              <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-muted);">
+                Haz clic en el puntaje de un asesor para auditar su historial detallado.
+              </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <input type="text" id="ranking-search-input" placeholder="🔍 Buscar asesor..." style="padding:7px 12px; font-size:12px; border-radius:8px; border:1px solid #cbd5e1; width:160px;" oninput="window.UyapayPortal.filterLeaderboardTable(this.value)">
+              <button id="btn-ranking-export" class="btn-secondary" style="font-size:12px; padding:7px 14px; display:none;" onclick="window.UyapayPortal.exportLeaderboardExcel()">
+                📥 Exportar Excel
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:60px;">#</th>
+                  <th>Asesor Comercial</th>
+                  <th>Puntaje Total</th>
+                  <th>Última Eval.</th>
+                  <th id="th-supervision-actions" style="display:none; text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-results-table">
+                <!-- Renderizado dinámicamente por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- NOVEDADES DE CAPACITACIÓN ("AGREGADOS RECIENTEMENTE" - FLUJO 2) -->
+        <div class="card" style="margin-top:0;" id="ranking-recent-training-box">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <h3 style="font-size:15px; margin:0; color:var(--text-dark); display:flex; align-items:center; gap:6px;">
+              <span>✨</span> Agregados Recientemente
+            </h3>
+            <span style="font-size:11px; color:#3b82f6; font-weight:700; cursor:pointer;" onclick="window.UyapayPortal.switchMainMenu('capacitacion', 'training-view')">Ver Aula Virtual ➔</span>
+          </div>
+          <div id="recent-training-cards-container">
+            <!-- Renderizado dinámicamente por JS -->
+          </div>
         </div>
       </div>
     </div>
@@ -861,6 +1011,147 @@
     </div>
   </div>
 
+  <!-- ================= HITO 5: MODAL NIVEL 1 — DESGLOSE HISTÓRICO DE EVALUACIONES (FLUJO 2 & 7) ================= -->
+  <div id="modal-advisor-history" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:820px;">
+      <div class="portal-modal-header" style="border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div id="hist-modal-avatar" style="width:44px; height:44px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:20px; position:relative;">
+            👤
+            <span id="hist-modal-pin-badge" style="position:absolute; bottom:-3px; right:-3px; font-size:16px; display:none;">🏅</span>
+          </div>
+          <div>
+            <h3 id="hist-modal-advisor-name" style="margin:0; font-size:17px; color:var(--text-dark);">Historial de Evaluaciones</h3>
+            <div id="hist-modal-advisor-role" style="font-size:12px; color:var(--text-muted); margin-top:2px;">Asesor Comercial</div>
+          </div>
+        </div>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeAdvisorHistoryModal()">&times;</button>
+      </div>
+
+      <div class="portal-modal-body" style="padding-top:16px;">
+        <!-- Pills de Resumen de Bolsa de XP y Totales -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;">
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 14px; text-align:center;">
+            <div style="font-size:11px; color:#1e40af; font-weight:700;">XP TOTAL ACUMULADO</div>
+            <div id="hist-modal-total-xp" style="font-size:20px; font-weight:800; color:#1d4ed8; margin-top:2px;">0 XP</div>
+          </div>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; text-align:center;">
+            <div style="font-size:11px; color:#64748b; font-weight:700;">SIMULADOR MÓVIL</div>
+            <div id="hist-modal-sim-count" style="font-size:18px; font-weight:800; color:#334155; margin-top:2px;">0 evals</div>
+          </div>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; text-align:center;">
+            <div style="font-size:11px; color:#64748b; font-weight:700;">QUIZZES KAHOOT</div>
+            <div id="hist-modal-quiz-count" style="font-size:18px; font-weight:800; color:#334155; margin-top:2px;">0 aprobados</div>
+          </div>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; text-align:center;">
+            <div style="font-size:11px; color:#64748b; font-weight:700;">CUESTIONARIOS</div>
+            <div id="hist-modal-theo-count" style="font-size:18px; font-weight:800; color:#334155; margin-top:2px;">0 aprobados</div>
+          </div>
+        </div>
+
+        <!-- Filtros de Pestañas para el Historial -->
+        <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:8px; flex-wrap:wrap;">
+          <button class="btn-filter-tab active" id="tab-filter-all" onclick="window.UyapayPortal.filterHistoryTab('all')">Todas</button>
+          <button class="btn-filter-tab" id="tab-filter-sim" onclick="window.UyapayPortal.filterHistoryTab('sim')">📱 Simulador Móvil</button>
+          <button class="btn-filter-tab" id="tab-filter-quiz" onclick="window.UyapayPortal.filterHistoryTab('quiz')">🎓 Quizzes Aula Virtual</button>
+          <button class="btn-filter-tab" id="tab-filter-theo" onclick="window.UyapayPortal.filterHistoryTab('theo')">📝 Cuestionarios Teóricos</button>
+        </div>
+
+        <!-- Contenedor de la lista de evaluaciones históricas -->
+        <div id="hist-modal-list-container" style="max-height:360px; overflow-y:auto;">
+          <!-- Renderizado dinámicamente -->
+        </div>
+      </div>
+
+      <div class="portal-modal-footer">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeAdvisorHistoryModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HITO 5: MODAL NIVEL 2 — AUDITORÍA FORENSE ÍTEM POR ÍTEM (FLUJO 2 & 7) ================= -->
+  <div id="modal-forensic-audit" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:760px;">
+      <div class="portal-modal-header">
+        <div>
+          <h3 id="audit-modal-title" style="margin:0; font-size:17px; color:var(--text-dark);">🔍 Auditoría Forense de Evaluación</h3>
+          <div id="audit-modal-subtitle" style="font-size:12px; color:var(--text-muted); margin-top:2px;">Detalle granular ítem por ítem</div>
+        </div>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeForensicAuditModal()">&times;</button>
+      </div>
+
+      <div class="portal-modal-body">
+        <div id="audit-modal-meta-banner" style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <!-- Metadatos de la evaluación -->
+        </div>
+
+        <div id="audit-modal-items-container" style="max-height:400px; overflow-y:auto;">
+          <!-- Preguntas o casos desglosados -->
+        </div>
+      </div>
+
+      <div class="portal-modal-footer">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeForensicAuditModal()">Volver al Historial</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HITO 5: MODAL DE FEEDBACK Y FELICITACIÓN (SUPERVISIÓN - FLUJO 7) ================= -->
+  <div id="modal-supervisor-feedback" class="portal-modal-backdrop" style="display:none;">
+    <div class="portal-modal" style="max-width:540px;">
+      <div class="portal-modal-header">
+        <div>
+          <h3 id="feedback-modal-title" style="margin:0; font-size:17px; color:var(--text-dark);">💡 Retroalimentación de Supervisión</h3>
+          <div id="feedback-modal-subtitle" style="font-size:12px; color:var(--text-muted); margin-top:2px;">Asesor: -</div>
+        </div>
+        <button class="portal-modal-close" onclick="window.UyapayPortal.closeFeedbackModal()">&times;</button>
+      </div>
+
+      <div class="portal-modal-body">
+        <!-- Selector de Tipo: Sugerencia o Felicitación -->
+        <div style="display:flex; gap:12px; margin-bottom:16px;">
+          <label style="flex:1; cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:8px;" id="lbl-feedback-type-suggestion">
+            <input type="radio" name="feedback-type" value="SUGGESTION" checked onchange="window.UyapayPortal.toggleFeedbackType(this.value)">
+            <span style="font-size:13px; font-weight:700; color:#0369a1;">💡 Sugerir Tema</span>
+          </label>
+          <label style="flex:1; cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 14px; border:1.5px solid #cbd5e1; border-radius:8px;" id="lbl-feedback-type-congrat">
+            <input type="radio" name="feedback-type" value="CONGRATULATION" onchange="window.UyapayPortal.toggleFeedbackType(this.value)">
+            <span style="font-size:13px; font-weight:700; color:#15803d;">🎉 Felicitar Asesor</span>
+          </label>
+        </div>
+
+        <!-- Selector de Tema / Módulo Recomendado (visible si es sugerencia) -->
+        <div id="feedback-topic-group" style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+            Módulo o Procedimiento Comercial Recomendado:
+          </label>
+          <select id="feedback-topic-select" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+            <option value="Toma de Pedidos y Listas de Precios">Módulo 1: Toma de Pedidos y Selección de Listas</option>
+            <option value="Gestión de Cobranzas y Arqueo Diario">Módulo 2: Gestión de Cobranzas y Arqueo Diario</option>
+            <option value="Ruta, Geocercas GPS y Visitas Telefónicas">Módulo 3: Ruta, Geocercas GPS y Visitas Telefónicas</option>
+            <option value="Políticas Comerciales y Promociones Shell/Michelin">Módulo 4: Políticas Comerciales y Promociones</option>
+            <option value="Retención de SUNAT (3%) en Facturas Electrónicas">Módulo 5: Retenciones SUNAT y Facturación</option>
+          </select>
+        </div>
+
+        <!-- Mensaje de Retroalimentación -->
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-dark); margin-bottom:6px;">
+            Mensaje Personalizado para el Asesor:
+          </label>
+          <textarea id="feedback-message-text" rows="4" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; resize:vertical;" placeholder="Escribe recomendaciones pedagógicas, felicitaciones o aspectos específicos a reforzar..."></textarea>
+        </div>
+      </div>
+
+      <div class="portal-modal-footer">
+        <button class="btn-secondary" style="width:auto;" onclick="window.UyapayPortal.closeFeedbackModal()">Cancelar</button>
+        <button class="btn-primary" style="width:auto; padding:10px 22px;" onclick="window.UyapayPortal.submitSupervisorFeedback()">
+          Enviar Retroalimentación ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DE DIÁLOGO / CONFIRMACIÓN Y ALERTA (CENTRADO Y CON FORMATO) -->
   <div id="portal-dialog-modal" class="portal-modal-backdrop" style="display:none;">
     <div class="portal-modal">
@@ -1285,6 +1576,52 @@
     </div>
   </div>
 
+  <!-- ================= DRAWER LATERAL DE PERFIL (FLUJO 8 PRDv2) ================= -->
+  <div id="profile-drawer-backdrop" class="profile-drawer-backdrop" onclick="window.UyapayPortal.closeProfileDrawer()"></div>
+  <div id="profile-drawer-panel" class="profile-drawer-panel">
+    <div style="padding:22px; background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:#fff; display:flex; justify-content:space-between; align-items:flex-start;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:54px; height:54px; border-radius:50%; background:var(--yellow); color:#fff; font-size:28px; display:flex; align-items:center; justify-content:center; font-weight:800; border:2px solid #fff;" id="drawer-avatar">👤</div>
+        <div>
+          <h4 id="drawer-user-name" style="margin:0; font-size:16px; color:#fff;">Asesor Comercial</h4>
+          <div style="font-size:12px; color:#94a3b8; margin-top:2px;" id="drawer-user-handle">@usuario</div>
+          <span class="badge" id="drawer-user-role" style="font-size:10px; background:rgba(255,255,255,0.15); color:#fef08a; padding:2px 8px; margin-top:4px; display:inline-block;">ASESOR</span>
+        </div>
+      </div>
+      <button style="background:none; border:none; color:#cbd5e1; font-size:26px; cursor:pointer; line-height:1;" onclick="window.UyapayPortal.closeProfileDrawer()">&times;</button>
+    </div>
+
+    <div style="padding:22px; flex:1; display:flex; flex-direction:column; gap:20px; overflow-y:auto;">
+      <!-- Bolsa Global de Puntos XP -->
+      <div class="card" style="margin-bottom:0; background:linear-gradient(135deg, #fefce8 0%, #fef08a 100%); border:1px solid #fde047; padding:16px; text-align:center;">
+        <div style="font-size:11.5px; font-weight:700; color:#854d0e; text-transform:uppercase;">Puntaje Global Acumulado (XP)</div>
+        <div id="drawer-xp-count" style="font-size:28px; font-weight:800; color:#713f12; margin-top:4px;">⚡ 0 XP</div>
+        <div style="font-size:11px; color:#a16207; margin-top:4px;">Evaluaciones, quizzes y actividades completadas</div>
+      </div>
+
+      <!-- Vitrina de las 6 Insignias Oficiales -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <b style="font-size:13px; color:var(--text-dark);">Vitrina de Insignias Oficiales:</b>
+          <span id="drawer-badges-unlocked" style="font-size:11.5px; font-weight:600; color:var(--text-muted);">0 / 6 Desbloqueadas</span>
+        </div>
+        <div id="drawer-badges-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <!-- Generado dinámicamente con las 6 insignias -->
+        </div>
+      </div>
+
+      <!-- Acciones de perfil -->
+      <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px; padding-top:16px;">
+        <button class="btn-secondary" style="width:100%; font-size:13px; font-weight:600;" onclick="window.UyapayPortal.goToFullProfile()">
+          👤 Ver Perfil Completo y Estadísticas
+        </button>
+        <button class="btn-primary" style="width:100%; font-size:13px; font-weight:700; background:#dc2626; border-color:#dc2626;" onclick="window.UyapayPortal.logout()">
+          🚪 Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= 7. SCRIPTS MODULARES Y FIREBASE ================= -->
   <!-- Firebase Cloud Firestore SDK (Compat Mode para navegador sin build) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1297,6 +1634,7 @@
   <script src="js/services/storage.js?v=3.2"></script>
   <script src="js/services/evaluator.js?v=3.2"></script>
   <script src="js/services/auth.js?v=3.2"></script>
+  <canvas id="podium-confetti-canvas" style="display:none;"></canvas>
   <script src="js/portal.js?v=3.2"></script>
 </body>
 </html>

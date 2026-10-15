@@ -17,6 +17,18 @@ function initDatabaseSchema(db) {
     // Ya existe la columna
   }
 
+  try {
+    db.exec("ALTER TABLE users ADD COLUMN pinned_badge_id TEXT;");
+  } catch (e) {
+    // Ya existe la columna
+  }
+
+  try {
+    db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;");
+  } catch (e) {
+    // Ya existe la columna
+  }
+
   // 2. Creación de las tablas para las 16 entidades
   db.exec(`
     -- Roles del sistema (ACC-03, RF-006, RF-048)
@@ -243,6 +255,19 @@ function initDatabaseSchema(db) {
       answers_json TEXT NOT NULL DEFAULT '[]',
       duration_seconds INTEGER DEFAULT 0,
       submitted_at TEXT NOT NULL
+    );
+
+    -- Feedback Pedagógico y Felicitaciones de Supervisión (Flujo 7 PRDv2)
+    CREATE TABLE IF NOT EXISTS user_feedback (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      author_id TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      type TEXT NOT NULL, -- 'SUGGESTION' o 'CONGRATULATION'
+      topic_or_module TEXT,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0
     );
   `);
 

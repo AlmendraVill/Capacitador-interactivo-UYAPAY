@@ -158,10 +158,20 @@ function authMiddleware(req, res, next) {
 
 function adminMiddleware(req, res, next) {
   authMiddleware(req, res, () => {
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'administrador')) {
       return next();
     }
     return res.status(403).json({ success: false, message: 'Acceso restringido a administradores.' });
+  });
+}
+
+function supervisorMiddleware(req, res, next) {
+  authMiddleware(req, res, () => {
+    const role = (req.user && req.user.role) ? req.user.role.toLowerCase() : '';
+    if (['admin', 'administrador', 'revisor', 'editor', 'facilitador'].includes(role)) {
+      return next();
+    }
+    return res.status(403).json({ success: false, message: 'Acceso restringido a personal de supervisión.' });
   });
 }
 
@@ -314,6 +324,10 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Usuario no encontrado en la plataforma.' });
   }
 
+  if (user.status && user.status.toLowerCase() === 'inactive') {
+    return res.status(403).json({ success: false, message: 'Tu usuario ha sido dado de baja o desactivado. Comunícate con el área de TI o tu supervisor.' });
+  }
+
   const inputPassword = (password || '').trim();
   if (user.password) {
     if (!verifyPassword(inputPassword, user.password)) {
@@ -351,7 +365,7 @@ app.post('/api/auth/login', (req, res) => {
 
 // 3. Listar usuarios
 app.get('/api/users', (req, res) => {
-  const users = db.prepare('SELECT id, username, name, role, created_at FROM users ORDER BY name ASC').all();
+  const users = db.prepare('SELECT id, username, name, role, status, created_at FROM users ORDER BY name ASC').all();
   res.json(users);
 });
 
@@ -450,11 +464,14 @@ app.post('/api/results', (req, res) => {
   // Limpiar sesión en curso del simulador y auto-desbloquear Gatekeeper si correspondía (Algoritmo 3 PRDv2)
   try {
     db.prepare('DELETE FROM simulator_sessions WHERE user_id = ?').run(data.username);
+    const uRow = stmtGatekeeperUser.get(data.username, data.username);
+    const resolvedId = uRow ? uRow.id : data.username;
+    const resolvedUsername = uRow ? uRow.username : data.username;
     const today = new Date().toISOString().split('T')[0];
     db.prepare(`
       UPDATE evaluation_assignments SET status = 'COMPLETADO', updated_at = ?
-      WHERE user_id = ? AND scheduled_date = ? AND status IN ('PENDIENTE', 'EN_CURSO')
-    `).run(new Date().toISOString(), data.username, today);
+      WHERE (user_id = ? OR user_id = ?) AND scheduled_date = ? AND status IN ('PENDIENTE', 'EN_CURSO')
+    `).run(new Date().toISOString(), resolvedId, resolvedUsername, today);
   } catch (e) {}
 
   const savedRecord = {
@@ -479,18 +496,22 @@ app.post('/api/results', (req, res) => {
   res.status(201).json({ success: true, result: savedRecord });
 });
 
-// 7. Cálculo dinámico de Ranking y Podio (RF-MVP-042 a RF-MVP-047)
+// 7. Cálculo dinámico de Ranking y Podio Unificado (Flujo 2, Flujo 7 y RF-MVP-042 a RF-MVP-047)
 app.get('/api/leaderboard', (req, res) => {
   const allResults = db.prepare('SELECT * FROM results').all();
+  const allUsers = db.prepare('SELECT id, username, name, role, pinned_badge_id, avatar_url FROM users').all();
 
-  // Agrupar por usuario tomando su mejor desempeño
-  const userBest = {};
+  // Agrupar por usuario tomando su mejor desempeño en simulador
+  const userSimBest = {};
+  const userAttempts = {};
+
   allResults.forEach(r => {
     const u = r.username.toLowerCase();
-    if (!userBest[u]) {
-      userBest[u] = r;
+    userAttempts[u] = (userAttempts[u] || 0) + 1;
+    if (!userSimBest[u]) {
+      userSimBest[u] = r;
     } else {
-      const current = userBest[u];
+      const current = userSimBest[u];
       const isBetterScore = r.numeric_score > current.numeric_score;
       const isEqualScoreBetterTime = (r.numeric_score === current.numeric_score) && 
         (r.duration_seconds < current.duration_seconds);
@@ -499,20 +520,94 @@ app.get('/api/leaderboard', (req, res) => {
         (r.errors < current.errors);
 
       if (isBetterScore || isEqualScoreBetterTime || isEqualBothBetterErrors) {
-        userBest[u] = r;
+        userSimBest[u] = r;
       }
     }
   });
 
-  const leaderboard = Object.values(userBest);
+  // Acumular puntos de Quizzes del Aula Virtual (conservando la nota máxima por quiz)
+  const quizScores = {};
+  try {
+    const passedQuizzes = db.prepare(`
+      SELECT user_id, SUM(max_score) as total_quiz_pts FROM (
+        SELECT user_id, quiz_id, MAX(score) as max_score 
+        FROM quiz_submissions 
+        WHERE passed = 1 
+        GROUP BY user_id, quiz_id
+      ) GROUP BY user_id
+    `).all();
+    passedQuizzes.forEach(q => {
+      quizScores[q.user_id] = q.total_quiz_pts || 0;
+    });
+  } catch (e) {}
 
-  // Ordenamiento oficial: 1. Mayor puntaje, 2. Menor tiempo, 3. Menor errores
+  // Acumular puntos de Cuestionarios Teóricos (conservando la nota máxima por cuestionario)
+  const theoScores = {};
+  try {
+    const passedTheo = db.prepare(`
+      SELECT user_id, SUM(max_xp) as total_theo_pts FROM (
+        SELECT user_id, questionnaire_id, MAX(xp_earned) as max_xp 
+        FROM theoretical_submissions 
+        WHERE passed = 1 
+        GROUP BY user_id, questionnaire_id
+      ) GROUP BY user_id
+    `).all();
+    passedTheo.forEach(t => {
+      theoScores[t.user_id] = t.total_theo_pts || 0;
+    });
+  } catch (e) {}
+
+  // Badges para resolver icono de medalla fijada en avatar
+  let badgeMap = {};
+  try {
+    const badgesList = db.prepare('SELECT id, icon, name FROM badges').all();
+    badgesList.forEach(b => { badgeMap[b.id] = b; });
+  } catch (e) {}
+
+  // Mapear cada participante con su desempeño consolidado
+  const userMap = new Map(allUsers.map(u => [u.username.toLowerCase(), u]));
+  const leaderboardMap = {};
+
+  Object.keys(userSimBest).forEach(u => {
+    const r = userSimBest[u];
+    const userRow = userMap.get(u) || {};
+    const userId = userRow.id || r.id;
+    const quizPts = quizScores[userId] || 0;
+    const theoPts = theoScores[userId] || 0;
+    const simPts = (r.numeric_score || 0) * 10;
+    const totalXp = simPts + quizPts + theoPts;
+
+    leaderboardMap[u] = {
+      id: r.id,
+      userId: userId,
+      caseTitle: r.case_title,
+      username: r.username,
+      advisorName: r.advisor_name || userRow.name || r.username,
+      score: r.score,
+      numericScore: r.numeric_score,
+      totalXp: totalXp,
+      attempts: userAttempts[u] || 1,
+      errors: r.errors,
+      status: r.status,
+      durationSeconds: r.duration_seconds,
+      formattedDuration: r.formatted_duration,
+      completedAt: r.completed_at,
+      pinnedBadge: userRow.pinned_badge_id ? (badgeMap[userRow.pinned_badge_id] || null) : null
+    };
+  });
+
+  const leaderboard = Object.values(leaderboardMap);
+
+  // Ordenamiento oficial trifactorial: 1. Mayor nota/XP, 2. Menor tiempo, 3. Menos errores
   leaderboard.sort((a, b) => {
-    if (b.numeric_score !== a.numeric_score) {
-      return b.numeric_score - a.numeric_score;
+    if (b.numericScore !== a.numericScore) {
+      return b.numericScore - a.numericScore;
     }
-    if (a.duration_seconds !== b.duration_seconds) {
-      return a.duration_seconds - b.duration_seconds;
+    if (b.totalXp !== a.totalXp) {
+      return b.totalXp - a.totalXp;
+    }
+    if (a.durationSeconds !== b.durationSeconds) {
+      return a.durationSeconds - b.durationSeconds;
     }
     return a.errors - b.errors;
   });
@@ -520,22 +615,26 @@ app.get('/api/leaderboard', (req, res) => {
   const formatted = leaderboard.map((r, index) => ({
     rank: index + 1,
     id: r.id,
-    caseTitle: r.case_title,
+    userId: r.userId,
+    caseTitle: r.caseTitle,
     username: r.username,
-    advisorName: r.advisor_name,
+    advisorName: r.advisorName,
     score: r.score,
-    numericScore: r.numeric_score,
+    numericScore: r.numericScore,
+    totalXp: r.totalXp,
+    attempts: r.attempts,
     errors: r.errors,
     status: r.status,
-    durationSeconds: r.duration_seconds,
-    formattedDuration: r.formatted_duration,
-    completedAt: r.completed_at
+    durationSeconds: r.durationSeconds,
+    formattedDuration: r.formattedDuration,
+    completedAt: r.completedAt,
+    pinnedBadge: r.pinnedBadge
   }));
 
   res.json(formatted);
 });
 
-// ================= CONFIGURACIONES DEL SISTEMA (ADMINISTRACIÓN) =================
+// ================= CONFIGURACIONES DEL SISTEMA (ADMINISTRACIÓN / SUPERVISIÓN) =================
 
 // Consulta del estado de publicación del podio
 app.get('/api/settings/podium', (req, res) => {
@@ -548,8 +647,8 @@ app.get('/api/settings/podium', (req, res) => {
   }
 });
 
-// Modificar publicación del podio (Mostrar/Ocultar a asesores - Solo Admin)
-app.post('/api/settings/podium', adminMiddleware, (req, res) => {
+// Modificar publicación del podio (Mostrar/Ocultar a asesores - Supervisores y Admin)
+app.post('/api/settings/podium', supervisorMiddleware, (req, res) => {
   try {
     const { visible } = req.body;
     const val = visible ? '1' : '0';
@@ -580,12 +679,17 @@ app.post('/api/settings/podium', adminMiddleware, (req, res) => {
   }
 });
 
-// ================= ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (EXCLUSIVO ADMIN) =================
-app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
+// ================= ANALÍTICA DE ERRORES Y CASOS CRÍTICOS (EXCLUSIVO SUPERVISIÓN / ADMIN) =================
+app.get('/api/admin/error-analytics', supervisorMiddleware, (req, res) => {
   try {
     const allResults = db.prepare('SELECT * FROM results ORDER BY rowid DESC').all();
     const casesStats = {};
     const advisorsErrors = {};
+
+    const totalEvaluations = allResults.length;
+    const passedEvaluations = allResults.filter(r => r.status === 'Aprobado' || r.numeric_score >= 11).length;
+    const failedEvaluations = totalEvaluations - passedEvaluations;
+    const passRate = totalEvaluations > 0 ? parseFloat(((passedEvaluations / totalEvaluations) * 100).toFixed(1)) : 0;
 
     allResults.forEach(r => {
       const casesDetails = JSON.parse(r.cases_details || '[]');
@@ -698,6 +802,11 @@ app.get('/api/admin/error-analytics', adminMiddleware, (req, res) => {
     }).sort((a, b) => b.totalErrors - a.totalErrors);
 
     res.json({
+      totalEvaluations: totalEvaluations,
+      passedEvaluations: passedEvaluations,
+      failedEvaluations: failedEvaluations,
+      passRate: passRate,
+      criticalCases: rankedCases,
       topErrorCases: rankedCases,
       advisorsErrors: Object.values(advisorsErrors)
     });
@@ -713,7 +822,10 @@ let currentLiveState = {
   detail: 'Esperando que un asesor inicie su evaluación...',
   type: 'INFO',
   errors: 0,
-  time: ''
+  time: '',
+  caseCode: '',
+  caseTitle: '',
+  resolvedCases: '0 de 5'
 };
 
 // 8. Consulta de estado y eventos en vivo (Polling / Carga inicial)
@@ -721,7 +833,10 @@ app.get('/api/live-events', (req, res) => {
   try {
     const history = db.prepare('SELECT * FROM live_events ORDER BY id DESC LIMIT 25').all();
     res.json({
-      current: currentLiveState,
+      current: {
+        ...currentLiveState,
+        connectedUsers: sseClients.length
+      },
       history: history.map(h => ({
         id: h.id,
         advisor: h.advisor,
@@ -737,9 +852,9 @@ app.get('/api/live-events', (req, res) => {
   }
 });
 
-// 9. Registro de eventos en vivo desde el evaluador/simulador
+// 9. Registro de eventos en vivo desde el evaluador/simulador (Flujo 9 PRDv2)
 app.post('/api/live-events', (req, res) => {
-  const { advisor, step, detail, type = 'INFO', errors = 0 } = req.body;
+  const { advisor, step, detail, type = 'INFO', errors = 0, caseCode, caseTitle, resolvedCases } = req.body;
   const time = new Date().toLocaleTimeString('es-PE');
 
   currentLiveState = {
@@ -748,7 +863,10 @@ app.post('/api/live-events', (req, res) => {
     detail: detail || '',
     type: type,
     errors: errors !== undefined ? errors : 0,
-    time: time
+    time: time,
+    caseCode: caseCode || currentLiveState.caseCode || '',
+    caseTitle: caseTitle || currentLiveState.caseTitle || '',
+    resolvedCases: resolvedCases || currentLiveState.resolvedCases || '0 de 5'
   };
 
   try {
@@ -760,9 +878,12 @@ app.post('/api/live-events', (req, res) => {
     console.error('[DB Error] Guardando live_event:', e.message);
   }
 
-  const eventPayload = { ...currentLiveState };
+  const eventPayload = {
+    ...currentLiveState,
+    connectedUsers: sseClients.length
+  };
 
-  // Difundir a todos los clientes SSE activos con control de errores
+  // Difundir a todos los clientes SSE activos con control de errores en <300ms
   sseClients = sseClients.filter(client => {
     try {
       client.res.write(`data: ${JSON.stringify(eventPayload)}\n\n`);
@@ -775,8 +896,8 @@ app.post('/api/live-events', (req, res) => {
   res.json({ success: true, current: currentLiveState });
 });
 
-// 10. Conexión SSE para transmisión de eventos en vivo al monitor de administración
-app.get('/api/live-events/stream', (req, res) => {
+// 10. Conexión SSE para transmisión de eventos en vivo al monitor (Flujo 9 PRDv2)
+app.get(['/api/live-events/stream', '/api/live-monitor/stream'], (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
@@ -785,13 +906,17 @@ app.get('/api/live-events/stream', (req, res) => {
     res.flushHeaders();
   }
 
-  const clientId = Date.now();
+  const clientId = Date.now() + Math.random();
   const newClient = { id: clientId, res };
   sseClients.push(newClient);
 
   // Enviar estado actual inmediatamente al conectar
   try {
-    res.write(`data: ${JSON.stringify(currentLiveState)}\n\n`);
+    const payload = {
+      ...currentLiveState,
+      connectedUsers: sseClients.length
+    };
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
   } catch (err) {}
 
   // Heartbeat ping cada 15 segundos para mantener viva la conexión en redes móviles/Wi-Fi
@@ -824,8 +949,8 @@ app.post('/api/reset', adminMiddleware, (req, res) => {
   res.json({ success: true, message: 'Todas las evaluaciones han sido eliminadas y la base de datos se restableció a 0.' });
 });
 
-// 12. Exportación de reportes administrativos (CSV y Excel XML - Solo Admin)
-app.get('/api/admin/export', adminMiddleware, (req, res) => {
+// 12. Exportación de reportes administrativos (CSV y Excel XML - Supervisión y Admin)
+app.get('/api/admin/export', supervisorMiddleware, (req, res) => {
   try {
     const format = (req.query.format || 'csv').toLowerCase();
     const allResults = db.prepare('SELECT * FROM results ORDER BY rowid DESC').all();
@@ -929,6 +1054,12 @@ app.use('/api/integration', createIntegrationRouter(db));
 app.use('/api/evaluations', createEvaluationsRouter(db, authMiddleware, adminMiddleware));
 
 // Endpoint canónico directo para Gatekeeper (PRDv2 Algoritmo 3)
+const stmtGatekeeperUser = db.prepare('SELECT id, username FROM users WHERE id = ? OR username = ?');
+const stmtGatekeeperAssignments = db.prepare(`
+  SELECT event_id, title, evaluation_type, status, scheduled_date FROM evaluation_assignments
+  WHERE (user_id = ? OR user_id = ?) AND scheduled_date = ?
+`);
+
 app.get('/api/gatekeeper/status', (req, res) => {
   try {
     const rawUserId = req.query.userId || (req.user ? req.user.id : null);
@@ -938,14 +1069,11 @@ app.get('/api/gatekeeper/status', (req, res) => {
       return res.status(400).json({ success: false, message: 'El parámetro userId es obligatorio.' });
     }
 
-    const userRow = db.prepare('SELECT id, username FROM users WHERE id = ? OR username = ?').get(rawUserId, rawUserId);
+    const userRow = stmtGatekeeperUser.get(rawUserId, rawUserId);
     const resolvedId = userRow ? userRow.id : rawUserId;
     const resolvedUsername = userRow ? userRow.username : rawUserId;
 
-    const activeAssignments = db.prepare(`
-      SELECT * FROM evaluation_assignments
-      WHERE (user_id = ? OR user_id = ?) AND scheduled_date = ?
-    `).all(resolvedId, resolvedUsername, queryDate);
+    const activeAssignments = stmtGatekeeperAssignments.all(resolvedId, resolvedUsername, queryDate);
 
     for (const assign of activeAssignments) {
       if (assign.status === 'PENDIENTE' || assign.status === 'EN_CURSO') {
@@ -971,6 +1099,12 @@ app.get('/api/gatekeeper/status', (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// Manejador 404 estricto para rutas de la API (garantiza que NUNCA se devuelva HTML bajo /api/*)
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: `Ruta de API no encontrada: ${req.method} ${req.originalUrl || req.path}` });
+});
+
 
 // Función para obtener dinámicamente la IP de la red local (Wi-Fi / Ethernet)
 function getLocalNetworkIp() {

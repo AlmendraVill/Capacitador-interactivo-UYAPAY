@@ -21,6 +21,13 @@ describe('8. Verificación de Compatibilidad PRDv2 (Persistencia, Auditoría For
   let advisorToken;
 
   before(async () => {
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const db = new DatabaseSync('uyapay.sqlite');
+      db.prepare("DELETE FROM evaluation_assignments WHERE status = 'PENDIENTE'").run();
+      db.prepare("DELETE FROM results WHERE case_title = 'Caso 1: Venta simple contado con regalo'").run();
+    } catch (e) {}
+
     serverInstance = await startServer(TEST_PORT);
 
     // Login Admin
@@ -33,6 +40,13 @@ describe('8. Verificación de Compatibilidad PRDv2 (Persistencia, Auditoría For
   });
 
   after(async () => {
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const db = new DatabaseSync('uyapay.sqlite');
+      db.prepare("DELETE FROM evaluation_assignments WHERE event_id = 'eval-mensual-oct'").run();
+      db.prepare("DELETE FROM results WHERE case_title = 'Caso 1: Venta simple contado con regalo'").run();
+    } catch (e) {}
+
     if (serverInstance) {
       await new Promise((resolve) => serverInstance.close(resolve));
     }

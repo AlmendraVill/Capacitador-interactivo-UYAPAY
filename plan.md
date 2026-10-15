@@ -89,23 +89,38 @@ flowchart TD
 
 ---
 
-### Hito 5: Ranking General, Podio Olímpico y Telemetría SSE (Flujos 2, 7, 9)
+### Hito 5: Ranking General, Podio Olímpico y Telemetría SSE (Flujos 2, 7, 9) [COMPLETADO]
 * **Alcance Técnico:**
-  1. **Podio y Ranking General:** Tarjetas asimétricas del Top 3 (1° al centro, 2° derecha, 3° izquierda), tabla general con fila del usuario fijada y modal de desglose de 2 niveles.
-  2. **Bolsa de XP Proporcional:** Algoritmo de consolidación de puntos y desempate determinista (XP > Errores > Tiempo).
-  3. **Consola de Supervisión SSE (Revisor / Admin):** Transmisión en tiempo real de participantes conectados, asesor en foco, caso/paso activo, feed de infracciones y ranking analítico de casos críticos.
-  4. **Control de Podio:** Switch de publicación del podio para congelar o exhibir resultados.
-* **Criterios de Aceptación (DoD):**
-  * El feed SSE muestra alertas de errores cometidos en el simulador en menos de 300ms.
-  * Los participantes solo pueden ver el desglose de su propio puntaje; Revisor/Admin pueden auditar a todos.
+  1. **Podio Olímpico Asimétrico Top 3:** Disposición física asimétrica (1° al centro elevado con laureles dorados, 2° derecha en plata, 3° izquierda en bronce), métricas visibles (nota, XP, intentos, tiempo, errores) y medalla fijada en avatar.
+  2. **Tabla General y Privacidad Estricta (SEG-01 / Flujo 7):** Fila del usuario fijada/resaltada (`ranking-row-self` con etiqueta `(Tú)`), puntaje interactivo con control estricto (el participante solo puede auditar su propio historial; supervisores auditan a todos), buscador reactivo y exportación a Excel (.xls) y CSV UTF-8.
+  3. **Auditoría Forense de 2 Niveles:**
+     - *Nivel 1 (Historial Multimodular):* Modal de trazabilidad consolidando Simulador, Quizzes de video y Cuestionarios Teóricos con pestañas de filtrado.
+     - *Nivel 2 (Autopsia Granular):* Modal de inspección forense ítem por ítem o caso por caso, mostrando respuestas emitidas, alternativas oficiales correctas, errores cometidos y justificación pedagógica.
+  4. **Bolsa de XP Unificada y Desempate Determinista:** Algoritmo determinista en `server.js` (Nota Vigesimal > XP Total > Tiempo de Ejecución > Errores Operativos).
+  5. **Consola de Supervisión SSE en Tiempo Real (Revisor / Admin):** Telemetría continua de asesores conectados, asesor en foco, paso activo, feed de infracciones (`[CLIC INDEBIDO]`, `[DATO INCORRECTO]`) en $<300$ms, métricas de aprobación ejecutivas y ranking de casos críticos por severidad.
+  6. **Control de Publicación y Confeti:** Switch administrativo de publicación del podio con difusión de evento SSE `PODIUM_STATUS_CHANGED` y animación de confeti festivo en canvas.
+  7. **Herramientas de Feedback de Supervisión:** Envío de recomendaciones pedagógicas de refuerzo por módulo y notas de felicitación directa al perfil del asesor.
+  8. **Banner Contextual y Novedades:** Banner de evaluación pendiente con acceso directo y tarjetas de "Agregados Recientemente" para exploración fluida.
+* **Criterios de Aceptación (DoD) - Verificados:**
+  * ✅ El feed SSE difunde y registra alertas de errores cometidos en el simulador en $<300$ms (verificado en $<20$ms en tests).
+  * ✅ Control estricto de privacidad activo: participantes reciben HTTP 403 Forbidden al intentar auditar historiales o evaluaciones ajenas; Supervisores/Admin pueden auditar a todos.
+  * ✅ Podio Olímpico Top 3 ordenado determinísticamente con render asimétrico (Oro al Centro, Plata a la Derecha, Bronce a la Izquierda).
+  * ✅ Auditoría Forense Nivel 1 y Nivel 2 operativa con detalle de acciones de simulador y respuestas de cuestionarios con feedback pedagógico.
+  * ✅ Suite automatizada `test/hito5_ranking_podium_telemetry.test.js` con 11/11 tests pasando al 100% (112/112 tests totales en la plataforma).
 
 ---
 
-### Hito 6: Pruebas Integrales E2E, Auditoría y Cierre
+### Hito 6: Pruebas Integrales E2E, Auditoría y Cierre [COMPLETADO]
 * **Alcance Técnico:**
-  1. Pruebas end-to-end automatizadas de los 12 flujos de usuario simulando los 4 roles.
-  2. Pruebas de estrés y concurrencia sobre el canal de telemetría SSE y la API Gatekeeper.
-  3. Validación de integridad de auditoría forense y exportación a Excel / PDF.
-* **Criterios de Aceptación (DoD):**
-  * Cero discrepancias en la bolsa de XP tras múltiples reintentos de evaluación.
-  * Plataforma validada contra la matriz de requerimientos de los 12 flujos.
+  1. **Matriz de Integración de los 4 Roles Oficiales:** Cobertura de permisos y fronteras de seguridad entre `participante`, `revisor`/`facilitador`, `editor` y `administrador`.
+  2. **Ciclo de Vida y Seguridad de Credenciales (Flujos 1 y 10):** Bloqueo en login para usuarios con estado `inactive` ("Tu usuario ha sido dado de baja o desactivado") y modificación de contraseña en caliente con hash PBKDF2 ($pbkdf2$10000$...).
+  3. **Cero Discrepancias en la Bolsa de XP:** Consolidación de mejor nota por quiz y cuestionario evitando duplicación y degradación ante reintentos.
+  4. **Pruebas de Estrés y Alta Concurrencia:** 50 peticiones simultáneas a Gatekeeper API ejecutadas con latencia media $< 50$ms (media $< 35$ms), y 4-5 clientes SSE concurrentes con entrega de alertas en $< 300$ms.
+  5. **Auditoría Forense Round-Trip (Nivel 1 y 2):** Integridad de autopsia ítem por ítem con protección estricta de privacidad.
+  6. **Exportación Oficial de Resultados:** Generación de Excel SpreadsheetML XML (.xls) y CSV con BOM UTF-8 (\uFEFF) para visualización sin corrupción de caracteres en Microsoft Excel.
+  7. **Cobertura E2E de los 12 Flujos PRDv2:** Verificación completa de los 12 flujos operativos de la plataforma.
+* **Criterios de Aceptación (DoD) - Verificados:**
+  * ✅ Cero discrepancias en la bolsa de XP tras múltiples reintentos de evaluación comprobado en Leaderboard y Mi Perfil.
+  * ✅ Plataforma validada integralmente contra la matriz de requerimientos de los 12 flujos.
+  * ✅ Suite automatizada `test/hito6_e2e_stress_audit_closure.test.js` con 8/8 tests pasando al 100%.
+  * ✅ Suite completa de regresión con **120 de 120 pruebas automatizadas pasando al 100%** (18 suites, 0 fallos).

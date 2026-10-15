@@ -251,9 +251,13 @@ function createEvaluationsRouter(db, authMiddleware, adminMiddleware) {
   // 8. Crear nuevo evento en el calendario y generar asignaciones para asesores convocados
   router.post('/calendar/events', authMiddleware, (req, res) => {
     try {
-      const isStaff = ['admin', 'editor'].includes(req.user.role);
+      const userRoles = [
+        req.user.role,
+        ...(req.user.roles || [])
+      ].map(r => String(r).toLowerCase());
+      const isStaff = userRoles.some(r => ['admin', 'administrador', 'editor', 'revisor', 'supervisor', 'facilitador'].includes(r));
       if (!isStaff) {
-        return res.status(403).json({ success: false, message: 'Acceso restringido a editores y administradores.' });
+        return res.status(403).json({ success: false, message: 'Acceso restringido a editores, supervisores y administradores.' });
       }
 
       const {
@@ -315,9 +319,13 @@ function createEvaluationsRouter(db, authMiddleware, adminMiddleware) {
   // 9. Eliminar evento del calendario y sus asignaciones pendientes
   router.delete('/calendar/events/:id', authMiddleware, (req, res) => {
     try {
-      const isStaff = ['admin', 'editor'].includes(req.user.role);
+      const userRoles = [
+        req.user.role,
+        ...(req.user.roles || [])
+      ].map(r => String(r).toLowerCase());
+      const isStaff = userRoles.some(r => ['admin', 'administrador', 'editor', 'revisor', 'supervisor', 'facilitador'].includes(r));
       if (!isStaff) {
-        return res.status(403).json({ success: false, message: 'Acceso restringido a editores y administradores.' });
+        return res.status(403).json({ success: false, message: 'Acceso restringido a editores, supervisores y administradores.' });
       }
 
       const eventId = req.params.id;
