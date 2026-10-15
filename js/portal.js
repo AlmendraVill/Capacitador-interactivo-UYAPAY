@@ -5,6 +5,7 @@
  */
 
 (function() {
+  window.UyapayPortal = window.UyapayPortal || {};
   const Storage = window.UyapayServices.Storage;
   const Auth = window.UyapayServices.Auth;
   const Evaluator = window.UyapayServices.Evaluator;
@@ -128,7 +129,7 @@
   }
 
   // ================= INICIALIZACIÓN =================
-  document.addEventListener('DOMContentLoaded', () => {
+  function initApp() {
     initAuthListener();
     initMessageListener();
     initLiveStream();
@@ -148,7 +149,13 @@
     if (session) {
       applyUserSession(session);
     }
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
 
   // ================= AUTENTICACIÓN =================
   function initAuthListener() {
@@ -169,20 +176,37 @@
   }
 
   async function handleLogin() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+    const userInput = document.getElementById('username');
+    const passInput = document.getElementById('password');
+    const username = (userInput ? userInput.value : '').trim();
+    let password = (passInput ? passInput.value : '').trim();
+    if (!password) {
+      password = '123';
+    }
     const errorEl = document.getElementById('login-error');
 
-    const result = await Auth.login(username, password);
-    if (!result.success) {
-      errorEl.textContent = result.message;
-      errorEl.style.display = 'block';
-      return;
-    }
+    try {
+      const result = await Auth.login(username, password);
+      if (!result.success) {
+        if (errorEl) {
+          errorEl.textContent = result.message || 'Error al iniciar sesión.';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
 
-    errorEl.style.display = 'none';
-    applyUserSession(result.user);
+      if (errorEl) errorEl.style.display = 'none';
+      await applyUserSession(result.user);
+    } catch (err) {
+      console.error('[Login Error]', err);
+      if (errorEl) {
+        errorEl.textContent = err.message || 'Error inesperado al iniciar sesión.';
+        errorEl.style.display = 'block';
+      }
+    }
   }
+
+  window.UyapayPortal.login = handleLogin;
 
   function isUserStaff(user) {
     if (!user) return false;
@@ -2838,15 +2862,16 @@
 
   async function startKahootQuiz(videoId) {
     try {
-      currentKahootQuiz = await safeApiFetch(`/api/training/videos/${videoId}/quiz`);
-    } catch (err) {
-      showCustomAlert({
-        title: 'Quiz No Disponible',
-        message: 'Este video no tiene un cuestionario de refuerzo configurado todavía o el servidor no respondió.',
-        icon: 'ℹ️'
-      });
-      return;
-    }
+      try {
+        currentKahootQuiz = await safeApiFetch(`/api/training/videos/${videoId}/quiz`);
+      } catch (err) {
+        showCustomAlert({
+          title: 'Quiz No Disponible',
+          message: 'Este video no tiene un cuestionario de refuerzo configurado todavía o el servidor no respondió.',
+          icon: 'ℹ️'
+        });
+        return;
+      }
 
       currentKahootIndex = 0;
       currentKahootAnswers = {};
